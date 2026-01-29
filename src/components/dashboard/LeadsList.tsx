@@ -1,26 +1,30 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/auth";
 import { fetchLeads } from "@/lib/supabase/queries";
 import type { Lead } from "../../../types/leads";
 
 type SortBy = "date" | "score";
 
 export function LeadsList() {
+  const { session } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [sortBy, setSortBy] = useState<SortBy>("date");
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
+      if (!session.user?.id) return;
+      
       setIsLoading(true);
-      const data = await fetchLeads();
+      const data = await fetchLeads(session.user.id);
       setLeads(data);
       setIsLoading(false);
     };
 
     load();
-  }, []);
+  }, [session.user?.id]);
 
   const sortedLeads = [...leads].sort((a, b) => {
     if (sortBy === "date") {

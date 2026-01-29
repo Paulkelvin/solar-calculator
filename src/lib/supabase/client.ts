@@ -1,8 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Default installer ID for Phase 1 (single-tenant internal use)
-export const DEFAULT_INSTALLER_ID = "installer_phase1_mock";
-
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -14,6 +11,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
   console.warn("Supabase env vars not set; using mock client");
 }
 
-export const supabase = createClient(url, key);
+// Singleton pattern - lazy initialize on first use
+let supabaseInstance: ReturnType<typeof createClient> | null = null;
 
+function getSupabase() {
+  if (!supabaseInstance) {
+    supabaseInstance = createClient(url, key);
+  }
+  return supabaseInstance;
+}
+
+// Export singleton instance
+export const supabase = getSupabase();
 export type SupabaseClient = typeof supabase;

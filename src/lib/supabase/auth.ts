@@ -7,10 +7,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
  * Sign up with email/password
+ * Installer profile is created automatically by database trigger
  */
 export async function signUp(email: string, password: string, companyName: string) {
   try {
-    // Create auth user
+    // Create auth user - installer profile created automatically by trigger
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -23,18 +24,6 @@ export async function signUp(email: string, password: string, companyName: strin
 
     if (authError) throw authError;
     if (!authData.user) throw new Error('Failed to create user');
-
-    // Create installer profile
-    const { error: profileError } = await supabase
-      .from('installers')
-      .insert([
-        {
-          user_id: authData.user.id,
-          company_name: companyName,
-        },
-      ]);
-
-    if (profileError) throw profileError;
 
     return { success: true, user: authData.user };
   } catch (error) {
@@ -129,7 +118,7 @@ export async function getInstallerProfile(userId: string) {
     const { data, error } = await supabase
       .from('installers')
       .select('*')
-      .eq('user_id', userId)
+      .eq('id', userId)
       .single();
 
     if (error) throw error;

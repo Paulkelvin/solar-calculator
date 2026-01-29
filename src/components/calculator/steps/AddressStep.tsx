@@ -18,6 +18,7 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
     value || { street: "", city: "", state: "", zip: "" }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [apiError, setApiError] = useState<string | null>(null);
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [showPredictions, setShowPredictions] = useState(false);
   const [isLoadingPredictions, setIsLoadingPredictions] = useState(false);
@@ -29,6 +30,7 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
   const handleStreetInputChange = async (val: string) => {
     const updated = { ...formValue, street: val };
     setFormValue(updated);
+    setApiError(null);
 
     // Validate other fields
     const result = addressSchema.safeParse(updated);
@@ -49,10 +51,18 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
     // Fetch predictions
     if (val.length > 2) {
       setIsLoadingPredictions(true);
-      const preds = await fetchPlacePredictions(val);
-      setPredictions(preds);
-      setShowPredictions(true);
-      setIsLoadingPredictions(false);
+      try {
+        const preds = await fetchPlacePredictions(val);
+        setPredictions(preds);
+        setShowPredictions(true);
+        setApiError(null);
+      } catch (err) {
+        setApiError(err instanceof Error ? err.message : "Failed to fetch address suggestions. Please enter address manually.");
+        setPredictions([]);
+        setShowPredictions(false);
+      } finally {
+        setIsLoadingPredictions(false);
+      }
     } else {
       setPredictions([]);
       setShowPredictions(false);
@@ -125,6 +135,12 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
 
   return (
     <div className="space-y-4">
+      {apiError && (
+        <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-700">
+          {apiError}
+        </div>
+      )}
+
       <div className="relative">
         <label className="block text-sm font-medium">Street Address</label>
         <input

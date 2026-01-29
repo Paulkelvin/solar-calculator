@@ -10,11 +10,11 @@ import type { SolarCalculationResult } from "../../../types/calculations";
 export async function createLead(
   leadData: Omit<Lead, "id" | "installer_id" | "lead_score" | "created_at" | "updated_at">,
   leadScore: number,
-  installerId?: string
+  installerId: string
 ): Promise<Lead | null> {
   try {
     const newLead = {
-      installer_id: installerId || DEFAULT_INSTALLER_ID,
+      installer_id: installerId,
       address: leadData.address,
       usage: leadData.usage,
       roof: leadData.roof,
@@ -35,7 +35,7 @@ export async function createLead(
     }
 
     console.log("[SUPABASE] Created lead:", data);
-    return data as Lead;
+    return data as unknown as Lead;
   } catch (err) {
     console.error("Error creating lead:", err);
     return null;
@@ -45,15 +45,17 @@ export async function createLead(
 /**
  * Log activity (form_submitted, results_viewed, etc.).
  * Phase 2: Real Supabase integration enabled.
+ * Phase 6.1: Uses authenticated installer_id
  */
 export async function logActivity(
   leadId: string,
   eventType: "form_submitted" | "results_viewed" | "pdf_generated",
+  installerId: string,
   metadata?: Record<string, unknown>
 ): Promise<boolean> {
   try {
     const activity = {
-      installer_id: DEFAULT_INSTALLER_ID,
+      installer_id: installerId,
       lead_id: leadId,
       event_type: eventType,
       metadata: metadata || {}
@@ -77,15 +79,16 @@ export async function logActivity(
 }
 
 /**
- * Fetch all leads for the default installer.
+ * Fetch all leads for the specified installer.
  * Phase 2: Real Supabase integration enabled.
+ * Phase 6.1: Uses authenticated installer_id
  */
-export async function fetchLeads(): Promise<Lead[]> {
+export async function fetchLeads(installerId: string): Promise<Lead[]> {
   try {
     const { data, error } = await supabase
       .from("leads")
       .select("*")
-      .eq("installer_id", DEFAULT_INSTALLER_ID)
+      .eq("installer_id", installerId)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -94,7 +97,7 @@ export async function fetchLeads(): Promise<Lead[]> {
     }
 
     console.log("[SUPABASE] Fetched leads:", data?.length || 0);
-    return (data as Lead[]) || [];
+    return (data as unknown as Lead[]) || [];
   } catch (err) {
     console.error("Error fetching leads:", err);
     return [];
@@ -119,7 +122,7 @@ export async function fetchLead(id: string): Promise<Lead | null> {
     }
 
     console.log("[SUPABASE] Fetched lead:", data?.id);
-    return (data as Lead) || null;
+    return (data as unknown as Lead) || null;
   } catch (err) {
     console.error("Error fetching lead:", err);
     return null;

@@ -162,6 +162,10 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
       const leadScore = enhancedLeadScore;
 
       // Create lead in database (with new score and installer_id from auth context)
+      if (!session.user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       const lead = await createLead(
         {
           address: formData.address,
@@ -171,17 +175,22 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
           contact: formData.contact
         },
         leadScore,
-        session.user?.id
+        session.user.id
       );
 
       // Log activity
       if (lead) {
-        await logActivity(lead.id, "form_submitted", {
-          systemSize: results.systemSizeKw,
-          financingType: formData.preferences.financingType,
-          enhancedScore: enhancedLeadScore,
-          legacyScore: legacyLeadScore
-        });
+        await logActivity(
+          lead.id,
+          "form_submitted",
+          session.user.id,
+          {
+            systemSize: results.systemSizeKw,
+            financingType: formData.preferences.financingType,
+            enhancedScore: enhancedLeadScore,
+            legacyScore: legacyLeadScore
+          }
+        );
 
         // Send emails asynchronously (don't wait for completion)
         sendLeadEmails(formData, results, leadScore).catch((err) =>

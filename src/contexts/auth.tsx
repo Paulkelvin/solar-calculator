@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const { data: installer } = await supabase
             .from('installers')
             .select('*')
-            .eq('user_id', sbSession.user.id)
+            .eq('id', sbSession.user.id)
             .single();
 
           setSession({
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const { data: installer } = await supabase
           .from('installers')
           .select('*')
-          .eq('user_id', sbSession.user.id)
+          .eq('id', sbSession.user.id)
           .single();
 
         setSession({
