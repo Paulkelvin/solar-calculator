@@ -35,16 +35,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             created_at: sbSession.user.created_at || new Date().toISOString(),
           };
 
-          // Fetch installer profile
-          const { data: installer } = await supabase
-            .from('installers')
-            .select('*')
-            .eq('id', sbSession.user.id)
-            .single();
-
+          // Don't fetch installer profile here - it's too slow
+          // It will be fetched on demand in the dashboard
           setSession({
             user,
-            installer: installer || null,
+            installer: null,
             isLoading: false,
             isAuthenticated: true,
           });
@@ -81,16 +76,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           created_at: sbSession.user.created_at || new Date().toISOString(),
         };
 
-        // Fetch installer profile
-        const { data: installer } = await supabase
-          .from('installers')
-          .select('*')
-          .eq('id', sbSession.user.id)
-          .single();
-
+        // Don't fetch installer profile here - it's slow
+        // Set it to null and let it load separately
         setSession({
           user,
-          installer: installer || null,
+          installer: null,
           isLoading: false,
           isAuthenticated: true,
         });
