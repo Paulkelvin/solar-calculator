@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth';
+import { useInstallerProfile } from '@/hooks/useInstallerProfile';
 import Link from 'next/link';
 
 interface DashboardLayoutProps {
@@ -11,6 +12,7 @@ interface DashboardLayoutProps {
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { session, signOut } = useAuth();
+  const { profile } = useInstallerProfile();
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
 
@@ -59,8 +61,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="mx-auto max-w-5xl px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-semibold">Solar ROI Calculator</h1>
-            {session.installer && (
-              <p className="text-sm text-muted-foreground">{session.installer.company_name}</p>
+            {profile && (
+              <p className="text-sm text-muted-foreground">{profile.company_name}</p>
             )}
           </div>
 
@@ -76,6 +78,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               className="text-sm font-medium text-foreground"
             >
               Dashboard
+            </Link>
+            <Link
+              href="/dashboard/settings"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Settings
             </Link>
             <button
               onClick={handleSignOut}

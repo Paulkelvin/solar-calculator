@@ -172,7 +172,8 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
           usage: formData.usage,
           roof: formData.roof,
           preferences: formData.preferences,
-          contact: formData.contact
+          contact: formData.contact,
+          status: 'new'
         },
         leadScore,
         session.user.id

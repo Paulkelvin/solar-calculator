@@ -1,4 +1,4 @@
-import { supabase, DEFAULT_INSTALLER_ID } from "./client";
+import { supabase } from "./client";
 import type { Lead } from "../../../types/leads";
 import type { SolarCalculationResult } from "../../../types/calculations";
 

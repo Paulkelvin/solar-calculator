@@ -3,15 +3,33 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth";
 import { fetchLeads } from "@/lib/supabase/queries";
+import { supabase } from "@/lib/supabase/client";
 import type { Lead } from "../../../types/leads";
 
 type SortBy = "date" | "score";
+type StatusFilter = "all" | "new" | "contacted" | "converted" | "lost";
+
+const STATUS_LABELS: Record<string, string> = {
+  new: "New",
+  contacted: "Contacted",
+  converted: "Converted",
+  lost: "Lost",
+};
+
+const STATUS_COLORS: Record<string, string> = {
+  new: "bg-blue-50 text-blue-700 border-blue-200",
+  contacted: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  converted: "bg-green-50 text-green-700 border-green-200",
+  lost: "bg-red-50 text-red-700 border-red-200",
+};
 
 export function LeadsList() {
   const { session } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [sortBy, setSortBy] = useState<SortBy>("date");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
@@ -26,7 +44,12 @@ export function LeadsList() {
     load();
   }, [session.user?.id]);
 
-  const sortedLeads = [...leads].sort((a, b) => {
+  const filteredLeads = leads.filter(lead => {
+    if (statusFilter === "all") return true;
+    return lead.status === statusFilter;
+  });
+
+  const sortedLeads = [...filteredLeads].sort((a, b) => {
     if (sortBy === "date") {
       return (
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -35,6 +58,30 @@ export function LeadsList() {
       return b.lead_score - a.lead_score;
     }
   });
+
+  const handleStatusChange = async (leadId: string, newStatus: string) => {
+    if (!session.user?.id) return;
+
+    setUpdatingId(leadId);
+    try {
+      const { error } = await supabase
+        .from("leads")
+        .update({ status: newStatus })
+        .eq("id", leadId)
+        .eq("installer_id", session.user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setLeads(leads.map(lead => 
+        lead.id === leadId ? { ...lead, status: newStatus as any } : lead
+      ));
+    } catch (err) {
+      console.error("Failed to update lead status:", err);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
 
   if (isLoading) {
     return <div className="text-sm text-muted-foreground">Loading leads...</div>;
@@ -52,7 +99,7 @@ export function LeadsList() {
 
   return (
     <div className="space-y-4">
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           onClick={() => setSortBy("date")}
           className={`rounded-md px-3 py-1 text-sm font-medium transition-colors ${
@@ -73,6 +120,20 @@ export function LeadsList() {
         >
           Sort by Score
         </button>
+
+        <div className="flex-1"></div>
+
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
+          className="rounded-md border border-border px-3 py-1 text-sm bg-white focus:ring-2 focus:ring-primary"
+        >
+          <option value="all">All Status</option>
+          <option value="new">New</option>
+          <option value="contacted">Contacted</option>
+          <option value="converted">Converted</option>
+          <option value="lost">Lost</option>
+        </select>
       </div>
 
       <div className="divide-y divide-border rounded-lg border border-border">
@@ -82,7 +143,20 @@ export function LeadsList() {
             className="flex items-center justify-between px-4 py-4 hover:bg-secondary/30"
           >
             <div className="flex-1">
-              <p className="font-medium">{lead.contact.name}</p>
+              <div className="flex items-center gap-2 mb-1">
+                <p className="font-medium">{lead.contact.name}</p>
+                <select
+                  value={lead.status}
+                  onChange={(e) => handleStatusChange(lead.id, e.target.value)}
+                  disabled={updatingId === lead.id}
+                  className={`text-xs px-2 py-1 rounded border ${STATUS_COLORS[lead.status] || "bg-gray-50 text-gray-700 border-gray-200"} focus:outline-none disabled:opacity-50`}
+                >
+                  <option value="new">New</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="converted">Converted</option>
+                  <option value="lost">Lost</option>
+                </select>
+              </div>
               <p className="text-xs text-muted-foreground">
                 {lead.address.street}, {lead.address.city}, {lead.address.state}
               </p>

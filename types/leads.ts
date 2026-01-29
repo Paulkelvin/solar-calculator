@@ -61,6 +61,7 @@ export interface Lead {
   preferences: Preferences;
   contact: Contact;
   lead_score: number;
+  status: 'new' | 'contacted' | 'converted' | 'lost';
   created_at: string;
   updated_at: string;
 }
