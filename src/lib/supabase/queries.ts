@@ -6,11 +6,13 @@ import type { SolarCalculationResult } from "../../../types/calculations";
  * Create a new lead from calculator submission.
  * Phase 2: Real Supabase integration enabled.
  * Phase 6.1: Added installer_id support for multi-tenant scoping
+ * Phase 8: Added solar data storage
  */
 export async function createLead(
   leadData: Omit<Lead, "id" | "installer_id" | "lead_score" | "created_at" | "updated_at">,
   leadScore: number,
-  installerId: string
+  installerId: string,
+  solarData?: { solarPotentialKwhAnnual?: number; roofImageUrl?: string }
 ): Promise<Lead | null> {
   try {
     const newLead = {
@@ -20,7 +22,10 @@ export async function createLead(
       roof: leadData.roof,
       preferences: leadData.preferences,
       contact: leadData.contact,
-      lead_score: leadScore
+      lead_score: leadScore,
+      status: leadData.status || 'new',
+      solar_potential_kwh_annual: solarData?.solarPotentialKwhAnnual,
+      roof_imagery_url: solarData?.roofImageUrl
     };
 
     const { data, error } = await supabase
@@ -34,7 +39,7 @@ export async function createLead(
       return null;
     }
 
-    console.log("[SUPABASE] Created lead:", data);
+    console.log("[SUPABASE] Created lead with solar data:", data);
     return data as unknown as Lead;
   } catch (err) {
     console.error("Error creating lead:", err);

@@ -62,6 +62,9 @@ export interface Lead {
   contact: Contact;
   lead_score: number;
   status: 'new' | 'contacted' | 'converted' | 'lost';
+  notes?: string;
+  solar_potential_kwh_annual?: number;
+  roof_imagery_url?: string;
   created_at: string;
   updated_at: string;
 }

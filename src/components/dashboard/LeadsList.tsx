@@ -101,6 +101,30 @@ export function LeadsList() {
     }
   };
 
+  const handleSaveNote = async (leadId: string, note: string) => {
+    if (!session.user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from("leads")
+        .update({ notes: note })
+        .eq("id", leadId)
+        .eq("installer_id", session.user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setLeads(leads.map(lead => 
+        lead.id === leadId ? { ...lead, notes: note } : lead
+      ));
+      
+      setSelectedNoteId(null);
+      setNoteContent("");
+    } catch (err) {
+      console.error("Failed to save note:", err);
+    }
+  };
+
   const exportToCSV = () => {
     if (leads.length === 0) return;
 
@@ -261,6 +285,20 @@ export function LeadsList() {
 
                 {/* Notes section */}
                 <div className="mt-2 text-xs">
+                  {lead.notes && !selectedNoteId?.includes(lead.id) && (
+                    <div className="bg-blue-50 p-2 rounded border border-blue-200 mb-2">
+                      <p className="text-blue-900">{lead.notes}</p>
+                      <button
+                        onClick={() => {
+                          setSelectedNoteId(lead.id);
+                          setNoteContent(lead.notes || "");
+                        }}
+                        className="text-blue-600 hover:underline mt-1 text-xs"
+                      >
+                        Edit
+                      </button>
+                    </div>
+                  )}
                   {selectedNoteId === lead.id ? (
                     <div className="space-y-1">
                       <textarea
@@ -272,6 +310,12 @@ export function LeadsList() {
                       />
                       <div className="flex gap-1">
                         <button
+                          onClick={() => handleSaveNote(lead.id, noteContent)}
+                          className="px-2 py-1 rounded bg-blue-600 text-white hover:bg-blue-700 text-xs"
+                        >
+                          Save
+                        </button>
+                        <button
                           onClick={() => {
                             setSelectedNoteId(null);
                             setNoteContent("");
@@ -282,7 +326,7 @@ export function LeadsList() {
                         </button>
                       </div>
                     </div>
-                  ) : (
+                  ) : !lead.notes && (
                     <button
                       onClick={() => setSelectedNoteId(lead.id)}
                       className="text-blue-600 hover:underline"

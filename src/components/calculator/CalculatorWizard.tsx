@@ -166,6 +166,28 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
         throw new Error('User not authenticated');
       }
 
+      // Fetch solar data from Google Solar API (async, non-blocking)
+      let solarData: { solarPotentialKwhAnnual?: number; roofImageUrl?: string } | undefined;
+      try {
+        if (formData.address.latitude && formData.address.longitude) {
+          const solarResponse = await fetch('/api/google/solar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              latitude: formData.address.latitude,
+              longitude: formData.address.longitude,
+              address: `${formData.address.street}, ${formData.address.city}, ${formData.address.state}`
+            })
+          });
+          if (solarResponse.ok) {
+            solarData = await solarResponse.json();
+          }
+        }
+      } catch (err) {
+        console.warn('Failed to fetch solar data:', err);
+        // Continue without solar data
+      }
+
       const lead = await createLead(
         {
           address: formData.address,
@@ -176,7 +198,8 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
           status: 'new'
         },
         leadScore,
-        session.user.id
+        session.user.id,
+        solarData
       );
 
       // Log activity
