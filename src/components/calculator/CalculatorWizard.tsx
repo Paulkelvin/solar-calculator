@@ -9,6 +9,9 @@ import { RoofStep } from "./steps/RoofStep";
 import { PreferencesStep } from "./steps/PreferencesStep";
 import { ContactStep } from "./steps/ContactStep";
 import { performSolarCalculation, calculateLeadScore } from "@/lib/calculations/solar";
+import { calculateIncentives } from "@/lib/incentives-service";
+import { calculateEnhancedLeadScore } from "@/lib/enhanced-lead-scoring";
+import type { LeadScoringFactors } from "@/lib/enhanced-lead-scoring";
 import { createLead, logActivity } from "@/lib/supabase/queries";
 import type { CalculatorForm, Address, Usage, Roof, Preferences, Contact } from "../../../types/leads";
 import type { SolarCalculationResult } from "../../../types/calculations";
@@ -99,14 +102,64 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
         wantsBattery: formData.preferences.wantsBattery
       });
 
-      // Calculate lead score
-      const leadScore = calculateLeadScore(
+      // Calculate incentives based on state and system size
+      const incentiveBreakdown = calculateIncentives(
+        formData.address.state || 'CO',
+        results.systemSizeKw,
+        results.estimatedAnnualProduction,
+        0.14 // default $/kWh average
+      );
+
+      // Add incentive data to results
+      results.incentives = {
+        state: incentiveBreakdown.state,
+        totalFirstYearIncentives: incentiveBreakdown.stateRebates.reduce((sum, i) => {
+          if (i.type === 'rebate' && i.amount < 1) {
+            return sum + (results.systemSizeKw * 1000 * i.amount);
+          } else if (i.type === 'rebate') {
+            return sum + i.amount;
+          }
+          return sum;
+        }, 0),
+        annualIncentives: incentiveBreakdown.totalAnnualIncentives,
+        netMeteringAnnualValue: incentiveBreakdown.netMeteringValue,
+        availableIncentives: [
+          ...incentiveBreakdown.stateRebates.map(i => i.name),
+          ...incentiveBreakdown.utilityRebates.map(i => i.name)
+        ],
+        disclaimer: incentiveBreakdown.disclaimer
+      };
+
+      // Calculate enhanced lead score with real solar data
+      const scoringFactors: LeadScoringFactors = {
+        solarPotential: (results.confidence === 'validated' || results.confidence === 'preliminary') ? 'high' : 'medium',
+        sunExposure: 85, // Will be from real solar data in Phase 5.3
+        roofAreaSqft: formData.roof?.squareFeet || 2500,
+        systemSizeKw: results.systemSizeKw,
+        annualSavings: results.incentives?.netMeteringAnnualValue || 1000,
+        paybackYears: 7, // From financing calcs
+        firstYearIncentives: results.incentives?.totalFirstYearIncentives || 0,
+        roi25Year: results.financing[0]?.roi || 100,
+        financingType: (formData.preferences?.financingType as any) || 'cash',
+        timeline: (formData.preferences?.timeline as any) || 'flexible',
+        hasCoordinates: !!formData.address?.latitude && !!formData.address?.longitude,
+        hasContact: !!formData.contact?.email,
+        completedAllSteps: true
+      };
+
+      const enhancedLeadScore = calculateEnhancedLeadScore(scoringFactors);
+      
+      // Keep old score for backwards compatibility
+      const legacyLeadScore = calculateLeadScore(
         results.systemSizeKw,
         formData.preferences.financingType,
         formData.preferences.timeline
       );
 
-      // Create lead in database (stubbed for Phase 1)
+      // Use enhanced score (Phase 5.3+)
+      const leadScore = enhancedLeadScore;
+
+      // Create lead in database (with new score)
       const lead = await createLead(
         {
           address: formData.address,
@@ -118,11 +171,13 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
         leadScore
       );
 
-      // Log activity (stubbed for Phase 1)
+      // Log activity
       if (lead) {
         await logActivity(lead.id, "form_submitted", {
           systemSize: results.systemSizeKw,
-          financingType: formData.preferences.financingType
+          financingType: formData.preferences.financingType,
+          enhancedScore: enhancedLeadScore,
+          legacyScore: legacyLeadScore
         });
 
         // Send emails asynchronously (don't wait for completion)

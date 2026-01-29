@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import type { SolarCalculationResult } from "../../../types/calculations";
 import type { CalculatorForm } from "../../../types/leads";
+import { fetchSolarData } from "@/lib/solar-service";
+import type { SolarDataResponse } from "@/lib/solar-service";
 
 interface ResultsViewProps {
   results: SolarCalculationResult;
@@ -11,6 +13,38 @@ interface ResultsViewProps {
 
 export function ResultsView({ results, leadData }: ResultsViewProps) {
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
+  const [solarData, setSolarData] = useState<SolarDataResponse | null>(null);
+  const [solarLoading, setSolarLoading] = useState(false);
+  const [solarError, setSolarError] = useState<string | null>(null);
+
+  // Fetch real solar data when component mounts and coordinates are available
+  useEffect(() => {
+    const loadSolarData = async () => {
+      const latitude = leadData?.address?.latitude;
+      const longitude = leadData?.address?.longitude;
+
+      if (!latitude || !longitude) {
+        console.log('No coordinates available for solar data');
+        return;
+      }
+
+      setSolarLoading(true);
+      setSolarError(null);
+
+      try {
+        const data = await fetchSolarData(latitude, longitude);
+        setSolarData(data);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Failed to fetch solar data';
+        setSolarError(errorMessage);
+        console.error('Solar data fetch error:', error);
+      } finally {
+        setSolarLoading(false);
+      }
+    };
+
+    loadSolarData();
+  }, [leadData?.address?.latitude, leadData?.address?.longitude]);
 
   const handleDownloadPDF = async () => {
     if (!leadData) {
@@ -75,36 +109,111 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
       setIsDownloadingPDF(false);
     }
   };
+
   return (
     <div className="space-y-8">
+      {/* System Overview with Real Solar Data */}
       <div className="rounded-lg border border-border bg-background p-6">
         <div className="mb-4 inline-block rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800">
-          Mocked Results — Phase 1
+          {solarData?.source === 'real' ? 'Real Solar Data' : 'Estimated — Phase 1'}
         </div>
 
         <h2 className="text-2xl font-semibold">Your Solar ROI Estimate</h2>
 
-        <div className="mt-6 grid grid-cols-3 gap-4">
-          <div className="rounded-md bg-secondary p-4">
-            <p className="text-xs text-muted-foreground">System Size</p>
-            <p className="mt-1 text-2xl font-bold">{results.systemSizeKw} kW</p>
+        {/* Loading state */}
+        {solarLoading && (
+          <div className="mt-4 flex items-center justify-center py-8">
+            <div className="flex flex-col items-center space-y-2">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+              <p className="text-sm text-muted-foreground">Fetching real solar data...</p>
+            </div>
+          </div>
+        )}
+
+        {/* Error state */}
+        {solarError && !solarLoading && (
+          <div className="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-700">
+            <p className="font-medium">Couldn't fetch real solar data</p>
+            <p className="text-xs text-amber-600">Using estimated values instead</p>
+          </div>
+        )}
+
+        {/* Display data (real or mock) */}
+        {!solarLoading && (
+          <div className="mt-6 grid grid-cols-3 gap-4">
+            <div className="rounded-md bg-secondary p-4">
+              <p className="text-xs text-muted-foreground">System Size</p>
+              <p className="mt-1 text-2xl font-bold">
+                {solarData 
+                  ? (solarData.panelCapacityWatts / 1000).toFixed(1)
+                  : results.systemSizeKw} kW
+              </p>
+            </div>
+
+            <div className="rounded-md bg-secondary p-4">
+              <p className="text-xs text-muted-foreground">Annual Production</p>
+              <p className="mt-1 text-2xl font-bold">
+                {solarData
+                  ? solarData.estimatedAnnualKwh.toLocaleString()
+                  : results.estimatedAnnualProduction.toLocaleString()} kWh
+              </p>
+            </div>
+
+            <div className="rounded-md bg-secondary p-4">
+              <p className="text-xs text-muted-foreground">Monthly Avg</p>
+              <p className="mt-1 text-2xl font-bold">
+                {solarData
+                  ? solarData.estimatedMonthlyKwh.toLocaleString()
+                  : results.estimatedMonthlyProduction.toLocaleString()} kWh
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Solar Potential Metrics - REAL DATA */}
+      {!solarLoading && solarData && (
+        <div className="rounded-lg border border-border bg-background p-6">
+          <h3 className="font-semibold">Solar Potential Analysis</h3>
+          
+          <div className="mt-4 grid grid-cols-2 gap-4 md:grid-cols-4">
+            <div className="rounded-md bg-secondary p-4">
+              <p className="text-xs text-muted-foreground">Potential</p>
+              <p className="mt-2 text-lg font-bold capitalize">
+                {solarData.solarPotential === 'high' && '⭐⭐⭐'}
+                {solarData.solarPotential === 'medium' && '⭐⭐'}
+                {solarData.solarPotential === 'low' && '⭐'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {solarData.solarPotential.charAt(0).toUpperCase() + solarData.solarPotential.slice(1)}
+              </p>
+            </div>
+
+            <div className="rounded-md bg-secondary p-4">
+              <p className="text-xs text-muted-foreground">Roof Area</p>
+              <p className="mt-2 text-lg font-bold">{solarData.roofAreaSqft.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">sq ft</p>
+            </div>
+
+            <div className="rounded-md bg-secondary p-4">
+              <p className="text-xs text-muted-foreground">Sun Exposure</p>
+              <p className="mt-2 text-lg font-bold">{solarData.sunExposurePercentage}%</p>
+              <p className="text-xs text-muted-foreground">exposed to sun</p>
+            </div>
+
+            <div className="rounded-md bg-secondary p-4">
+              <p className="text-xs text-muted-foreground">Shading</p>
+              <p className="mt-2 text-lg font-bold">{solarData.shadingPercentage}%</p>
+              <p className="text-xs text-muted-foreground">average</p>
+            </div>
           </div>
 
-          <div className="rounded-md bg-secondary p-4">
-            <p className="text-xs text-muted-foreground">Annual Production</p>
-            <p className="mt-1 text-2xl font-bold">
-              {results.estimatedAnnualProduction.toLocaleString()} kWh
-            </p>
-          </div>
-
-          <div className="rounded-md bg-secondary p-4">
-            <p className="text-xs text-muted-foreground">Monthly Avg</p>
-            <p className="mt-1 text-2xl font-bold">
-              {results.estimatedMonthlyProduction.toLocaleString()} kWh
-            </p>
+          <div className="mt-4 flex items-center justify-between rounded-md bg-blue-50 px-4 py-3 text-sm">
+            <span className="text-muted-foreground">Data Confidence:</span>
+            <span className="font-semibold text-blue-700">{solarData.confidence}%</span>
           </div>
         </div>
-      </div>
+      )}
 
       <div className="space-y-4">
         <h3 className="text-lg font-semibold">Financing Options</h3>
@@ -225,6 +334,62 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
           ))}
         </div>
       </div>
+
+      {/* Available Incentives Section */}
+      {results.incentives && (
+        <div className="rounded-lg border border-border bg-background p-6">
+          <h3 className="font-semibold">Available Incentives & Savings</h3>
+          
+          <div className="mt-3 rounded-md bg-blue-50 p-3 text-xs text-blue-700">
+            <p className="font-medium">ℹ️ {results.incentives.disclaimer}</p>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-4">
+            <div className="rounded-md bg-secondary p-4">
+              <p className="text-xs text-muted-foreground">First-Year Incentives</p>
+              <p className="mt-2 text-lg font-bold">
+                ${results.incentives.totalFirstYearIncentives.toLocaleString(undefined, {
+                  maximumFractionDigits: 0
+                })}
+              </p>
+              <p className="text-xs text-muted-foreground">rebates & credits</p>
+            </div>
+
+            <div className="rounded-md bg-secondary p-4">
+              <p className="text-xs text-muted-foreground">Annual Net Metering</p>
+              <p className="mt-2 text-lg font-bold">
+                ${results.incentives.netMeteringAnnualValue.toLocaleString(undefined, {
+                  maximumFractionDigits: 0
+                })}
+              </p>
+              <p className="text-xs text-muted-foreground">electricity savings</p>
+            </div>
+
+            <div className="rounded-md bg-secondary p-4">
+              <p className="text-xs text-muted-foreground">Annual Benefits</p>
+              <p className="mt-2 text-lg font-bold">
+                ${(results.incentives.annualIncentives + results.incentives.netMeteringAnnualValue).toLocaleString(undefined, {
+                  maximumFractionDigits: 0
+                })}
+              </p>
+              <p className="text-xs text-muted-foreground">total first year</p>
+            </div>
+          </div>
+
+          {results.incentives.availableIncentives.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm font-medium mb-2">Available in {results.incentives.state}:</p>
+              <ul className="space-y-1">
+                {results.incentives.availableIncentives.map((incentive, idx) => (
+                  <li key={idx} className="text-xs text-muted-foreground">
+                    ✓ {incentive}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="rounded-lg border border-border bg-background p-6">
         <h3 className="font-semibold">Environmental Impact</h3>

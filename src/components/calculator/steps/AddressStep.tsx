@@ -21,6 +21,7 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [showPredictions, setShowPredictions] = useState(false);
   const [isLoadingPredictions, setIsLoadingPredictions] = useState(false);
+  const [addressSelected, setAddressSelected] = useState(!!value?.city); // Track if address was selected
   const inputRef = useRef<HTMLInputElement>(null);
   const predictionsRef = useRef<HTMLDivElement>(null);
 
@@ -70,11 +71,14 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
         street: details.street,
         city: details.city,
         state: details.state,
-        zip: details.zip
+        zip: details.zip,
+        latitude: details.latitude,
+        longitude: details.longitude
       };
       setFormValue(updated);
       onChange(updated);
       setErrors({});
+      setAddressSelected(true); // Show city/state/zip fields now
     }
 
     setIsLoadingPredictions(false);
@@ -165,49 +169,58 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium">City</label>
-          <input
-            type="text"
-            value={formValue.city}
-            onChange={(e) => handleChange("city", e.target.value)}
-            className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-            placeholder="Denver"
-          />
-          {errors.city && (
-            <p className="mt-1 text-xs text-red-600">{errors.city}</p>
-          )}
-        </div>
+      {/* City/State/ZIP - Only show after address is selected */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          addressSelected ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium">City</label>
+              <input
+                type="text"
+                value={formValue.city}
+                onChange={(e) => handleChange("city", e.target.value)}
+                className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+                placeholder="Denver"
+              />
+              {errors.city && (
+                <p className="mt-1 text-xs text-red-600">{errors.city}</p>
+              )}
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium">State</label>
-          <input
-            type="text"
-            value={formValue.state}
-            onChange={(e) => handleChange("state", e.target.value)}
-            className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm uppercase outline-none focus:ring-2 focus:ring-primary"
-            placeholder="CO"
-            maxLength={2}
-          />
-          {errors.state && (
-            <p className="mt-1 text-xs text-red-600">{errors.state}</p>
-          )}
-        </div>
-      </div>
+            <div>
+              <label className="block text-sm font-medium">State</label>
+              <input
+                type="text"
+                value={formValue.state}
+                onChange={(e) => handleChange("state", e.target.value)}
+                className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm uppercase outline-none focus:ring-2 focus:ring-primary"
+                placeholder="CO"
+                maxLength={2}
+              />
+              {errors.state && (
+                <p className="mt-1 text-xs text-red-600">{errors.state}</p>
+              )}
+            </div>
+          </div>
 
-      <div>
-        <label className="block text-sm font-medium">ZIP Code</label>
-        <input
-          type="text"
-          value={formValue.zip}
-          onChange={(e) => handleChange("zip", e.target.value)}
-          className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-          placeholder="80202"
-        />
-        {errors.zip && (
-          <p className="mt-1 text-xs text-red-600">{errors.zip}</p>
-        )}
+          <div>
+            <label className="block text-sm font-medium">ZIP Code</label>
+            <input
+              type="text"
+              value={formValue.zip}
+              onChange={(e) => handleChange("zip", e.target.value)}
+              className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+              placeholder="80202"
+            />
+            {errors.zip && (
+              <p className="mt-1 text-xs text-red-600">{errors.zip}</p>
+            )}
+          </div>
+        </div>
       </div>
 
       {!process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY && (

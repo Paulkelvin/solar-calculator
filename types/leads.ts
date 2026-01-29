@@ -4,7 +4,9 @@ export const addressSchema = z.object({
   street: z.string().min(1, "Address required"),
   city: z.string().min(1, "City required"),
   state: z.string().min(2, "State required"),
-  zip: z.string().regex(/^\d{5}(-\d{4})?$/, "Valid ZIP required")
+  zip: z.string().regex(/^\d{5}(-\d{4})?$/, "Valid ZIP required"),
+  latitude: z.number().optional(),
+  longitude: z.number().optional()
 });
 
 export const usageSchema = z.object({

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { CalculatorWizard } from "@/components/calculator/CalculatorWizard";
 import { ResultsView } from "@/components/results/ResultsView";
-import type { SolarCalculationResult } from "../../types/calculations";
-import type { CalculatorForm } from "../../types/leads";
+import type { SolarCalculationResult } from "@/../types/calculations";
+import type { CalculatorForm } from "@/../types/leads";
 
 interface ResultsState {
   results: SolarCalculationResult;

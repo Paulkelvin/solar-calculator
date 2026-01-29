@@ -12,27 +12,22 @@ export interface PlacePrediction {
 
 /**
  * Fetch place predictions from Google Places API
- * Requires NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
+ * Phase 5.2: Uses API proxy route to avoid CORS issues
+ * 
+ * Previously called Google directly (CORS blocked).
+ * Now calls /api/google/places/autocomplete which proxies to Google.
  */
 export async function fetchPlacePredictions(
   input: string
 ): Promise<PlacePrediction[]> {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
-
-  if (!apiKey) {
-    console.warn("Google Places API key not configured");
-    return [];
-  }
-
   try {
+    // Call our API proxy route instead of Google directly
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(
-        input
-      )}&key=${apiKey}&components=country:us`
+      `/api/google/places/autocomplete?input=${encodeURIComponent(input)}`
     );
 
     if (!response.ok) {
-      throw new Error(`Google API error: ${response.statusText}`);
+      throw new Error(`API error: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -61,22 +56,19 @@ export async function fetchPlacePredictions(
 }
 
 /**
- * Get place details from placeId (street, city, state, zip)
+ * Get place details from placeId (street, city, state, zip, coordinates)
+ * Phase 5.2: Uses API proxy route to avoid CORS issues
+ * Now also extracts coordinates for Solar API
  */
 export async function fetchPlaceDetails(placeId: string) {
-  const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
-
-  if (!apiKey) {
-    return null;
-  }
-
   try {
+    // Call our API proxy route instead of Google directly
     const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${apiKey}&fields=formatted_address,address_components`
+      `/api/google/places/details?place_id=${placeId}`
     );
 
     if (!response.ok) {
-      throw new Error(`Google API error: ${response.statusText}`);
+      throw new Error(`API error: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -88,6 +80,8 @@ export async function fetchPlaceDetails(placeId: string) {
 
     const result = data.result;
     const addressComponents = result.address_components || [];
+    const geometry = result.geometry || {};
+    const location = geometry.location || {};
 
     // Extract address components
     let street = "";
@@ -119,7 +113,9 @@ export async function fetchPlaceDetails(placeId: string) {
       street: street.trim(),
       city,
       state,
-      zip
+      zip,
+      latitude: location.lat,
+      longitude: location.lng
     };
   } catch (error) {
     console.error("Error fetching place details:", error);

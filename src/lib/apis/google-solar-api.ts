@@ -54,10 +54,14 @@ const MOCK_SOLAR_DATA: GoogleSolarData = {
  * Phase 5.1: Implements real Google Solar API calls with fallback to Phase 4 mock data
  * 
  * @param placeId - Google Places ID
+ * @param latitude - Latitude coordinate (optional, will be fetched if not provided)
+ * @param longitude - Longitude coordinate (optional, will be fetched if not provided)
  * @returns Solar data or null if API unavailable
  */
 export async function getGoogleSolarData(
-  placeId: string
+  placeId: string,
+  latitude?: number,
+  longitude?: number
 ): Promise<GoogleSolarData | null> {
   try {
     // Validate inputs
@@ -70,27 +74,39 @@ export async function getGoogleSolarData(
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY;
     
     if (apiKey) {
-      // Real Google Solar API call
-      // Phase 5.2+: Uncomment when ready to use real API
-      // const response = await fetch(
-      //   `https://solar.googleapis.com/v1/buildingInsights:findClosest?key=${apiKey}`,
-      //   {
-      //     method: 'POST',
-      //     headers: { 'Content-Type': 'application/json' },
-      //     body: JSON.stringify({
-      //       location: { latitude, longitude },
-      //       requiredQuality: 'HIGH'
-      //     })
-      //   }
-      // );
-      //
-      // if (!response.ok) {
-      //   console.error(`Google Solar API error: ${response.status}`);
-      //   return null;
-      // }
-      //
-      // const data = await response.json();
-      // return transformGoogleSolarResponse(data);
+      // Real Google Solar API call (Phase 5.2)
+      try {
+        // If coordinates not provided, use mock coordinates for now
+        // Phase 5.3: Will implement place details API to fetch real coordinates
+        const lat = latitude || 40.7128;
+        const lon = longitude || -74.006;
+
+        const response = await fetch(
+          `https://solar.googleapis.com/v1/buildingInsights:findClosest?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              location: { latitude: lat, longitude: lon },
+              requiredQuality: 'HIGH'
+            })
+          }
+        );
+
+        if (!response.ok) {
+          console.error(`Google Solar API error: ${response.status}`);
+          // Fall through to mock data
+        } else {
+          const data = await response.json();
+          const transformed = transformGoogleSolarResponse(data);
+          if (transformed) {
+            return transformed;
+          }
+        }
+      } catch (apiError) {
+        console.error('Google Solar API fetch error:', apiError);
+        // Fall through to mock data
+      }
     }
 
     // Fallback: Return realistic mock data for development/testing
@@ -135,19 +151,26 @@ export async function getAddressAutocomplete(
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
 
     if (apiKey) {
-      // Real Google Places API call
-      // Phase 5.2+: Uncomment when ready to use real API
-      // const response = await fetch(
-      //   `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(trimmedInput)}&key=${apiKey}&components=country:us`
-      // );
-      //
-      // if (!response.ok) {
-      //   console.error(`Google Places API error: ${response.status}`);
-      //   return [];
-      // }
-      //
-      // const data = await response.json();
-      // return data.predictions?.map(transformGooglePlacesPrediction) ?? [];
+      // Real Google Places API call (Phase 5.2)
+      try {
+        const response = await fetch(
+          `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(trimmedInput)}&key=${apiKey}&components=country:us`
+        );
+
+        if (!response.ok) {
+          console.error(`Google Places API error: ${response.status}`);
+          // Fall through to mock data
+        } else {
+          const data = await response.json();
+          const predictions = data.predictions?.map(transformGooglePlacesPrediction) ?? [];
+          if (predictions.length > 0) {
+            return predictions;
+          }
+        }
+      } catch (apiError) {
+        console.error('Google Places API fetch error:', apiError);
+        // Fall through to mock data
+      }
     }
 
     // Fallback: Return mock results for development/testing

@@ -25,12 +25,22 @@ export interface EnvironmentalMetrics {
   gridIndependence: number; // %
 }
 
+export interface IncentiveData {
+  state: string;
+  totalFirstYearIncentives: number; // rebates
+  annualIncentives: number; // performance payments
+  netMeteringAnnualValue: number; // value of excess production
+  availableIncentives: string[]; // names of incentives
+  disclaimer: string;
+}
+
 export interface SolarCalculationResult {
   systemSizeKw: number;
   estimatedAnnualProduction: number; // kWh
   estimatedMonthlyProduction: number; // kWh
   financing: FinancingOption[];
   environmental: EnvironmentalMetrics;
+  incentives?: IncentiveData; // Optional incentive breakdown
   confidence: "mocked" | "preliminary" | "validated";
 }
 
