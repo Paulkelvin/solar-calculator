@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useAuth } from "@/contexts/auth";
 import { fetchLeads } from "@/lib/supabase/queries";
 import { supabase } from "@/lib/supabase/client";
@@ -245,8 +246,12 @@ export function LeadsList() {
                     <option value="contacted">Contacted</option>
                     <option value="converted">Converted</option>
                     <option value="lost">Lost</option>
-                  </select>
-                </div>
+                  </select>                <Link
+                  href={`/dashboard/leads/${lead.id}`}
+                  className="ml-2 text-xs px-2 py-1 rounded bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                >
+                  View →
+                </Link>                </div>
                 <p className="text-xs text-muted-foreground">
                   {lead.address.street}, {lead.address.city}, {lead.address.state}
                 </p>

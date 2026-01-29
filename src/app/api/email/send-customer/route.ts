@@ -1,16 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendCustomerSubmissionEmail } from '@/lib/email/sender';
+import type { Lead } from '../../../../../types/leads';
 
 export async function POST(request: NextRequest) {
   try {
-    const {
-      customerEmail,
-      customerName,
-      systemSize,
-      annualProduction,
-      address,
-    } = await request.json();
+    const body = await request.json();
 
+    // Support both old format and new Lead format
+    const { 
+      customerEmail, 
+      customerName, 
+      systemSize, 
+      annualProduction, 
+      address,
+      to,
+      lead,
+      type
+    } = body;
+
+    // Handle new lead-based request
+    if (lead && to) {
+      const leadData = lead as Lead;
+      const emailResult = await sendCustomerSubmissionEmail(
+        to,
+        leadData.contact.name,
+        0, // systemSize placeholder
+        0, // annualProduction placeholder
+        `${leadData.address.street}, ${leadData.address.city}, ${leadData.address.state} ${leadData.address.zip}`
+      );
+
+      if (!emailResult.success) {
+        return NextResponse.json(
+          { error: 'Failed to send email', details: emailResult },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({ success: true, message: 'Email sent to ' + to });
+    }
+
+    // Handle old format (for backwards compatibility)
     if (!customerEmail || !customerName || !systemSize || !address) {
       return NextResponse.json(
         { error: 'Missing required fields' },
