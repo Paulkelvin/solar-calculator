@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useInstallerProfile } from '@/hooks/useInstallerProfile';
 import { supabase } from '@/lib/supabase/client';
 import { useAuth } from '@/contexts/auth';
@@ -8,18 +8,31 @@ import { Button } from '@/components/ui/button';
 
 export default function SettingsPage() {
   const { session } = useAuth();
-  const { profile, isLoading } = useInstallerProfile();
+  const { profile, isLoading, refetch } = useInstallerProfile();
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
-    company_name: profile?.company_name || '',
-    contact_name: profile?.contact_name || '',
-    phone: profile?.phone || '',
-    website: profile?.website || '',
-    state: profile?.state || '',
+    company_name: '',
+    contact_name: '',
+    phone: '',
+    website: '',
+    state: '',
   });
+
+  // Sync form data when profile loads
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        company_name: profile.company_name || '',
+        contact_name: profile.contact_name || '',
+        phone: profile.phone || '',
+        website: profile.website || '',
+        state: profile.state || '',
+      });
+    }
+  }, [profile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -43,6 +56,9 @@ export default function SettingsPage() {
         .eq('id', session.user.id);
 
       if (err) throw err;
+
+      // Refetch profile to reflect latest changes
+      await refetch();
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
