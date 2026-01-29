@@ -5,14 +5,16 @@ import type { SolarCalculationResult } from "../../../types/calculations";
 /**
  * Create a new lead from calculator submission.
  * Phase 2: Real Supabase integration enabled.
+ * Phase 6.1: Added installer_id support for multi-tenant scoping
  */
 export async function createLead(
   leadData: Omit<Lead, "id" | "installer_id" | "lead_score" | "created_at" | "updated_at">,
-  leadScore: number
+  leadScore: number,
+  installerId?: string
 ): Promise<Lead | null> {
   try {
     const newLead = {
-      installer_id: DEFAULT_INSTALLER_ID,
+      installer_id: installerId || DEFAULT_INSTALLER_ID,
       address: leadData.address,
       usage: leadData.usage,
       roof: leadData.roof,

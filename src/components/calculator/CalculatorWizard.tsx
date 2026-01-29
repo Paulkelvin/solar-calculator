@@ -13,6 +13,7 @@ import { calculateIncentives } from "@/lib/incentives-service";
 import { calculateEnhancedLeadScore } from "@/lib/enhanced-lead-scoring";
 import type { LeadScoringFactors } from "@/lib/enhanced-lead-scoring";
 import { createLead, logActivity } from "@/lib/supabase/queries";
+import { useAuth } from "@/contexts/auth";
 import type { CalculatorForm, Address, Usage, Roof, Preferences, Contact } from "../../../types/leads";
 import type { SolarCalculationResult } from "../../../types/calculations";
 
@@ -29,6 +30,7 @@ interface CalculatorWizardProps {
 }
 
 export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
+  const { session } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -159,7 +161,7 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
       // Use enhanced score (Phase 5.3+)
       const leadScore = enhancedLeadScore;
 
-      // Create lead in database (with new score)
+      // Create lead in database (with new score and installer_id from auth context)
       const lead = await createLead(
         {
           address: formData.address,
@@ -168,7 +170,8 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
           preferences: formData.preferences,
           contact: formData.contact
         },
-        leadScore
+        leadScore,
+        session.user?.id
       );
 
       // Log activity
