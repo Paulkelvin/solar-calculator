@@ -110,13 +110,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    setSession({
-      user: null,
-      installer: null,
-      isLoading: false,
-      isAuthenticated: false,
-    });
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Sign out error:', error);
+      }
+    } catch (err) {
+      console.error('Sign out error:', err);
+    } finally {
+      // Always clear the session regardless of error
+      setSession({
+        user: null,
+        installer: null,
+        isLoading: false,
+        isAuthenticated: false,
+      });
+    }
   };
 
   return (
