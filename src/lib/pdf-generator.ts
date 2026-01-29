@@ -1,0 +1,475 @@
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
+import { SolarCalculationResult } from '../../types/calculations';
+
+interface FinancingCard {
+  label: string;
+  totalCost: number;
+  yearOneSavings: number;
+  yearTwoSavings: number;
+  monthlyPayment?: number;
+  roi: number;
+}
+
+interface EnvironmentalMetrics {
+  co2OffsetTons: number;
+  treeEquivalent: number;
+}
+
+/**
+ * Generate HTML content for solar proposal PDF
+ */
+export function generateProposalHTML(
+  leadData: {
+    name: string;
+    email: string;
+    phone: string;
+    address: {
+      street: string;
+      city: string;
+      state: string;
+      zip: string;
+    };
+    usage: {
+      monthlyBill?: number;
+      annualKwh: number;
+    };
+    roof: {
+      size: number;
+      sunExposure: string;
+    };
+    preferences: {
+      battery: boolean;
+      financing: string;
+      timeline: string;
+      notes?: string;
+    };
+  },
+  calculations: SolarCalculationResult
+): string {
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(value);
+
+  // Transform financing data to match the card structure
+  const financingCards: FinancingCard[] = calculations.financing.map((opt, idx) => {
+    const costPerkW = 2.75; // $2.75 per watt average
+    const systemCost = calculations.systemSizeKw * 1000 * costPerkW;
+    const annualSavings = (calculations.systemSizeKw * 1200) * 0.14; // ~$1,680/kW/year
+    
+    return {
+      label: opt.type === 'cash' ? '💰 Cash Purchase' : '🏦 Solar Loan',
+      totalCost: systemCost,
+      yearOneSavings: annualSavings,
+      yearTwoSavings: annualSavings,
+      monthlyPayment: opt.monthlyPayment,
+      roi: opt.roi
+    };
+  });
+
+  const cashCard = financingCards[0];
+  const loanCard = financingCards[1];
+
+  // Convert environmental metrics from kg to metric tons
+  const envMetrics: EnvironmentalMetrics = {
+    co2OffsetTons: calculations.environmental.annualCO2Offset / 1000,
+    treeEquivalent: calculations.environmental.treesEquivalent
+  };
+
+  return `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>Solar Proposal Report</title>
+        <style>
+          * { margin: 0; padding: 0; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            color: #111;
+            line-height: 1.6;
+            background: #fff;
+          }
+          .page {
+            width: 8.5in;
+            height: 11in;
+            margin: 0 auto;
+            padding: 0.5in;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+          }
+          .header {
+            border-bottom: 3px solid #10b981;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+          }
+          .header h1 {
+            font-size: 2rem;
+            color: #10b981;
+            margin-bottom: 0.25rem;
+          }
+          .header p {
+            color: #666;
+            font-size: 0.9rem;
+          }
+          .section {
+            margin-bottom: 1.5rem;
+          }
+          .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #10b981;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+          }
+          .two-column {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+          }
+          .info-box {
+            background: #f9fafb;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            border-left: 3px solid #10b981;
+          }
+          .info-label {
+            font-size: 0.85rem;
+            color: #6b7280;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .info-value {
+            font-size: 1.1rem;
+            color: #111;
+            font-weight: 600;
+            margin-top: 0.25rem;
+          }
+          .financing-card {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e5e7eb;
+          }
+          .financing-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #111;
+            margin-bottom: 0.5rem;
+          }
+          .card-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.4rem 0;
+            font-size: 0.9rem;
+          }
+          .card-label {
+            color: #6b7280;
+          }
+          .card-value {
+            font-weight: 600;
+            color: #111;
+          }
+          .highlight {
+            background: #d1fae5;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            color: #047857;
+            font-weight: 600;
+          }
+          .environmental {
+            background: #f0fdf4;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #dcfce7;
+          }
+          .environmental-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 0.75rem;
+          }
+          .env-item {
+            text-align: center;
+          }
+          .env-number {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #10b981;
+          }
+          .env-label {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+          }
+          .footer {
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e5e7eb;
+            font-size: 0.8rem;
+            color: #6b7280;
+            text-align: center;
+          }
+          .badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="page">
+          <!-- Header -->
+          <div class="header">
+            <h1>☀️ Solar Proposal Report</h1>
+            <p>Preliminary Estimate - Phase 1 Mock Data</p>
+            <div class="badge">MOCKED CALCULATIONS</div>
+          </div>
+
+          <!-- Property Information -->
+          <div class="section">
+            <div class="section-title">Property & Lead Information</div>
+            <div class="two-column">
+              <div class="info-box">
+                <div class="info-label">Name</div>
+                <div class="info-value">${leadData.name}</div>
+              </div>
+              <div class="info-box">
+                <div class="info-label">Email</div>
+                <div class="info-value">${leadData.email}</div>
+              </div>
+            </div>
+            <div class="two-column">
+              <div class="info-box">
+                <div class="info-label">Phone</div>
+                <div class="info-value">${leadData.phone}</div>
+              </div>
+              <div class="info-box">
+                <div class="info-label">Address</div>
+                <div class="info-value">
+                  ${leadData.address.street}<br>
+                  ${leadData.address.city}, ${leadData.address.state} ${leadData.address.zip}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- System Information -->
+          <div class="section">
+            <div class="section-title">Estimated System Design</div>
+            <div class="two-column">
+              <div class="info-box">
+                <div class="info-label">System Size</div>
+                <div class="info-value">${calculations.systemSizeKw.toFixed(2)} kW</div>
+              </div>
+              <div class="info-box">
+                <div class="info-label">Annual Production</div>
+                <div class="info-value">${calculations.estimatedAnnualProduction.toLocaleString()} kWh</div>
+              </div>
+            </div>
+            <div class="two-column">
+              <div class="info-box">
+                <div class="info-label">Roof Size</div>
+                <div class="info-value">${leadData.roof.size} sqft</div>
+              </div>
+              <div class="info-box">
+                <div class="info-label">Sun Exposure</div>
+                <div class="info-value">${leadData.roof.sunExposure}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Financing Options -->
+          <div class="section">
+            <div class="section-title">Financing Scenarios (2 Years)</div>
+            
+            ${
+              cashCard
+                ? `
+              <div class="financing-card">
+                <div class="financing-card-title">${cashCard.label}</div>
+                <div class="card-row">
+                  <span class="card-label">Total System Cost:</span>
+                  <span class="card-value">${formatCurrency(cashCard.totalCost)}</span>
+                </div>
+                <div class="card-row">
+                  <span class="card-label">Annual Savings:</span>
+                  <span class="card-value highlight">${formatCurrency(cashCard.yearOneSavings)}</span>
+                </div>
+                <div class="card-row">
+                  <span class="card-label">Year 2 Savings:</span>
+                  <span class="card-value">${formatCurrency(cashCard.yearTwoSavings)}</span>
+                </div>
+                <div class="card-row">
+                  <span class="card-label">2-Year ROI:</span>
+                  <span class="card-value">${cashCard.roi.toFixed(1)}%</span>
+                </div>
+              </div>
+            `
+                : ''
+            }
+
+            ${
+              loanCard
+                ? `
+              <div class="financing-card">
+                <div class="financing-card-title">${loanCard.label}</div>
+                <div class="card-row">
+                  <span class="card-label">Loan Amount:</span>
+                  <span class="card-value">${formatCurrency(loanCard.totalCost)}</span>
+                </div>
+                <div class="card-row">
+                  <span class="card-label">Monthly Payment:</span>
+                  <span class="card-value">${formatCurrency(loanCard.monthlyPayment || 0)}</span>
+                </div>
+                <div class="card-row">
+                  <span class="card-label">Year 1 Savings:</span>
+                  <span class="card-value highlight">${formatCurrency(loanCard.yearOneSavings)}</span>
+                </div>
+                <div class="card-row">
+                  <span class="card-label">Year 2 Savings:</span>
+                  <span class="card-value">${formatCurrency(loanCard.yearTwoSavings)}</span>
+                </div>
+              </div>
+            `
+                : ''
+            }
+          </div>
+
+          <!-- Environmental Impact -->
+          <div class="section">
+            <div class="section-title">Environmental Impact (Annual)</div>
+            <div class="environmental">
+              <div class="environmental-grid">
+                <div class="env-item">
+                  <div class="env-number">${envMetrics.co2OffsetTons.toFixed(1)}</div>
+                  <div class="env-label">Metric Tons CO₂</div>
+                </div>
+                <div class="env-item">
+                  <div class="env-number">${envMetrics.treeEquivalent}</div>
+                  <div class="env-label">Trees Equivalent</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Customer Preferences -->
+          <div class="section">
+            <div class="section-title">Your Preferences</div>
+            <div class="two-column">
+              <div class="info-box">
+                <div class="info-label">Battery Interest</div>
+                <div class="info-value">${leadData.preferences.battery ? 'Yes' : 'No'}</div>
+              </div>
+              <div class="info-box">
+                <div class="info-label">Preferred Financing</div>
+                <div class="info-value">${leadData.preferences.financing}</div>
+              </div>
+            </div>
+            <div class="two-column">
+              <div class="info-box">
+                <div class="info-label">Timeline</div>
+                <div class="info-value">${leadData.preferences.timeline}</div>
+              </div>
+              <div class="info-box">
+                <div class="info-label">Annual Usage</div>
+                <div class="info-value">${leadData.usage.annualKwh.toLocaleString()} kWh</div>
+              </div>
+            </div>
+            ${
+              leadData.preferences.notes
+                ? `
+              <div class="info-box">
+                <div class="info-label">Additional Notes</div>
+                <div class="info-value">${leadData.preferences.notes}</div>
+              </div>
+            `
+                : ''
+            }
+          </div>
+
+          <!-- Footer -->
+          <div class="footer">
+            <p>This is a preliminary estimate based on mock calculations. Final system design requires on-site assessment.</p>
+            <p>Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
+}
+
+/**
+ * Generate PDF blob from HTML content using jsPDF
+ * This is a server-side implementation for the Node.js runtime
+ */
+export async function generatePDFBlob(htmlContent: string): Promise<Buffer> {
+  try {
+    // For server-side PDF generation, we'll use a simplified approach
+    // Create a basic PDF with jsPDF
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const margin = 10;
+    const textWidth = pageWidth - 2 * margin;
+    let yPosition = margin;
+    const lineHeight = 5;
+    const fontSize = 10;
+
+    pdf.setFontSize(16);
+    pdf.text('Solar Proposal Report', margin, yPosition);
+    yPosition += lineHeight * 2;
+
+    pdf.setFontSize(fontSize);
+    pdf.setTextColor(100);
+    pdf.text('Preliminary Estimate - Phase 1 Mock Data', margin, yPosition);
+    yPosition += lineHeight * 1.5;
+
+    // Extract text content from HTML for the PDF
+    // This is a simplified approach
+    const plainText = htmlContent
+      .replace(/<[^>]*>/g, '') // Remove HTML tags
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .split('\n')
+      .filter((line) => line.trim().length > 0);
+
+    pdf.setFontSize(fontSize);
+    pdf.setTextColor(0);
+
+    for (const line of plainText) {
+      if (yPosition > pageHeight - margin) {
+        pdf.addPage();
+        yPosition = margin;
+      }
+      const wrappedText = pdf.splitTextToSize(line.trim(), textWidth);
+      pdf.text(wrappedText, margin, yPosition);
+      yPosition += lineHeight * wrappedText.length + 2;
+    }
+
+    // Return as buffer
+    return Buffer.from(pdf.output('arraybuffer'));
+  } catch (error) {
+    throw new Error('PDF generation failed: ' + (error instanceof Error ? error.message : String(error)));
+  }
+}
