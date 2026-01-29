@@ -42,7 +42,13 @@ export async function signIn(email: string, password: string) {
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      // Provide user-friendly error message
+      if (error.message === 'Invalid login credentials') {
+        throw new Error('Incorrect email or password. Please try again.');
+      }
+      throw error;
+    }
 
     return { success: true, session: data.session };
   } catch (error) {
