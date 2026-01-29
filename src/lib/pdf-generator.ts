@@ -473,3 +473,74 @@ export async function generatePDFBlob(htmlContent: string): Promise<Buffer> {
     throw new Error('PDF generation failed: ' + (error instanceof Error ? error.message : String(error)));
   }
 }
+
+/**
+ * Enhanced PDF section with real solar data and incentives
+ * Phase 5.2 Week 2-3: Include actual solar metrics and incentive breakdown
+ */
+export function generateSolarAnalysisSection(calculations: SolarCalculationResult): string {
+  if (!calculations.incentives) {
+    return ''; // Skip if no incentive data
+  }
+
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(value);
+
+  const incentives = calculations.incentives;
+
+  return `
+    <!-- Solar Analysis & Incentives (Real Data) -->
+    <div class="section">
+      <div class="section-title">Real Solar Analysis & Incentives</div>
+      
+      <div style="background: #f0f9ff; padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 12px;">
+        <strong>📊 Data Source:</strong> ${
+          incentives.state ? `Real Google Solar API data for ${incentives.state}` : 'Estimated'
+        }
+      </div>
+
+      <div class="two-column">
+        <div class="info-box">
+          <div class="info-label">System Size</div>
+          <div class="info-value">${calculations.systemSizeKw} kW</div>
+        </div>
+        <div class="info-box">
+          <div class="info-label">Annual Production</div>
+          <div class="info-value">${calculations.estimatedAnnualProduction.toLocaleString()} kWh</div>
+        </div>
+      </div>
+
+      <div style="margin-top: 16px; border-top: 1px solid #e0e0e0; padding-top: 12px;">
+        <div style="font-weight: bold; margin-bottom: 8px;">Available Incentives & Savings:</div>
+        <div class="two-column">
+          <div class="info-box">
+            <div class="info-label">First-Year Rebates</div>
+            <div class="info-value">${formatCurrency(incentives.totalFirstYearIncentives)}</div>
+          </div>
+          <div class="info-box">
+            <div class="info-label">Annual Net Metering</div>
+            <div class="info-value">${formatCurrency(incentives.netMeteringAnnualValue)}</div>
+          </div>
+        </div>
+        ${
+          incentives.availableIncentives.length > 0
+            ? `
+        <div style="margin-top: 12px; font-size: 11px;">
+          <strong>Available in ${incentives.state}:</strong><br/>
+          ${incentives.availableIncentives.map((i) => `• ${i}`).join('<br/>')}
+        </div>
+        `
+            : ''
+        }
+        <div style="margin-top: 12px; padding: 8px; background: #fff3cd; border-left: 3px solid #ffc107; font-size: 11px;">
+          <strong>ℹ️ Important:</strong> ${incentives.disclaimer}
+        </div>
+      </div>
+    </div>
+  `;
+}
+

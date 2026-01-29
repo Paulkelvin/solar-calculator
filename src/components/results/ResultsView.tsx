@@ -5,6 +5,9 @@ import type { SolarCalculationResult } from "../../../types/calculations";
 import type { CalculatorForm } from "../../../types/leads";
 import { fetchSolarData } from "@/lib/solar-service";
 import type { SolarDataResponse } from "@/lib/solar-service";
+import { generateSystemDesignOptions } from "@/lib/system-design-service";
+import type { SystemDesignOption } from "@/lib/system-design-service";
+import { SystemDesignComparison } from "./SystemDesignComparison";
 
 interface ResultsViewProps {
   results: SolarCalculationResult;
@@ -16,6 +19,8 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
   const [solarData, setSolarData] = useState<SolarDataResponse | null>(null);
   const [solarLoading, setSolarLoading] = useState(false);
   const [solarError, setSolarError] = useState<string | null>(null);
+  const [systemDesignOptions, setSystemDesignOptions] = useState<SystemDesignOption[]>([]);
+  const [selectedDesignOption, setSelectedDesignOption] = useState<SystemDesignOption | null>(null);
 
   // Fetch real solar data when component mounts and coordinates are available
   useEffect(() => {
@@ -45,6 +50,44 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
 
     loadSolarData();
   }, [leadData?.address?.latitude, leadData?.address?.longitude]);
+
+  // Generate system design options when component mounts and data is available
+  useEffect(() => {
+    const generateDesignOptions = () => {
+      // Calculate annual consumption from usage data
+      const annualConsumptionKwh = (leadData?.usage?.monthlyKwh || 0) * 12;
+      
+      if (annualConsumptionKwh === 0) {
+        console.log('No consumption data available for system design');
+        return;
+      }
+
+      // Calculate sun factor from solar data (sunlight availability ratio)
+      // Typical system produces annual kWh based on sun exposure
+      let sunFactor = 1.2; // Default conservative estimate
+      if (solarData) {
+        // Sun factor approximation: annual production / (system size in kW * 365 days * 4 peak hours)
+        // For now, use exposure percentage as proxy (85% = 1.2 factor, 75% = 1.0)
+        sunFactor = 0.85 + (solarData.sunExposurePercentage / 100) * 0.4;
+      }
+      
+      const state = leadData?.address?.state || 'CA';
+
+      try {
+        const options = generateSystemDesignOptions(annualConsumptionKwh, sunFactor, state);
+        setSystemDesignOptions(options);
+        
+        // Select the first option (Standard) by default
+        if (options.length > 0) {
+          setSelectedDesignOption(options[1] || options[0]);
+        }
+      } catch (error) {
+        console.error('System design generation error:', error);
+      }
+    };
+
+    generateDesignOptions();
+  }, [leadData?.usage?.monthlyKwh, solarData?.sunExposurePercentage, leadData?.address?.state]);
 
   const handleDownloadPDF = async () => {
     if (!leadData) {
@@ -388,6 +431,21 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
               </ul>
             </div>
           )}
+        </div>
+      )}
+
+      {/* System Design Comparison */}
+      {systemDesignOptions.length > 0 && (
+        <div className="rounded-lg border border-border bg-background p-6">
+          <h3 className="font-semibold mb-4">System Design Options</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Compare different system sizes and find the best fit for your home and budget.
+          </p>
+          <SystemDesignComparison 
+            options={systemDesignOptions}
+            selectedOption={selectedDesignOption}
+            onSelect={setSelectedDesignOption}
+          />
         </div>
       )}
 
