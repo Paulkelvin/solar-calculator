@@ -19,17 +19,25 @@ export default function HomePage() {
   };
 
   return (
-    <main className="space-y-6" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-      <header className="space-y-2" style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-        <h1 className="text-3xl font-semibold tracking-tight" style={{ fontSize: "1.875rem", fontWeight: 600, letterSpacing: "-0.02em" }}>Solar ROI Calculator</h1>
-        <p className="text-sm text-muted-foreground" style={{ fontSize: "0.875rem", color: "#6b7280" }}>
-          Phase 1 prototype — all numbers are mocked estimates only.
-        </p>
-      </header>
+    <main className="h-full flex flex-col">
+      <div className="w-full flex-none">
+        <header className="text-center mb-2 md:mb-4">
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">
+            Solar ROI Calculator
+          </h1>
+          <p className="text-xs text-gray-600">
+            Discover your solar savings potential
+          </p>
+        </header>
+      </div>
 
-      <CalculatorWizard onResults={handleResults} />
-
-      {resultsState && <ResultsView results={resultsState.results} leadData={resultsState.leadData} />}
+      <div className="flex-1 min-h-0 flex flex-col">
+        {resultsState ? (
+          <ResultsView results={resultsState.results} leadData={resultsState.leadData} />
+        ) : (
+          <CalculatorWizard onResults={handleResults} />
+        )}
+      </div>
     </main>
   );
 }

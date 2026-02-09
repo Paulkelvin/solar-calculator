@@ -3,13 +3,11 @@
  * Phase 5.2: Fetches and transforms real Google Solar API data
  * 
  * Responsibilities:
- * - Call the /api/google/solar proxy route with coordinates
+ * - Call the /api/google-solar route with coordinates
  * - Transform Google Solar response to UI-friendly format
  * - Handle loading/error states gracefully
  * - Fallback to mock data if API unavailable
  */
-
-import type { GoogleSolarData } from "./apis/google-solar-api";
 
 export interface SolarDataResponse {
   panelCapacityWatts: number;
@@ -56,7 +54,7 @@ export async function fetchSolarData(
     }
 
     // Call the proxy route (no CORS issues, server-to-server)
-    const response = await fetch('/api/google/solar', {
+    const response = await fetch('/api/google-solar', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ latitude, longitude })
@@ -68,8 +66,6 @@ export async function fetchSolarData(
     }
 
     const data = await response.json();
-    
-    // Transform Google Solar API response to UI format
     return transformGoogleSolarResponse(data);
   } catch (error) {
     console.error('Error fetching solar data:', error);
@@ -91,68 +87,37 @@ function transformGoogleSolarResponse(googleResponse: any): SolarDataResponse {
       return MOCK_SOLAR_RESPONSE;
     }
 
-    // Extract buildingInsights (main data container)
-    const buildingInsights = googleResponse.buildingInsights;
-    if (!buildingInsights) {
-      return MOCK_SOLAR_RESPONSE;
-    }
+    const roofSegments = googleResponse.roofSegments || [];
+    const panelConfigs = googleResponse.panelConfigs || [];
+    const topConfig = panelConfigs[0];
 
-    // Extract solar potential info
-    const solarPotential = buildingInsights.solarPotential;
-    if (!solarPotential) {
-      return MOCK_SOLAR_RESPONSE;
-    }
+    const totalAreaMeters = googleResponse.wholeRoofArea || roofSegments.reduce((sum: number, seg: any) => sum + (seg.area || 0), 0);
+    const roofAreaSqft = totalAreaMeters ? Math.round(totalAreaMeters * 10.764) : MOCK_SOLAR_RESPONSE.roofAreaSqft;
 
-    // Parse panel capacity (convert Watts to match UI format)
-    const panelCapacityWatts = 
-      solarPotential.panelCapacityWatts || 7500;
+    const avgSunExposure = roofSegments.length > 0
+      ? roofSegments.reduce((sum: number, seg: any) => sum + (seg.sunExposure ?? 75), 0) / roofSegments.length
+      : 75;
 
-    // Parse annual production energy
-    const yearlyEnergyKwh = 
-      solarPotential.yearlyEnergyKwhAc || 
-      solarPotential.yearlyEnergyKwh || 
-      9000;
+    const estimatedAnnualKwh = topConfig?.yearlyEnergyKwh || Math.round((avgSunExposure / 100) * 10000);
+    const panelCapacityWatts = topConfig
+      ? Math.round((topConfig.systemSizeKw ?? (topConfig.panelsCount || 0) * 0.4) * 1000)
+      : Math.round((googleResponse.maxArrayPanels || 18) * 400);
 
-    // Determine solar potential level
-    const potentialEnum = solarPotential.solarPotentialEnum || 'MEDIUM';
-    const solarPotentialLevel = 
-      potentialEnum === 'HIGH' ? 'high' :
-      potentialEnum === 'MEDIUM' ? 'medium' :
-      'low';
-
-    // Parse roof area (convert m² to sq ft if needed)
-    let roofAreaSqft = solarPotential.maxArrayAreaMeters2;
-    if (roofAreaSqft) {
-      // Convert square meters to square feet (1 m² = 10.764 sq ft)
-      roofAreaSqft = Math.round(roofAreaSqft * 10.764);
-    } else {
-      roofAreaSqft = 2500; // Default fallback
-    }
-
-    // Parse sun exposure (as percentage)
-    const sunExposurePercentage = 
-      (solarPotential.percentageExposedToSun || 85) * 1;
-
-    // Parse shading information
-    const monthlyShading = solarPotential.monthlyShading || [];
-    const averageShadingPercentage = 
-      monthlyShading.length > 0
-        ? Math.round(monthlyShading.reduce((a, b) => a + b, 0) / monthlyShading.length)
-        : 15;
-
-    // Confidence level (0-100)
-    const confidence = googleResponse.imageQuality === 'HIGH' ? 95 : 80;
+    const solarPotentialLevel = avgSunExposure >= 80 ? 'high' : avgSunExposure >= 60 ? 'medium' : 'low';
+    const shadingPercentage = Math.max(0, 100 - Math.round(avgSunExposure));
+    const confidence = googleResponse.imageryQuality === 'HIGH' ? 95 : googleResponse.imageryQuality === 'MEDIUM' ? 88 : 80;
+    const source = googleResponse._source === 'google_solar_api' ? 'real' : 'mock';
 
     return {
       panelCapacityWatts: Math.round(panelCapacityWatts),
-      estimatedAnnualKwh: Math.round(yearlyEnergyKwh),
-      estimatedMonthlyKwh: Math.round(yearlyEnergyKwh / 12),
+      estimatedAnnualKwh: Math.round(estimatedAnnualKwh),
+      estimatedMonthlyKwh: Math.round(estimatedAnnualKwh / 12),
       solarPotential: solarPotentialLevel,
       roofAreaSqft,
-      sunExposurePercentage,
-      shadingPercentage: averageShadingPercentage,
+      sunExposurePercentage: Math.round(avgSunExposure),
+      shadingPercentage,
       confidence,
-      source: 'real'
+      source,
     };
   } catch (error) {
     console.error('Error transforming solar response:', error);

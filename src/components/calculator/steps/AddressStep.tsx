@@ -1,52 +1,188 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { addressSchema, type Address } from "../../../../types/leads";
+import { MapPin } from "lucide-react";
+import { type Address } from "../../../../types/leads";
 import {
   fetchPlacePredictions,
   fetchPlaceDetails,
   type PlacePrediction
 } from "../../../lib/google-places";
+import { useCalculatorStore, type AddressData } from "../../../store/calculatorStore";
+import { calculateSolarScore } from "../../../lib/solar-score";
+import { getPeakSunHours } from "../../../lib/state-sun-hours";
+import { getStateIncentives } from "../../../lib/us-incentives-data";
 
 interface AddressStepProps {
   value?: Address;
-  onChange: (address: Address) => void;
+  onChange: (address: Address, meta?: { userInitiated?: boolean }) => void;
 }
 
-export function AddressStep({ value, onChange }: AddressStepProps) {
-  const [formValue, setFormValue] = useState<Address>(
-    value || { street: "", city: "", state: "", zip: "" }
+const toStoreAddress = (address: Address): AddressData => ({
+  street: address.street,
+  city: address.city,
+  state: address.state,
+  zip: address.zip,
+  latitude: address.latitude,
+  longitude: address.longitude,
+});
+
+const formatAddressLine = (address: Address) => {
+  const parts = [
+    address.street,
+    [address.city, address.state].filter(Boolean).join(", ") || undefined,
+    address.zip,
+  ].filter(Boolean);
+  return parts.join(", ");
+};
+
+const transformSolarApiResponse = (
+  data: any,
+  latitude: number,
+  longitude: number,
+  stateCode?: string
+) => {
+  const roofCenter = data?.center || { latitude, longitude };
+  const segments = Array.isArray(data?.roofSegments) ? data.roofSegments : [];
+  const totalArea = segments.reduce((sum: number, seg: any) => sum + (seg.area || 0), 0);
+  const segmentCount = segments.length;
+  const avgSunExposure = segmentCount > 0
+    ? segments.reduce((sum: number, seg: any) => sum + (seg.sunExposure || 0), 0) / segmentCount
+    : 75;
+  const totalSolarPotential = segments.reduce(
+    (sum: number, seg: any) => sum + (seg.solarPotential || 0),
+    0
   );
+  const panelConfigs = Array.isArray(data?.panelConfigs) ? data.panelConfigs : [];
+  const primaryConfig = panelConfigs[0];
+  const estimatedAnnualProduction = Math.max(
+    4000,
+    Math.round(primaryConfig?.yearlyEnergyKwh || totalSolarPotential || totalArea * 120)
+  );
+  const normalizedStateCode = stateCode?.toUpperCase();
+  const stateIncentives = normalizedStateCode ? getStateIncentives(normalizedStateCode) : null;
+  const utilityRate = stateIncentives?.averageUtilityRate ?? 0.16;
+  const estimatedSavingsMin = Math.max(
+    500,
+    Math.round(estimatedAnnualProduction * utilityRate * 0.65)
+  );
+  const estimatedSavingsMax = Math.max(
+    estimatedSavingsMin + 500,
+    Math.round(estimatedAnnualProduction * utilityRate * 0.9)
+  );
+  const peakSunHours = getPeakSunHours(normalizedStateCode);
+
+  const solarPayload = {
+    roofAreaSqft: Math.max(0, Math.round(totalArea * 10.764)),
+    sunExposurePercentage: Math.max(0, Math.min(100, Math.round(avgSunExposure))),
+    shadingPercentage: Math.max(0, Math.min(100, Math.round(100 - avgSunExposure))),
+    optimalTilt: Math.max(0, Math.min(60, data?.roofSegments?.[0]?.tilt || 20)),
+    optimalAzimuth: Math.max(0, Math.min(360, data?.roofSegments?.[0]?.azimuth || 180)),
+    maxPanels: Math.max(0, Math.round(data?.maxArrayPanels || 30)),
+    roofSegments: segments,
+    roofCenter,
+    roofOutline: data?.roofOutline,
+    roofOutlineSource: data?.roofOutlineSource,
+    dataSource: data?._source || 'google_solar_api',
+    imageryDate: data?.imageryDate,
+    imageryQuality: data?.imageryQuality,
+    stateName: data?._stateName,
+    solarScore: Math.max(
+      0,
+      Math.min(100, Math.round((avgSunExposure + Math.min(totalArea * 0.1, 50)) / 2))
+    ),
+    peakSunHours,
+    percentileRanking: avgSunExposure > 85 ? 10 : avgSunExposure > 70 ? 25 : 50,
+    estimatedSavingsRange: {
+      min: estimatedSavingsMin,
+      max: estimatedSavingsMax
+    },
+    annualProduction: estimatedAnnualProduction
+  };
+
+  return { solarPayload, roofCenter };
+};
+
+export function AddressStep({ value, onChange }: AddressStepProps) {
+  // Default address population
+  const defaultAddress: Address = {
+    street: "1600 Amphitheatre Parkway",
+    city: "Mountain View",
+    state: "CA",
+    zip: "94043",
+    latitude: 37.4221,
+    longitude: -122.0841
+  };
+
+  const initialAddress = (value && value.street) ? value : defaultAddress;
+  const [formValue, setFormValue] = useState<Address>(initialAddress);
+  const [inputValue, setInputValue] = useState<string>(formatAddressLine(initialAddress));
+  
+  // Trigger update on mount if using default
+  useEffect(() => {
+    if (!value || !value.street) {
+      onChange(defaultAddress, { userInitiated: false });
+      setInputValue(formatAddressLine(defaultAddress));
+    }
+  }, []);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [showPredictions, setShowPredictions] = useState(false);
   const [isLoadingPredictions, setIsLoadingPredictions] = useState(false);
-  const [addressSelected, setAddressSelected] = useState(!!value?.city); // Track if address was selected
+  const [isLoadingSolarScore, setIsLoadingSolarScore] = useState(false);
+  const [addressConfirmed, setAddressConfirmed] = useState(!!(value?.latitude && value?.longitude)); 
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const predictionsRef = useRef<HTMLDivElement>(null);
 
+  const loadingMessages = [
+    "Pinpointing your rooftop in satellite imagery…",
+    "Measuring usable roof area and tilt…",
+    "Projecting annual sunshine and incentives…"
+  ];
+
+  // Zustand store
+  const { solarData, setSolarData, setShowSolarScore, showSolarScore } = useCalculatorStore();
+  const setStoreAddress = useCalculatorStore((state) => state.setAddress);
+
+  // Auto-show solar score if data already exists when component mounts
+  useEffect(() => {
+    if (solarData?.solarScore && addressConfirmed && !showSolarScore) {
+      setShowSolarScore(true);
+    }
+  }, [solarData?.solarScore, addressConfirmed, showSolarScore, setShowSolarScore]);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+    if (addressConfirmed && isLoadingSolarScore) {
+      interval = setInterval(() => {
+        setLoadingMessageIndex((idx) => (idx + 1) % loadingMessages.length);
+      }, 1500);
+    } else {
+      setLoadingMessageIndex(0);
+    }
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, [addressConfirmed, isLoadingSolarScore, loadingMessages.length]);
+
   // Fetch predictions as user types
   const handleStreetInputChange = async (val: string) => {
+    setInputValue(val);
     const updated = { ...formValue, street: val };
     setFormValue(updated);
     setApiError(null);
-
-    // Validate other fields
-    const result = addressSchema.safeParse(updated);
-    if (result.success) {
-      onChange(updated);
-      setErrors({});
-    } else {
-      const fieldErrors: Record<string, string> = {};
-      result.error.errors.forEach((err) => {
-        const path = err.path[0] as string;
-        if (path !== "street") {
-          fieldErrors[path] = err.message;
-        }
-      });
-      setErrors(fieldErrors);
-    }
+    setAddressConfirmed(false);
+    setShowSolarScore(false);
+    setErrors((prev) => ({
+      ...prev,
+      street: val.trim() ? "" : "Address required"
+    }));
 
     // Fetch predictions
     if (val.length > 2) {
@@ -77,6 +213,17 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
     const details = await fetchPlaceDetails(prediction.placeId);
 
     if (details) {
+      if (!details.city && prediction.secondaryText) {
+        const parts = prediction.secondaryText.split(",");
+        if (parts.length) {
+          details.city = parts[0].trim();
+        }
+        if (!details.state && parts.length > 1) {
+          const segment = parts[1].trim();
+          const stateCandidate = segment.split(" ")[0].trim();
+          details.state = stateCandidate.slice(0, 2).toUpperCase();
+        }
+      }
       const updated = {
         street: details.street,
         city: details.city,
@@ -86,9 +233,98 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
         longitude: details.longitude
       };
       setFormValue(updated);
-      onChange(updated);
+      onChange(updated, { userInitiated: true });
+      setStoreAddress(toStoreAddress(updated));
       setErrors({});
-      setAddressSelected(true); // Show city/state/zip fields now
+      setAddressConfirmed(true);
+      const formattedInput = formatAddressLine(updated) || prediction.description;
+      setInputValue(formattedInput);
+
+      // Fetch real roof data from Google Solar API
+      if (details.latitude && details.longitude) {
+        setIsLoadingSolarScore(true);
+        
+        try {
+          // Call Google Solar API with state-specific fallbacks
+          const response = await fetch('/api/google-solar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              latitude: details.latitude,
+              longitude: details.longitude,
+              stateCode: details.state
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const { solarPayload, roofCenter } = transformSolarApiResponse(
+              data,
+              details.latitude,
+              details.longitude,
+              details.state
+            );
+            setSolarData(solarPayload);
+            setStoreAddress({
+              ...toStoreAddress(updated),
+              latitude: roofCenter.latitude,
+              longitude: roofCenter.longitude
+            });
+            setFormValue((prev) => ({
+              ...prev,
+              latitude: roofCenter.latitude,
+              longitude: roofCenter.longitude
+            }));
+            setShowSolarScore(true);
+          } else {
+            console.error('Google Solar API error:', response.status);
+            // Fall back to basic score calculation if API fails
+            const scoreData = await calculateSolarScore(details.latitude, details.longitude, 'US');
+            if (scoreData) {
+              const fallbackCenter = {
+                latitude: details.latitude,
+                longitude: details.longitude
+              };
+              setSolarData({ 
+                ...scoreData, 
+                dataSource: 'us_average',
+                roofSegments: [],
+                roofCenter: fallbackCenter
+              });
+              setStoreAddress({
+                ...toStoreAddress(updated),
+                latitude: fallbackCenter.latitude,
+                longitude: fallbackCenter.longitude
+              });
+              setShowSolarScore(true);
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching solar data:', error);
+          // Fall back to basic score calculation
+          const scoreData = await calculateSolarScore(details.latitude, details.longitude, 'US');
+          if (scoreData) {
+            const fallbackCenter = {
+              latitude: details.latitude,
+              longitude: details.longitude
+            };
+            setSolarData({ 
+              ...scoreData, 
+              dataSource: 'us_average',
+              roofSegments: [],
+              roofCenter: fallbackCenter
+            });
+            setStoreAddress({
+              ...toStoreAddress(updated),
+              latitude: fallbackCenter.latitude,
+              longitude: fallbackCenter.longitude
+            });
+            setShowSolarScore(true);
+          }
+        }
+        
+        setIsLoadingSolarScore(false);
+      }
     }
 
     setIsLoadingPredictions(false);
@@ -111,139 +347,76 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleChange = (field: keyof Address, val: string) => {
-    if (field === "street") {
-      handleStreetInputChange(val);
-    } else {
-      const updated = { ...formValue, [field]: val };
-      setFormValue(updated);
-
-      const result = addressSchema.safeParse(updated);
-      if (result.success) {
-        onChange(updated);
-        setErrors({});
-      } else {
-        const fieldErrors: Record<string, string> = {};
-        result.error.errors.forEach((err) => {
-          const path = err.path[0] as string;
-          fieldErrors[path] = err.message;
-        });
-        setErrors(fieldErrors);
-      }
-    }
-  };
-
   return (
     <div className="space-y-4">
       {apiError && (
-        <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-700">
+        <div className="rounded border border-amber-300 bg-amber-50 p-2 text-xs text-amber-800">
           {apiError}
         </div>
       )}
 
       <div className="relative">
-        <label className="block text-sm font-medium">Street Address</label>
-        <input
-          ref={inputRef}
-          type="text"
-          value={formValue.street}
-          onChange={(e) => handleChange("street", e.target.value)}
-          onFocus={() => predictions.length > 0 && setShowPredictions(true)}
-          className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-          placeholder="123 Main St or start typing an address..."
-          autoComplete="off"
-        />
+        <label className="block text-sm font-medium text-gray-700 mb-1">Enter your address</label>
+        <div className="relative">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+            <MapPin className="h-3.5 w-3.5" />
+          </span>
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={(e) => handleStreetInputChange(e.target.value)}
+            onFocus={() => predictions.length > 0 && setShowPredictions(true)}
+            className="w-full rounded border border-gray-300 pl-12 pr-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"
+            placeholder="Start typing to find your address"
+            autoComplete="off"
+          />
+        </div>
         {errors.street && (
           <p className="mt-1 text-xs text-red-600">{errors.street}</p>
         )}
 
-        {/* Predictions dropdown */}
         {showPredictions && predictions.length > 0 && (
           <div
             ref={predictionsRef}
-            className="absolute top-full left-0 right-0 z-10 mt-1 max-h-48 overflow-y-auto rounded-md border border-border bg-background shadow-lg"
+            className="absolute top-full left-0 right-0 z-10 mt-1 max-h-48 overflow-y-auto rounded border border-gray-300 bg-white shadow-lg"
           >
             {predictions.map((pred) => (
               <button
                 key={pred.placeId}
                 onClick={() => handleSelectPrediction(pred)}
-                className="w-full px-3 py-2 text-left text-sm hover:bg-secondary"
+                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 border-b border-gray-100 last:border-0"
               >
-                <div className="font-medium">{pred.mainText}</div>
+                <div className="font-medium text-gray-900">{pred.mainText}</div>
                 {pred.secondaryText && (
-                  <div className="text-xs text-muted-foreground">
-                    {pred.secondaryText}
-                  </div>
+                  <div className="text-xs text-gray-500">{pred.secondaryText}</div>
                 )}
               </button>
             ))}
           </div>
         )}
 
-        {isLoadingPredictions && (
-          <p className="mt-1 text-xs text-muted-foreground">Loading...</p>
+        {isLoadingPredictions && !isLoadingSolarScore && (
+          <p className="mt-1 text-xs text-gray-500">Searching...</p>
+        )}
+
+        {addressConfirmed && isLoadingSolarScore && (
+          <div className="mt-4 rounded-3xl border border-emerald-100 bg-gradient-to-b from-white via-white to-emerald-50/40 px-6 py-6 shadow-[0_25px_60px_rgba(16,185,129,0.18)] backdrop-blur">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="relative h-16 w-16">
+                <div className="absolute inset-0 rounded-full border-4 border-emerald-100" />
+                <div className="absolute inset-2 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
+              </div>
+              <div>
+                <p className="text-base font-semibold text-gray-800">Analyzing solar potential…</p>
+                <p className="text-xs text-gray-500 mt-1 transition-opacity duration-500">
+                  {loadingMessages[loadingMessageIndex]}
+                </p>
+              </div>
+            </div>
+          </div>
         )}
       </div>
-
-      {/* City/State/ZIP - Only show after address is selected */}
-      <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${
-          addressSelected ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
-        }`}
-      >
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium">City</label>
-              <input
-                type="text"
-                value={formValue.city}
-                onChange={(e) => handleChange("city", e.target.value)}
-                className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Denver"
-              />
-              {errors.city && (
-                <p className="mt-1 text-xs text-red-600">{errors.city}</p>
-              )}
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium">State</label>
-              <input
-                type="text"
-                value={formValue.state}
-                onChange={(e) => handleChange("state", e.target.value)}
-                className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm uppercase outline-none focus:ring-2 focus:ring-primary"
-                placeholder="CO"
-                maxLength={2}
-              />
-              {errors.state && (
-                <p className="mt-1 text-xs text-red-600">{errors.state}</p>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium">ZIP Code</label>
-            <input
-              type="text"
-              value={formValue.zip}
-              onChange={(e) => handleChange("zip", e.target.value)}
-              className="mt-1 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-              placeholder="80202"
-            />
-            {errors.zip && (
-              <p className="mt-1 text-xs text-red-600">{errors.zip}</p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {!process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY && (
-        <p className="mt-4 text-xs text-muted-foreground">
-          💡 Add NEXT_PUBLIC_GOOGLE_PLACES_API_KEY to .env.local to enable address autocomplete
-        </p>
-      )}
     </div>
   );
 }

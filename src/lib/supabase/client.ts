@@ -14,7 +14,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 // Singleton pattern - lazy initialize on first use
 let supabaseInstance: ReturnType<typeof createClient> | null = null;
 
-function getSupabase() {
+export function getSupabaseClient() {
   if (!supabaseInstance) {
     supabaseInstance = createClient(url, key);
   }
@@ -22,5 +22,5 @@ function getSupabase() {
 }
 
 // Export singleton instance
-export const supabase = getSupabase();
+export const supabase = getSupabaseClient();
 export type SupabaseClient = typeof supabase;

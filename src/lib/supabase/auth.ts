@@ -1,9 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from './client';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock_key';
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Use the singleton Supabase client to avoid multiple instances warning
+export const supabase = getSupabaseClient();
 
 /**
  * Sign up with email/password

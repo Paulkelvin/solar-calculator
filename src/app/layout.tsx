@@ -10,9 +10,9 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen bg-background text-foreground" style={{ backgroundColor: "#f5f5f5", color: "#111111" }}>
+      <body className="h-screen w-screen overflow-hidden bg-background text-foreground" style={{ backgroundColor: "#f5f5f5", color: "#111111" }}>
         <AuthProvider>
-          <div className="mx-auto max-w-5xl px-4 py-6" style={{ maxWidth: "64rem", marginLeft: "auto", marginRight: "auto", padding: "1.5rem 1rem" }}>
+          <div className="h-full w-full flex flex-col mx-auto max-w-5xl px-4 py-4 md:py-6" style={{ maxWidth: "64rem", marginLeft: "auto", marginRight: "auto" }}>
             {children}
           </div>
         </AuthProvider>

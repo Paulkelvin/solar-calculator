@@ -45,6 +45,7 @@ function createMockLead(overrides?: Partial<Lead>): Lead {
       email: 'john@example.com',
       phone: '3035551234',
     },
+    status: 'new',
     lead_score: 75,
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),

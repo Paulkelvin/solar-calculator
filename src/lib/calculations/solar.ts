@@ -233,7 +233,7 @@ export function performSolarCalculation(
     estimatedMonthlyProduction: Math.round(monthlyProduction),
     financing,
     environmental,
-    confidence: "mocked"
+    confidence: "preliminary"
   };
 }
 

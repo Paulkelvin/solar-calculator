@@ -3,18 +3,11 @@
  * Handles Supabase auth operations (signup, login, logout, session management)
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { getSupabaseClient } from '../supabase/client';
 import type { AuthUser, Installer } from './auth-types';
 
-// Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Supabase credentials not configured - auth will not work');
-}
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Use the singleton Supabase client to avoid multiple instances warning
+const supabase = getSupabaseClient();
 
 /**
  * Sign up a new installer
@@ -64,7 +57,7 @@ export async function signUp(
         email: authData.user.email || '',
         created_at: authData.user.created_at,
       },
-      installer: installerRecord as Installer,
+      installer: installerRecord as unknown as Installer,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Signup failed';
@@ -105,7 +98,7 @@ export async function signIn(email: string, password: string): Promise<{ user: A
         created_at: authData.user.created_at,
         last_sign_in_at: authData.user.last_sign_in_at,
       },
-      installer: installerRecord as Installer,
+      installer: installerRecord as unknown as Installer,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Login failed';
@@ -157,7 +150,7 @@ export async function getSession(): Promise<{ user: AuthUser; installer: Install
         created_at: sessionData.session.user.created_at,
         last_sign_in_at: sessionData.session.user.last_sign_in_at,
       },
-      installer: installerRecord as Installer,
+      installer: installerRecord as unknown as Installer,
     };
   } catch (error) {
     console.error('Session fetch error:', error);

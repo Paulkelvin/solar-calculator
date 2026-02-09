@@ -8,6 +8,12 @@ import type { SolarDataResponse } from "@/lib/solar-service";
 import { generateSystemDesignOptions } from "@/lib/system-design-service";
 import type { SystemDesignOption } from "@/lib/system-design-service";
 import { SystemDesignComparison } from "./SystemDesignComparison";
+import { RoofImageryViewer } from "./RoofImageryViewer";
+import { CashFlowChart } from "./CashFlowChart";
+import { BillOffsetChart, EnvironmentalImpactChart } from "./EnvironmentalCharts";
+import { WhatIfSliders } from "./WhatIfSliders";
+import { saveLead } from "@/lib/supabase/lead-service";
+import { useCalculatorStore } from "@/store/calculatorStore";
 
 interface ResultsViewProps {
   results: SolarCalculationResult;
@@ -16,11 +22,14 @@ interface ResultsViewProps {
 
 export function ResultsView({ results, leadData }: ResultsViewProps) {
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
+  const [isSavingLead, setIsSavingLead] = useState(false);
+  const [leadSaved, setLeadSaved] = useState(false);
   const [solarData, setSolarData] = useState<SolarDataResponse | null>(null);
   const [solarLoading, setSolarLoading] = useState(false);
   const [solarError, setSolarError] = useState<string | null>(null);
   const [systemDesignOptions, setSystemDesignOptions] = useState<SystemDesignOption[]>([]);
   const [selectedDesignOption, setSelectedDesignOption] = useState<SystemDesignOption | null>(null);
+  const { solarData: solarScoreData } = useCalculatorStore();
 
   // Fetch real solar data when component mounts and coordinates are available
   useEffect(() => {
@@ -213,6 +222,22 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
           </div>
         )}
       </div>
+
+      {/* Roof Imagery & Solar Potential Heatmap */}
+      <RoofImageryViewer
+        address={`${leadData?.address?.street}, ${leadData?.address?.city}, ${leadData?.address?.state}`}
+        coordinates={
+          leadData?.address?.latitude && leadData?.address?.longitude
+            ? { lat: leadData.address.latitude, lng: leadData.address.longitude }
+            : undefined
+        }
+        solarPotentialKwhAnnual={
+          solarData
+            ? solarData.estimatedAnnualKwh
+            : results.estimatedAnnualProduction
+        }
+        roofImageryUrl={undefined}
+      />
 
       {/* Solar Potential Metrics - REAL DATA */}
       {!solarLoading && solarData && (
@@ -490,6 +515,83 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
           <li>PDF proposal generation</li>
         </ul>
       </div>
+
+      {/* 25-Year Cash Flow Projections */}
+      <CashFlowChart
+        systemCost={results.systemSizeKw * 3000} // ~$3/watt estimate
+        annualSavings={results.estimatedAnnualProduction * 0.15} // $0.15/kWh estimate
+        loanMonthlyPayment={results.financing.find(f => f.type === 'loan')?.monthlyPayment || 150}
+        leaseMonthlyPayment={results.financing.find(f => f.type === 'lease')?.monthlyPayment || 120}
+        ppaRate={results.financing.find(f => f.type === 'ppa')?.ppaRatePerKwh || 0.10}
+        annualProduction={results.estimatedAnnualProduction}
+        utilityRate={0.15}
+        rateEscalation={3.5}
+      />
+
+      {/* Environmental Impact & Bill Offset Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <BillOffsetChart
+          offsetPercentage={
+            ((results.estimatedAnnualProduction / ((leadData?.usage?.monthlyKwh || 1000) * 12)) * 100) || 85
+          }
+          annualConsumption={(leadData?.usage?.monthlyKwh || 1000) * 12}
+          annualProduction={results.estimatedAnnualProduction}
+        />
+
+        <EnvironmentalImpactChart
+          annualProduction={results.estimatedAnnualProduction}
+          co2OffsetTons={(results.estimatedAnnualProduction * 0.0007) || 5.6} // 0.7kg CO₂/kWh
+          treesEquivalent={Math.round((results.estimatedAnnualProduction * 0.0007 * 40) || 220)} // ~40 trees/ton CO₂
+        />
+      </div>
+
+      {/* What-If Analysis Sliders */}
+      <WhatIfSliders
+        baseSystemCost={results.systemSizeKw * 3000}
+        baseAnnualProduction={results.estimatedAnnualProduction}
+        baseUtilityRate={0.15}
+      />
+
+      {/* Save Lead to Dashboard */}
+      {!leadSaved && (
+        <div className="rounded-lg border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 p-6">
+          <h3 className="text-lg font-semibold mb-2">💾 Save Your Results</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Save this solar estimate to your dashboard for future reference and track your progress.
+          </p>
+          <button
+            onClick={async () => {
+              setIsSavingLead(true);
+              const result = await saveLead({
+                formData: leadData || {},
+                results,
+                solarScore: solarScoreData.solarScore,
+              });
+              setIsSavingLead(false);
+              if (result.success) {
+                setLeadSaved(true);
+              } else {
+                alert(`Failed to save: ${result.error}`);
+              }
+            }}
+            disabled={isSavingLead}
+            className="w-full rounded-lg bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isSavingLead ? "Saving..." : "💾 Save to Dashboard"}
+          </button>
+        </div>
+      )}
+
+      {leadSaved && (
+        <div className="rounded-lg border-2 border-green-500 bg-green-50 dark:bg-green-950 p-6 text-center">
+          <p className="text-lg font-semibold text-green-700 dark:text-green-300 mb-2">
+            ✅ Results Saved!
+          </p>
+          <p className="text-sm text-green-600 dark:text-green-400">
+            Your solar estimate has been saved to the dashboard. You can view it anytime.
+          </p>
+        </div>
+      )}
 
       <button
         onClick={handleDownloadPDF}

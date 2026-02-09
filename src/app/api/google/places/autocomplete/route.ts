@@ -2,8 +2,7 @@
  * Google Places API Autocomplete Proxy
  * Phase 5.2: API route to handle Places autocomplete requests
  * 
- * Why a proxy? CORS policy blocks direct client-side API calls.
- * This route runs on the server, avoiding CORS issues.
+ * PHASE 1: Stubbed - returns mock predictions without external API calls
  */
 
 export async function GET(request: Request) {
@@ -12,31 +11,24 @@ export async function GET(request: Request) {
     const input = searchParams.get('input');
 
     if (!input || input.trim().length < 2) {
-      return Response.json({ predictions: [] });
+      return Response.json({ predictions: [], status: "ZERO_RESULTS" });
     }
 
+    // Use the Google Places API key from environment
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
     if (!apiKey) {
-      console.warn('Google Places API key not configured');
-      return Response.json({ predictions: [] });
+      return Response.json({ error: 'Google Places API key not set', predictions: [] }, { status: 500 });
     }
 
-    // Call Google Places API from server (no CORS issues)
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${apiKey}&components=country:us`,
-      { method: 'GET' }
-    );
-
-    if (!response.ok) {
-      console.error(`Google Places API error: ${response.status}`);
-      return Response.json(
-        { error: 'Failed to fetch predictions', predictions: [] },
-        { status: response.status }
-      );
+    // Call the real Google Places Autocomplete API
+    const url = `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&key=${apiKey}&types=address&components=country:us`;
+    const apiRes = await fetch(url);
+    if (!apiRes.ok) {
+      return Response.json({ error: 'Failed to fetch from Google Places', predictions: [] }, { status: 502 });
     }
-
-    const data = await response.json();
-    return Response.json(data);
+    const data = await apiRes.json();
+    // Pass through the predictions and status
+    return Response.json({ predictions: data.predictions, status: data.status });
   } catch (error) {
     console.error('Places API proxy error:', error);
     return Response.json(

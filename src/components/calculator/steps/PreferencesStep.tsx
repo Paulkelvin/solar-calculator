@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { preferencesSchema, type Preferences } from "../../../../types/leads";
 
 interface PreferencesStepProps {
@@ -18,6 +18,19 @@ export function PreferencesStep({ value, onChange }: PreferencesStepProps) {
     }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!value) {
+      onChange(formValue);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (value) {
+      setFormValue(value);
+    }
+  }, [value]);
 
   const validate = (updated: Preferences) => {
     const result = preferencesSchema.safeParse(updated);
@@ -56,6 +69,7 @@ export function PreferencesStep({ value, onChange }: PreferencesStepProps) {
 
       <div>
         <label className="block text-sm font-medium mb-2">Financing Preference</label>
+        <p className="text-xs text-muted-foreground mb-2">We log this to pre-tailor the financing preview; you can still pick the exact package on the Financial screen.</p>
         <div className="space-y-2">
           {[
             { id: "cash", label: "Cash Purchase" },

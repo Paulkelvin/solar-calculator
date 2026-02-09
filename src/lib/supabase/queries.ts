@@ -7,6 +7,8 @@ import type { SolarCalculationResult } from "../../../types/calculations";
  * Phase 2: Real Supabase integration enabled.
  * Phase 6.1: Added installer_id support for multi-tenant scoping
  * Phase 8: Added solar data storage
+ * 
+ * PHASE 1: Stubbed - returns mock data without database operations
  */
 export async function createLead(
   leadData: Omit<Lead, "id" | "installer_id" | "lead_score" | "created_at" | "updated_at">,
@@ -15,22 +17,22 @@ export async function createLead(
   solarData?: { solarPotentialKwhAnnual?: number; roofImageUrl?: string }
 ): Promise<Lead | null> {
   try {
-    const newLead = {
-      installer_id: installerId,
-      address: leadData.address,
-      usage: leadData.usage,
-      roof: leadData.roof,
-      preferences: leadData.preferences,
-      contact: leadData.contact,
-      lead_score: leadScore,
-      status: leadData.status || 'new',
-      solar_potential_kwh_annual: solarData?.solarPotentialKwhAnnual,
-      roof_imagery_url: solarData?.roofImageUrl
-    };
-
     const { data, error } = await supabase
       .from("leads")
-      .insert([newLead])
+      .insert([
+        {
+          installer_id: installerId,
+          address: leadData.address,
+          usage: leadData.usage,
+          roof: leadData.roof,
+          preferences: leadData.preferences,
+          contact: leadData.contact,
+          lead_score: leadScore,
+          status: leadData.status || 'new',
+          solar_potential_kwh_annual: solarData?.solarPotentialKwhAnnual,
+          roof_imagery_url: solarData?.roofImageUrl
+        }
+      ])
       .select()
       .single();
 
@@ -39,7 +41,7 @@ export async function createLead(
       return null;
     }
 
-    console.log("[SUPABASE] Created lead with solar data:", data);
+    console.log("[SUPABASE] Lead created:", data.id);
     return data as unknown as Lead;
   } catch (err) {
     console.error("Error creating lead:", err);

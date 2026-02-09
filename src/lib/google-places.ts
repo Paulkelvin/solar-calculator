@@ -88,6 +88,7 @@ export async function fetchPlaceDetails(placeId: string) {
     let city = "";
     let state = "";
     let zip = "";
+    let altCity = "";
 
     addressComponents.forEach(
       (component: { long_name: string; short_name: string; types: string[] }) => {
@@ -100,6 +101,17 @@ export async function fetchPlaceDetails(placeId: string) {
         if (component.types.includes("locality")) {
           city = component.long_name;
         }
+        if (
+          component.types.includes("postal_town") ||
+          component.types.includes("administrative_area_level_2") ||
+          component.types.includes("sublocality") ||
+          component.types.includes("sublocality_level_1") ||
+          component.types.includes("neighborhood")
+        ) {
+          if (!altCity) {
+            altCity = component.long_name;
+          }
+        }
         if (component.types.includes("administrative_area_level_1")) {
           state = component.short_name;
         }
@@ -108,6 +120,10 @@ export async function fetchPlaceDetails(placeId: string) {
         }
       }
     );
+
+    if (!city) {
+      city = altCity || "";
+    }
 
     return {
       street: street.trim(),
