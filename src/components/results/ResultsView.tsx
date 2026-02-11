@@ -7,7 +7,7 @@ import { fetchSolarData } from "@/lib/solar-service";
 import type { SolarDataResponse } from "@/lib/solar-service";
 import { generateSystemDesignOptions } from "@/lib/system-design-service";
 import type { SystemDesignOption } from "@/lib/system-design-service";
-import { calculateFinancing, calculateEnvironmental, BASE_ELECTRICITY_RATE, AVG_PRODUCTION_PER_KW, SYSTEM_COST_PER_WATT, FIXED_INSTALL_OVERHEAD, getSunFactor } from "@/lib/calculations/solar";
+import { BASE_ELECTRICITY_RATE, SYSTEM_COST_PER_WATT, FIXED_INSTALL_OVERHEAD, getSunFactor } from "@/lib/calculations/solar";
 import { SystemDesignComparison } from "./SystemDesignComparison";
 import { RoofImageryViewer } from "./RoofImageryViewer";
 import { CashFlowChart } from "./CashFlowChart";
@@ -115,86 +115,15 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
 
   // === UNIFIED RESULTS ===
   // The `results` object from CalculatorWizard already has Google Solar baked in
-  // via performSolarCalculation(input, googleSolar). This memo provides a secondary
-  // override for when the ResultsView's own solarData fetch returns real data
-  // (in case the wizard didn't have it yet, or for the re-fetch on results page).
+  // The `results` prop is already computed by performSolarCalculation(input, googleSolar)
+  // which uses the Zustand store's Google Solar data as single source of truth.
+  // We no longer re-derive financials from the secondary solarData fetch — that fetch
+  // is only used for the roof visualization panel (area, sun exposure, shading, confidence).
+  // This eliminates the 6 kWh / $13 discrepancy caused by two independent API calls
+  // producing slightly different intermediate values.
   const effectiveResults = useMemo(() => {
-    if (!solarData || solarData.source === 'mock') return results;
-
-    // Real Google Solar data → use its actual production ratio
-    const googleMaxKw = solarData.panelCapacityWatts / 1000;
-    const realSystemSizeKw = Math.min(results.systemSizeKw, googleMaxKw);
-
-    const googleProdPerKw = googleMaxKw > 0
-      ? solarData.estimatedAnnualKwh / googleMaxKw
-      : AVG_PRODUCTION_PER_KW;
-    const realAnnualProduction = Math.round(realSystemSizeKw * googleProdPerKw);
-    const realMonthlyProduction = Math.round(realAnnualProduction / 12);
-
-    // Derive effective sunFactor so calculateFinancing uses Google Solar production
-    const effectiveSunFactor = googleProdPerKw / AVG_PRODUCTION_PER_KW;
-
-    const financingData = calculateFinancing(realSystemSizeKw, effectiveSunFactor);
-    const environmental = calculateEnvironmental(realSystemSizeKw, realAnnualProduction, annualConsumption);
-
-    const financing = [
-      {
-        type: "cash" as const,
-        totalCost: financingData.totalSystemCost,
-        downPayment: financingData.totalSystemCost,
-        monthlyPayment: 0,
-        totalInterest: 0,
-        payoffYears: financingData.cash.yearsToBreakEven,
-        roi: financingData.cash.roi25Years,
-        description: "Pay upfront, own your system from day 1"
-      },
-      {
-        type: "loan" as const,
-        totalCost: financingData.totalSystemCost,
-        downPayment: financingData.loan.downPayment,
-        monthlyPayment: financingData.loan.monthlyPayment,
-        totalInterest: financingData.loan.totalInterest,
-        payoffYears: financingData.loan.yearsToBreakEven,
-        roi: financingData.loan.roi25Years,
-        description: "Finance with competitive rates, own after payoff"
-      },
-      {
-        type: "lease" as const,
-        totalCost: financingData.lease.totalCost,
-        downPayment: 0,
-        monthlyPayment: financingData.lease.monthlyPayment,
-        totalInterest: 0,
-        payoffYears: financingData.lease.yearsToBreakEven,
-        roi: financingData.lease.roi20Years,
-        leaseDownPayment: 0,
-        leaseMonthlyPayment: financingData.lease.monthlyPayment,
-        leaseTermYears: financingData.lease.termYears,
-        description: "Zero down, predictable monthly payment"
-      },
-      {
-        type: "ppa" as const,
-        totalCost: financingData.ppa.totalCost,
-        downPayment: 0,
-        monthlyPayment: financingData.ppa.monthlyPayment,
-        totalInterest: 0,
-        payoffYears: 25,
-        roi: financingData.ppa.roi25Years,
-        ppaRatePerKwh: financingData.ppa.ratePerKwh,
-        ppaEscalatorPercent: financingData.ppa.escalator * 100,
-        ppaSavings25Year: financingData.ppa.savings25Year,
-        description: "Pay for power produced, guaranteed savings"
-      }
-    ];
-
-    return {
-      ...results,
-      systemSizeKw: Math.round(realSystemSizeKw * 100) / 100,
-      estimatedAnnualProduction: Math.round(realAnnualProduction),
-      estimatedMonthlyProduction: Math.round(realMonthlyProduction),
-      financing,
-      environmental,
-    };
-  }, [results, solarData, annualConsumption]);
+    return results;
+  }, [results]);
 
   const handleDownloadPDF = async () => {
     if (!leadData) {
