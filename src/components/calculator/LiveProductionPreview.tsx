@@ -25,8 +25,19 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
       return;
     }
 
+    // Derive sunFactor from Google Solar data (mirrors calculateSystemSize logic)
+    const sunFactor = (() => {
+      const pct = solarData.sunExposurePercentage;
+      if (!pct) return 1.0;
+      if (pct >= 85) return 1.15; // excellent
+      if (pct >= 70) return 1.0;  // good
+      if (pct >= 55) return 0.85; // fair
+      return 0.7; // poor
+    })();
+
     // Calculate recommended system size (80% offset — industry standard)
-    let recommendedSize = Math.round((usage.annualKwh * 0.8 / 1200) * 10) / 10;
+    // Divide by sunFactor: better sun → fewer kW needed (matches calculateSystemSize)
+    let recommendedSize = Math.round((usage.annualKwh * 0.8 / (1200 * sunFactor)) * 10) / 10;
 
     // Apply roof constraint: ~54 sq ft per kW, ~60% usable area (matches performSolarCalculation)
     if (solarData.roofAreaSqft && solarData.roofAreaSqft > 0) {

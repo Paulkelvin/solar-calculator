@@ -273,7 +273,10 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
             <div className="p-3 bg-purple-50 rounded border border-purple-200">
               <p className="text-xs text-purple-700 mb-1">Recommended Solar System</p>
               <p className="text-lg font-bold text-purple-900">{(() => {
-                let size = Math.round((annualKwh * 0.8 / 1200) * 10) / 10;
+                // Derive sunFactor (mirrors calculateSystemSize + RoofStep thresholds)
+                const pct = solarData?.sunExposurePercentage;
+                const sf = !pct ? 1.0 : pct >= 85 ? 1.15 : pct >= 70 ? 1.0 : pct >= 55 ? 0.85 : 0.7;
+                let size = Math.round((annualKwh * 0.8 / (1200 * sf)) * 10) / 10;
                 // Apply roof constraint if available (matches performSolarCalculation)
                 const roofSqft = solarData?.roofAreaSqft;
                 if (roofSqft && roofSqft > 0) {
