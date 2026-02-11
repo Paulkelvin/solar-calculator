@@ -7,7 +7,7 @@ import { fetchSolarData } from "@/lib/solar-service";
 import type { SolarDataResponse } from "@/lib/solar-service";
 import { generateSystemDesignOptions } from "@/lib/system-design-service";
 import type { SystemDesignOption } from "@/lib/system-design-service";
-import { calculateFinancing, calculateEnvironmental, BASE_ELECTRICITY_RATE } from "@/lib/calculations/solar";
+import { calculateFinancing, calculateEnvironmental, BASE_ELECTRICITY_RATE, AVG_PRODUCTION_PER_KW } from "@/lib/calculations/solar";
 import { SystemDesignComparison } from "./SystemDesignComparison";
 import { RoofImageryViewer } from "./RoofImageryViewer";
 import { CashFlowChart } from "./CashFlowChart";
@@ -105,27 +105,26 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
   }, [annualConsumption, solarData?.sunExposurePercentage, leadData?.address?.state]);
 
   // === UNIFIED RESULTS ===
-  // When Google Solar provides real data, recalculate financing to match
-  // so the system size, production, AND financing cards all agree.
+  // When Google Solar provides REAL data, recalculate to match.
+  // When data is MOCK, use performSolarCalculation as-is (mock ratios are arbitrary).
   const effectiveResults = useMemo(() => {
-    if (!solarData) return results; // No real data — use mock calculation as-is
+    if (!solarData || solarData.source === 'mock') return results;
 
-    // Use the SMALLER of: user-need-based size (from performSolarCalculation)
-    // and Google Solar's max roof capacity. This way the system is sized to
-    // the user's consumption but never exceeds roof capacity.
+    // Real Google Solar data → use its actual production ratio
     const googleMaxKw = solarData.panelCapacityWatts / 1000;
     const realSystemSizeKw = Math.min(results.systemSizeKw, googleMaxKw);
 
-    // If Google Solar + NREL give us a production-per-kW ratio, use it;
-    // otherwise fall back to the default 1200 kWh/kW.
     const googleProdPerKw = googleMaxKw > 0
       ? solarData.estimatedAnnualKwh / googleMaxKw
-      : 1200;
+      : AVG_PRODUCTION_PER_KW;
     const realAnnualProduction = Math.round(realSystemSizeKw * googleProdPerKw);
     const realMonthlyProduction = Math.round(realAnnualProduction / 12);
 
-    // Recalculate financing with the consumption-constrained system size
-    const financingData = calculateFinancing(realSystemSizeKw);
+    // Derive effective sunFactor so calculateFinancing's internal production
+    // matches the actual Google Solar production estimate
+    const effectiveSunFactor = googleProdPerKw / AVG_PRODUCTION_PER_KW;
+
+    const financingData = calculateFinancing(realSystemSizeKw, effectiveSunFactor);
     const environmental = calculateEnvironmental(realSystemSizeKw, realAnnualProduction);
 
     const financing = [

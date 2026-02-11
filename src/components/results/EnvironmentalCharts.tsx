@@ -112,10 +112,16 @@ export function EnvironmentalImpactChart({
   co2OffsetTons,
   treesEquivalent,
 }: EnvironmentalImpactChartProps) {
-  // Breakdown: Coal vs Natural Gas vs Solar
+  // Breakdown: Solar offset vs remaining grid emissions
+  // co2OffsetTons = what solar saves; remaining = typical household total minus saved
+  const typicalHouseholdCO2 = annualProduction > 0
+    ? co2OffsetTons / Math.min(1, annualProduction / 10800) // scale to full consumption
+    : co2OffsetTons * 2;
+  const remainingGridCO2 = Math.max(0, typicalHouseholdCO2 - co2OffsetTons);
+
   const data = [
-    { name: "CO₂ Saved (Solar)", value: co2OffsetTons, color: "#22c55e" },
-    { name: "Typical Grid CO₂", value: co2OffsetTons * 0.3, color: "#ef4444" },
+    { name: "CO\u2082 Saved (Solar)", value: co2OffsetTons, color: "#22c55e" },
+    { name: "Remaining Grid CO\u2082", value: remainingGridCO2, color: "#ef4444" },
   ];
 
   return (
