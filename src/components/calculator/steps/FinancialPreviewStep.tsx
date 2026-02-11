@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
-import { performSolarCalculation } from "@/lib/calculations/solar";
+import { performSolarCalculation, BASE_ELECTRICITY_RATE } from "@/lib/calculations/solar";
 import type { Address, Usage, Roof, Preferences } from "../../../../types/leads";
 import type { SolarData } from "../../../store/calculatorStore";
+import { useCalculatorStore } from "../../../store/calculatorStore";
 import { DollarSign, Leaf, PiggyBank, TrendingUp } from "lucide-react";
 
 interface FinancialPreviewStepProps {
@@ -27,6 +28,7 @@ export function FinancialPreviewStep({
   preferences,
   solarSnapshot,
 }: FinancialPreviewStepProps) {
+  const { productionData } = useCalculatorStore();
   const hasInputs = Boolean(
     address?.state &&
     roof?.squareFeet &&
@@ -50,10 +52,18 @@ export function FinancialPreviewStep({
   }, [hasInputs, roof, usage?.monthlyKwh, usage?.billAmount, address, preferences?.wantsBattery]);
 
   const savingsRange = useMemo(() => {
-    // Use the actual constrained production from performSolarCalculation
-    // instead of assuming 80% bill offset (roof may limit system size)
+    // Prefer NREL actual production data when available (most accurate)
+    if (productionData?.annualKwh && productionData.annualKwh > 0) {
+      const annualSavings = productionData.annualKwh * BASE_ELECTRICITY_RATE;
+      return {
+        min: Math.round(annualSavings * 0.9),
+        max: Math.round(annualSavings * 1.1),
+      };
+    }
+
+    // Fall back to mock calculation production
     if (preview) {
-      const annualSavings = preview.estimatedAnnualProduction * 0.14;
+      const annualSavings = preview.estimatedAnnualProduction * BASE_ELECTRICITY_RATE;
       return {
         min: Math.round(annualSavings * 0.9),
         max: Math.round(annualSavings * 1.1),
@@ -66,7 +76,7 @@ export function FinancialPreviewStep({
     }
 
     return null;
-  }, [preview, solarSnapshot?.estimatedSavingsRange]);
+  }, [preview, productionData?.annualKwh, solarSnapshot?.estimatedSavingsRange]);
 
   const financingCards = useMemo(() => {
     if (!preview) return [];

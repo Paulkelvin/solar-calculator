@@ -55,20 +55,39 @@ function calculateMonthlyPayment(
  * @param sunFactor - Adjustment factor for sun exposure (0.7-1.15)
  * @param stateForIncentives - State for incentive lookup (optional)
  * @param roofAreaSqft - Roof area in sqft for constraining system size
+ * @param maxCapacityKw - Hard cap from Google Solar panelCapacityWatts (if available)
+ * @param productionPerKw - Actual kWh/kW from Google Solar (overrides 1200 default)
  * @returns Array of 3 system options (conservative, standard, aggressive)
  */
 export function generateSystemDesignOptions(
   annualConsumptionKwh: number,
   sunFactor: number = 1.0,
   stateForIncentives?: string,
-  roofAreaSqft?: number
+  roofAreaSqft?: number,
+  maxCapacityKw?: number,
+  productionPerKw?: number
 ): SystemDesignOption[] {
-  const adjustedProduction = annualConsumptionKwh / sunFactor;
+  // Use Google Solar's actual production per kW when available,
+  // otherwise fall back to AVG_PRODUCTION_PER_KW (1200)
+  const effectiveProdPerKw = productionPerKw && productionPerKw > 0
+    ? productionPerKw
+    : AVG_PRODUCTION_PER_KW;
+
+  // System size needed for 100% offset (divide by production per kW)
+  const adjustedProduction = annualConsumptionKwh / (effectiveProdPerKw / AVG_PRODUCTION_PER_KW) / sunFactor;
 
   // Roof constraint: ~54 sq ft per kW, ~60% usable area
   const roofMaxKw = roofAreaSqft && roofAreaSqft > 0
     ? (roofAreaSqft * 0.6) / 54
     : Infinity;
+
+  // Google Solar capacity cap (most accurate physical constraint)
+  const googleMaxKw = maxCapacityKw && maxCapacityKw > 0
+    ? maxCapacityKw
+    : Infinity;
+
+  // Use the tighter of the two constraints
+  const effectiveMaxKw = Math.min(roofMaxKw, googleMaxKw);
 
   // 3 options: cover 60%, 80%, 100% of consumption
   const coveragePercentages = [60, 80, 100];
@@ -88,15 +107,15 @@ export function generateSystemDesignOptions(
     const targetProduction = (adjustedProduction * coverage) / 100;
     let systemSizeKw = targetProduction / AVG_PRODUCTION_PER_KW;
 
-    // Apply roof constraint
-    if (roofMaxKw < Infinity) {
-      systemSizeKw = Math.min(systemSizeKw, roofMaxKw);
+    // Apply capacity constraint (tighter of roof area formula and Google Solar max)
+    if (effectiveMaxKw < Infinity) {
+      systemSizeKw = Math.min(systemSizeKw, effectiveMaxKw);
     }
 
     const systemCost = FIXED_INSTALL_OVERHEAD + systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
 
-    // Production metrics
-    const annualProduction = systemSizeKw * AVG_PRODUCTION_PER_KW * sunFactor;
+    // Production metrics — use real production per kW when available
+    const annualProduction = systemSizeKw * effectiveProdPerKw;
     const actualCoverage = (annualProduction / annualConsumptionKwh) * 100;
 
     // Financial metrics

@@ -13,7 +13,7 @@ interface LiveProductionPreviewProps {
 }
 
 export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewProps = {}) {
-  const { address, usage, roof, solarData } = useCalculatorStore();
+  const { address, usage, roof, solarData, setProductionData } = useCalculatorStore();
   const [estimate, setEstimate] = useState<PVWattsResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showMonthly, setShowMonthly] = useState(true);
@@ -59,6 +59,17 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
         }
       );
       setEstimate(result);
+      // Persist NREL data to store so other components (UsageStep, FinancialPreview) can use it
+      if (result) {
+        setProductionData({
+          annualKwh: result.production.annual,
+          monthlyKwh: result.production.monthly,
+          billOffset: calculateBillOffset(result.production.annual, usage.annualKwh || 0),
+          annualSavings: result.savings.annual,
+          capacityFactor: result.production.capacityFactor,
+          source: result.source,
+        });
+      }
       setIsLoading(false);
       onStatusChange?.(result ? 'ready' : 'idle');
     }, 500); // 500ms debounce

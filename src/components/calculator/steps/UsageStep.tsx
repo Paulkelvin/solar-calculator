@@ -30,7 +30,7 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
   const [showEnergyProfile, setShowEnergyProfile] = useState(false);
   const [nrelStatus, setNrelStatus] = useState<'idle' | 'loading' | 'ready'>('idle');
 
-  const { setUsage, solarData, shouldSuggestBattery } = useCalculatorStore();
+  const { setUsage, solarData, shouldSuggestBattery, productionData } = useCalculatorStore();
 
   // Debounced calculation + loading choreography
   useEffect(() => {
@@ -284,7 +284,12 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
               const roofMax = Math.round(((roofSqft * 0.6) / 54) * 10) / 10;
               size = Math.min(size, roofMax);
             }
-            const offsetPct = Math.min(100, Math.round((size * 1200 * sf) / annualKwh * 100));
+            // Use NREL actual production for offset when available;
+            // otherwise fall back to formula estimate
+            const actualNrelProduction = productionData?.annualKwh;
+            const offsetPct = actualNrelProduction && actualNrelProduction > 0
+              ? Math.min(100, Math.round((actualNrelProduction / annualKwh) * 100))
+              : Math.min(100, Math.round((size * 1200 * sf) / annualKwh * 100));
             return (
               <div className="p-3 bg-purple-50 rounded border border-purple-200">
                 <p className="text-xs text-purple-700 mb-1">Recommended Solar System</p>

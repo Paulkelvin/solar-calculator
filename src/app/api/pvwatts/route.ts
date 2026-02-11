@@ -116,8 +116,8 @@ export async function POST(request: Request) {
     const monthlyProduction = data.outputs.ac_monthly;
     const capacityFactor = data.outputs.capacity_factor;
     
-    // Estimate savings (US average $0.15/kWh, adjust by state)
-    const averageRate = 0.15;
+    // Estimate savings using the same rate as the rest of the app
+    const averageRate = 0.14;
     const annualSavings = Math.round(annualProduction * averageRate);
     const monthlySavings = monthlyProduction.map(kwh => Math.round(kwh * averageRate));
 
@@ -174,7 +174,7 @@ function getFallbackEstimates(systemCapacity: number, latitude: number, stateCod
     Math.round((annualProduction / 12) * factor)
   );
 
-  const averageRate = 0.15;
+  const averageRate = 0.14;
   const annualSavings = Math.round(annualProduction * averageRate);
   const monthlySavings = monthlyProduction.map(kwh => Math.round(kwh * averageRate));
 

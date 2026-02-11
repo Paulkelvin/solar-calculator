@@ -89,8 +89,20 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
       const state = leadData?.address?.state || 'CA';
       const roofSqft = solarData?.roofAreaSqft || leadData?.roof?.squareFeet;
 
+      // Pass Google Solar's actual capacity cap and production-per-kW
+      // so design tiers use the same constraints as effectiveResults
+      const googleMaxKw = solarData?.source === 'real' && solarData.panelCapacityWatts
+        ? solarData.panelCapacityWatts / 1000
+        : undefined;
+      const googleProdPerKw = solarData?.source === 'real' && solarData.panelCapacityWatts && solarData.estimatedAnnualKwh
+        ? solarData.estimatedAnnualKwh / (solarData.panelCapacityWatts / 1000)
+        : undefined;
+
       try {
-        const options = generateSystemDesignOptions(annualConsumption, sunFactor, state, roofSqft);
+        const options = generateSystemDesignOptions(
+          annualConsumption, sunFactor, state, roofSqft,
+          googleMaxKw, googleProdPerKw
+        );
         setSystemDesignOptions(options);
         
         // Select the first option (Standard) by default
@@ -103,7 +115,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
     };
 
     generateDesignOptions();
-  }, [annualConsumption, solarData?.sunExposurePercentage, solarData?.roofAreaSqft, leadData?.address?.state, leadData?.roof?.squareFeet]);
+  }, [annualConsumption, solarData?.sunExposurePercentage, solarData?.roofAreaSqft, solarData?.panelCapacityWatts, solarData?.estimatedAnnualKwh, solarData?.source, leadData?.address?.state, leadData?.roof?.squareFeet]);
 
   // === UNIFIED RESULTS ===
   // When Google Solar provides REAL data, recalculate to match.
