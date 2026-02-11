@@ -14,10 +14,18 @@ export function ContactStep({ value, onChange }: ContactStepProps) {
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const normalizeContact = (contact: Contact): Contact => ({
+    ...contact,
+    name: contact.name.trim(),
+    email: contact.email.trim(),
+    phone: contact.phone.replace(/\D/g, ""),
+  });
+
   const validate = (updated: Contact) => {
-    const result = contactSchema.safeParse(updated);
+    const normalized = normalizeContact(updated);
+    const result = contactSchema.safeParse(normalized);
     if (result.success) {
-      onChange(updated);
+      onChange(normalized);
       setErrors({});
     } else {
       const fieldErrors: Record<string, string> = {};
@@ -38,7 +46,7 @@ export function ContactStep({ value, onChange }: ContactStepProps) {
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium">Full Name</label>
+        <label className="block text-sm font-medium">Enter your full name</label>
         <input
           type="text"
           value={formValue.name}
@@ -79,8 +87,11 @@ export function ContactStep({ value, onChange }: ContactStepProps) {
         )}
       </div>
 
-      <div className="rounded-md bg-secondary/50 p-3 text-xs text-muted-foreground">
-        <p>
+      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700">
+        <p className="flex items-center gap-1.5">
+          <svg className="h-3.5 w-3.5 flex-none" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+          </svg>
           We'll use this contact info to follow up with your solar results. Your privacy is important to us.
         </p>
       </div>

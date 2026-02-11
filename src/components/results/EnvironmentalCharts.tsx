@@ -25,7 +25,7 @@ export function BillOffsetChart({
   ];
 
   return (
-    <Card className="border-2 border-green-300">
+    <Card className="border-2 border-green-300 overflow-visible">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -45,10 +45,24 @@ export function BillOffsetChart({
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, value, percent }) => 
-                `${name}: ${Math.round(percent * 100)}%`
-              }
-              outerRadius={80}
+              label={({ name, percent, cx, x, y }: { name: string; percent: number; cx: number; x: number; y: number }) => {
+                const label = `${name}: ${Math.round(percent * 100)}%`;
+                // Position text anchor based on which side of the pie it's on
+                const anchor = x > cx ? "start" : "end";
+                return (
+                  <text
+                    x={x}
+                    y={y}
+                    fill="#374151"
+                    fontSize={12}
+                    textAnchor={anchor}
+                    dominantBaseline="central"
+                  >
+                    {label}
+                  </text>
+                );
+              }}
+              outerRadius={70}
               fill="#8884d8"
               dataKey="value"
             >
@@ -105,7 +119,7 @@ export function EnvironmentalImpactChart({
   ];
 
   return (
-    <Card className="border-2 border-emerald-300">
+    <Card className="border-2 border-emerald-300 overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -125,9 +139,10 @@ export function EnvironmentalImpactChart({
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percent }) => 
-                `${name}: ${Math.round(percent * 100)}%`
-              }
+              label={({ name, percent }) => {
+                const short = name.includes("Saved") ? "Saved" : "Grid";
+                return `${short}: ${Math.round(percent * 100)}%`;
+              }}
               outerRadius={70}
               fill="#8884d8"
               dataKey="value"

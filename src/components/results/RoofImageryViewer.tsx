@@ -75,25 +75,6 @@ export function RoofImageryViewer({
             />
             {/* Solar potential heat map overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-orange-400 to-red-500 opacity-20 pointer-events-none" />
-            
-            {/* Legend */}
-            <div className="absolute bottom-4 left-4 bg-white/90 p-3 rounded-lg text-sm">
-              <p className="font-semibold text-gray-800 mb-2">Solar Potential</p>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-yellow-400 rounded" />
-                  <span>Good</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-orange-400 rounded" />
-                  <span>Very Good</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-red-500 rounded" />
-                  <span>Excellent</span>
-                </div>
-              </div>
-            </div>
 
             {/* Annual production badge */}
             {solarPotentialKwhAnnual && (

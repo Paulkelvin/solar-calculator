@@ -13,7 +13,7 @@ import type { SolarCalculationResult } from "../../../types/calculations";
 export async function createLead(
   leadData: Omit<Lead, "id" | "installer_id" | "lead_score" | "created_at" | "updated_at">,
   leadScore: number,
-  installerId: string,
+  installerId: string | null,
   solarData?: { solarPotentialKwhAnnual?: number; roofImageUrl?: string }
 ): Promise<Lead | null> {
   try {
@@ -28,9 +28,7 @@ export async function createLead(
           preferences: leadData.preferences,
           contact: leadData.contact,
           lead_score: leadScore,
-          status: leadData.status || 'new',
-          solar_potential_kwh_annual: solarData?.solarPotentialKwhAnnual,
-          roof_imagery_url: solarData?.roofImageUrl
+          status: leadData.status || 'new'
         }
       ])
       .select()
@@ -57,7 +55,7 @@ export async function createLead(
 export async function logActivity(
   leadId: string,
   eventType: "form_submitted" | "results_viewed" | "pdf_generated",
-  installerId: string,
+  installerId: string | null,
   metadata?: Record<string, unknown>
 ): Promise<boolean> {
   try {
@@ -108,6 +106,45 @@ export async function fetchLeads(installerId: string): Promise<Lead[]> {
   } catch (err) {
     console.error("Error fetching leads:", err);
     return [];
+  }
+}
+
+/**
+ * Update an existing lead with new data.
+ * Used when a partial lead (contact info) is completed with full calculation results.
+ */
+export async function updateLead(
+  leadId: string,
+  leadData: Partial<Omit<Lead, "id" | "created_at" | "updated_at">>,
+  leadScore?: number
+): Promise<Lead | null> {
+  try {
+    const updatePayload: any = {
+      ...leadData,
+      updated_at: new Date().toISOString()
+    };
+
+    if (leadScore !== undefined) {
+      updatePayload.lead_score = leadScore;
+    }
+
+    const { data, error } = await supabase
+      .from("leads")
+      .update(updatePayload)
+      .eq("id", leadId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Failed to update lead:", error);
+      return null;
+    }
+
+    console.log("[SUPABASE] Lead updated:", data.id);
+    return data as unknown as Lead;
+  } catch (err) {
+    console.error("Error updating lead:", err);
+    return null;
   }
 }
 

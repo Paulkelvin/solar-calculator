@@ -23,12 +23,15 @@ export function SystemDesignComparison({
   return (
     <div className="space-y-4">
       <div className="rounded-lg border border-border bg-background p-6">
-        <h3 className="font-semibold mb-4">System Design Options</h3>
-        <p className="text-sm text-muted-foreground mb-6">
-          Compare 3 system sizes to find the best fit for your needs and budget
-        </p>
+        <div className="mb-6">
+          <h3 className="font-semibold text-xl mb-2">Step 1: Choose Your System Size</h3>
+          <p className="text-sm text-muted-foreground">
+            Select the solar system size that best fits your energy needs and budget. Larger systems produce more power but cost more upfront.
+          </p>
+        </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">;
+
           {options.map((option, idx) => {
             const isSelected = selectedOption?.name === option.name;
 

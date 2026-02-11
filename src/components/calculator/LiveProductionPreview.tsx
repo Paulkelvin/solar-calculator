@@ -8,7 +8,11 @@ import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGri
 import { useCalculatorStore } from "../../store/calculatorStore";
 import { fetchProductionEstimate, formatMonthlyData, calculateBillOffset, type PVWattsResult } from "../../lib/pvwatts-service";
 
-export function LiveProductionPreview() {
+interface LiveProductionPreviewProps {
+  onStatusChange?: (status: 'idle' | 'loading' | 'ready') => void;
+}
+
+export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewProps = {}) {
   const { address, usage, roof, solarData } = useCalculatorStore();
   const [estimate, setEstimate] = useState<PVWattsResult | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -17,6 +21,7 @@ export function LiveProductionPreview() {
   useEffect(() => {
     // Debounce: Only fetch if we have all required data
     if (!address.latitude || !address.longitude || !usage.annualKwh) {
+      onStatusChange?.('idle');
       return;
     }
 
@@ -25,6 +30,7 @@ export function LiveProductionPreview() {
 
     const timer = setTimeout(async () => {
       setIsLoading(true);
+      onStatusChange?.('loading');
       const result = await fetchProductionEstimate(
         address.latitude!,
         address.longitude!,
@@ -32,14 +38,16 @@ export function LiveProductionPreview() {
         {
           tilt: roof.roofArea ? (solarData.optimalTilt || 20) : undefined,
           azimuth: roof.roofArea ? (solarData.optimalAzimuth || 180) : undefined,
-          stateCode: address.state, // Priority Fix #5: Pass state code for better fallback
+          stateCode: address.state,
         }
       );
       setEstimate(result);
       setIsLoading(false);
+      onStatusChange?.(result ? 'ready' : 'idle');
     }, 500); // 500ms debounce
 
     return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [address.latitude, address.longitude, usage.annualKwh, roof.roofArea, solarData]);
 
   if (!address.latitude || !usage.annualKwh) {
@@ -50,11 +58,19 @@ export function LiveProductionPreview() {
     return (
       <Card className="border-blue-200 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950 dark:to-cyan-950">
         <CardContent className="p-6">
-          <div className="flex items-center gap-3">
-            <div className="animate-spin h-6 w-6 border-3 border-blue-500 border-t-transparent rounded-full"></div>
-            <p className="text-sm text-blue-700 dark:text-blue-300">
-              Calculating solar production with NREL data...
-            </p>
+          <div className="flex flex-col items-center gap-4 py-4">
+            <div className="relative">
+              <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+              <Zap className="absolute inset-0 m-auto h-4 w-4 text-blue-600" />
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">
+                Fetching solar production data from NREL…
+              </p>
+              <p className="text-xs text-blue-600 dark:text-blue-400">
+                Analyzing local weather patterns, sun hours, and panel output for your location
+              </p>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -181,8 +197,8 @@ export function LiveProductionPreview() {
         <div className="p-3 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">
           <p className="text-xs text-blue-800 dark:text-blue-200">
             <strong>System:</strong> {estimate.system.capacity} kW • 
-            Tilt: {estimate.system.tilt}° • 
-            Azimuth: {estimate.system.azimuth}° (South)
+            Tilt: {solarData.optimalTilt ? Math.round(solarData.optimalTilt) : estimate.system.tilt}° • 
+            Azimuth: {solarData.optimalAzimuth ? Math.round(solarData.optimalAzimuth) : estimate.system.azimuth}°
           </p>
           <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
             Capacity Factor: {estimate.production.capacityFactor}% • 

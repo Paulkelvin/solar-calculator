@@ -14,7 +14,7 @@ import { calculateIncentives } from "@/lib/incentives-service";
 import { calculateEnhancedLeadScore } from "@/lib/enhanced-lead-scoring";
 import type { LeadScoringFactors } from "@/lib/enhanced-lead-scoring";
 import { fetchSolarData, type SolarDataResponse } from "@/lib/solar-service";
-import { createLead } from "@/lib/supabase/queries";
+import { createLead, updateLead } from "@/lib/supabase/queries";
 import { useAuth } from "@/contexts/auth";
 import { useCalculatorStore } from "../../store/calculatorStore";
 import type { CalculatorForm, Address, Usage, Roof, Preferences, Contact } from "../../../types/leads";
@@ -22,7 +22,8 @@ import type { SolarCalculationResult } from "../../../types/calculations";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 // Default installer ID for Phase 1 internal use
-const DEFAULT_INSTALLER_ID = '00000000-0000-0000-0000-000000000000';
+// Use null for anonymous leads (no auth required)
+const DEFAULT_INSTALLER_ID: string | null = null;
 const FINANCIAL_PREVIEW_DELAY_MS = 1400;
 
 const STEPS: Step[] = [
@@ -51,7 +52,7 @@ function FinancialPreviewLoading() {
   );
 }
 
-const STEPS_WITH_TITLES = new Set(["contact", "preferences"]);
+const STEPS_WITH_TITLES = new Set<string>();
 
 interface CalculatorWizardProps {
   onResults: (results: SolarCalculationResult, leadData: Partial<CalculatorForm>) => void;
@@ -80,6 +81,7 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [financialPreviewLoading, setFinancialPreviewLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedLeadId, setSavedLeadId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<Partial<CalculatorForm>>({});
   const [auxSolarData, setAuxSolarData] = useState<SolarDataResponse | null>(null);
@@ -92,6 +94,9 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
   const previousStepRef = useRef(0);
   const financialLoadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const contactComplete = isContactComplete(formData.contact);
+  const safeStepIndex = Math.min(currentStep, STEPS.length - 1);
+  const safeStep = STEPS[safeStepIndex];
+  const safeStepId = safeStep.id;
 
   const handleAddressChange = (address: Address, meta?: { userInitiated?: boolean }) => {
     setFormData((prev) => ({ ...prev, address }));
@@ -196,7 +201,7 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
   }, [error]);
 
   useEffect(() => {
-    const stepId = STEPS[currentStep].id;
+    const stepId = safeStepId;
     if (!contentRef.current) return;
     if (!["usage", "financial", "preferences", "contact"].includes(stepId)) {
       return;
@@ -205,7 +210,7 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
     window.requestAnimationFrame(() => {
       node.scrollTo({ top: 0, behavior: "smooth" });
     });
-  }, [currentStep]);
+  }, [currentStep, safeStepId]);
 
   useEffect(() => {
     if (currentStep !== 0) {
@@ -235,7 +240,7 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
     const previousIndex = previousStepRef.current;
     previousStepRef.current = currentStep;
     const movedFromContact =
-      STEPS[currentStep].id === "financial" &&
+      safeStepId === "financial" &&
       STEPS[previousIndex]?.id === "contact";
 
     if (!movedFromContact) {
@@ -261,18 +266,18 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
   }, [currentStep]);
 
   useEffect(() => {
-    if (STEPS[currentStep].id !== "financial" && financialPreviewLoading) {
+    if (safeStepId !== "financial" && financialPreviewLoading) {
       setFinancialPreviewLoading(false);
       if (financialLoadingTimerRef.current) {
         clearTimeout(financialLoadingTimerRef.current);
         financialLoadingTimerRef.current = null;
       }
     }
-  }, [currentStep, financialPreviewLoading]);
+  }, [currentStep, financialPreviewLoading, safeStepId]);
 
   const validateCurrentStep = () => {
     let message: string | null = null;
-    const stepId = STEPS[currentStep].id;
+    const stepId = safeStepId;
 
     if (stepId === "address") {
       const address = formData.address;
@@ -308,8 +313,19 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
       }
     } else if (stepId === "contact") {
       const contact = formData.contact;
-      if (!contact || !contact.name || !contact.email || !contact.phone) {
+      if (!contact || !contact.name?.trim() || !contact.email?.trim() || !contact.phone?.trim()) {
         message = "Please provide your name, email, and phone number so we can send the proposal.";
+      } else {
+        // Validate phone has at least 10 digits
+        const digits = contact.phone.replace(/\D/g, "");
+        if (digits.length < 10) {
+          message = "Phone number must be at least 10 digits. Please enter a valid phone number.";
+        }
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(contact.email)) {
+          message = "Please enter a valid email address.";
+        }
       }
     }
 
@@ -350,6 +366,12 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
       return;
     }
 
+    // Don't save again if we already have a saved lead
+    if (savedLeadId) {
+      console.log('[PRODUCTION] Contact already saved, lead ID:', savedLeadId);
+      return;
+    }
+
     try {
       const installerId = session?.user?.id || DEFAULT_INSTALLER_ID;
       
@@ -360,7 +382,7 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
         formData.preferences?.timeline || '6-months'
       );
 
-      await createLead(
+      const lead = await createLead(
         {
           address: formData.address,
           usage: formData.usage,
@@ -378,7 +400,10 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
         installerId
       );
 
-      console.log('[PRODUCTION] Contact data saved to database');
+      if (lead?.id) {
+        setSavedLeadId(lead.id);
+        console.log('[PRODUCTION] Contact data saved to database, lead ID:', lead.id);
+      }
     } catch (err) {
       console.error('Failed to save contact lead:', err);
       // Don't block user flow if save fails
@@ -516,20 +541,41 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
       }
 
       console.log('Creating lead...');
-      const lead = await createLead(
-        {
-          address: formData.address,
-          usage: formData.usage,
-          roof: formData.roof,
-          preferences: formData.preferences,
-          contact: formData.contact,
-          status: 'new'
-        },
-        leadScore,
-        installerId,
-        apiSolarData
-      );
-      console.log('Lead created:', lead);
+      let lead;
+      
+      if (savedLeadId) {
+        // Update existing lead with full calculation results
+        console.log('Updating existing lead:', savedLeadId);
+        lead = await updateLead(
+          savedLeadId,
+          {
+            address: formData.address,
+            usage: formData.usage,
+            roof: formData.roof,
+            preferences: formData.preferences,
+            contact: formData.contact,
+            status: 'new'
+          },
+          leadScore
+        );
+      } else {
+        // Create new lead (fallback if contact wasn't saved)
+        console.log('Creating new lead...');
+        lead = await createLead(
+          {
+            address: formData.address,
+            usage: formData.usage,
+            roof: formData.roof,
+            preferences: formData.preferences,
+            contact: formData.contact,
+            status: 'new'
+          },
+          leadScore,
+          installerId,
+          apiSolarData
+        );
+      }
+      console.log('Lead saved:', lead);
 
       // Log activity
       if (lead) {
@@ -608,7 +654,7 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
   };
 
   const renderStep = () => {
-    const step = STEPS[currentStep];
+    const step = safeStep;
 
     switch (step.id) {
       case "address":
@@ -668,26 +714,56 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
                 onChange={handleContactChange}
               />
             </div>
-            <div className="relative">
-              <div className={`transition-all duration-500 ${contactComplete ? "opacity-100" : "pointer-events-none blur-[2px] opacity-70"}`}>
-                <FinancialPreviewStep
-                  address={formData.address}
-                  usage={formData.usage}
-                  roof={formData.roof}
-                  preferences={formData.preferences}
-                  solarSnapshot={roofInsights}
-                />
+            <div className="relative rounded-3xl border border-emerald-100 bg-emerald-50/70 p-5 shadow-inner">
+              <div className="flex items-start gap-3">
+                <div className="mt-1 h-8 w-8 rounded-full bg-white text-emerald-600 shadow flex items-center justify-center font-semibold">💡</div>
+                <div className="space-y-2 text-sm text-emerald-900">
+                  <h3 className="text-base font-semibold text-emerald-800">What you’ll unlock next</h3>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>Cash vs. loan comparison tailored to your roof + usage</li>
+                    <li>Estimated monthly payment and savings timeline</li>
+                    <li>Battery option guidance based on your sun exposure</li>
+                  </ul>
+                  {contactComplete && (
+                    <div className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 shadow-sm">Great! Continue to see your financing options.</div>
+                  )}
+                </div>
               </div>
-              {contactComplete ? (
-                <div className="pointer-events-none absolute right-4 top-4 rounded-full bg-emerald-600/90 px-3 py-1 text-[11px] font-semibold text-white shadow">
-                  Ready to unlock
+              <div className="relative mt-4 space-y-3 rounded-2xl border border-emerald-100 bg-white/90 p-4 shadow-sm overflow-hidden">
+                <div className="relative flex items-center justify-between text-sm font-semibold text-emerald-900">
+                  <span>Financing preview</span>
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Complete contact to unlock</span>
                 </div>
-              ) : (
-                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center rounded-3xl border border-dashed border-emerald-300 bg-white/80 px-6 text-center">
-                  <p className="text-sm font-semibold text-emerald-900">Finish your contact info to reveal the detailed plan.</p>
-                  <p className="mt-2 text-xs text-emerald-700">We use it to send your PDF proposal and coordinate a design review.</p>
+                <div className="relative grid gap-3 text-sm text-emerald-900 select-none" style={{ filter: 'blur(2px)' }}>
+                  <div className="rounded-xl border border-emerald-50 bg-emerald-50/70 p-3 shadow-inner">
+                    <div className="mb-2 flex items-center justify-between font-semibold">
+                      <span>Cash path</span>
+                      <span className="text-sm">~$18,500</span>
+                    </div>
+                    <div className="space-y-1 text-xs text-emerald-800">
+                      <div>• Pay upfront, own immediately</div>
+                      <div>• Estimated ~$1,600/yr savings</div>
+                      <div>• Payback in ~12 years</div>
+                    </div>
+                  </div>
+                  <div className="rounded-xl border border-emerald-50 bg-emerald-50/70 p-3 shadow-inner">
+                    <div className="mb-2 flex items-center justify-between font-semibold">
+                      <span>Loan path</span>
+                      <span className="text-sm">$185/mo</span>
+                    </div>
+                    <div className="space-y-1 text-xs text-emerald-800">
+                      <div>• Finance over 10 years</div>
+                      <div>• Immediate net-positive cash flow</div>
+                      <div>• Own after loan term</div>
+                    </div>
+                  </div>
                 </div>
-              )}
+                <div className="absolute inset-0 flex items-center justify-center rounded-2xl pointer-events-none">
+                  <div className="rounded-xl bg-white/80 px-4 py-2 shadow-lg backdrop-blur-sm">
+                    <p className="text-xs font-semibold text-emerald-800">🔒 Fill in your details to see numbers</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -700,19 +776,19 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
     <div className="bg-white rounded-lg shadow border border-gray-200 flex flex-col h-full max-h-full overflow-hidden">
       {/* Progress Bar */}
       <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 mb-6 flex-none">
-        <StepIndicator steps={STEPS} currentStep={currentStep} />
+        <StepIndicator steps={STEPS} currentStep={safeStepIndex} />
       </div>
 
       {/* Main Content */}
       <div
         ref={contentRef}
         className={`relative flex-1 overflow-y-auto px-4 pb-4 pt-4 ${
-          STEPS[currentStep].id === "roof" ? "roof-scroll" : "no-scrollbar"
+          safeStepId === "roof" ? "roof-scroll" : "no-scrollbar"
         }`}
       >
         {error && showErrorToast && (
-          <div className="pointer-events-none absolute top-0 left-0 right-0 z-20 flex justify-center">
-            <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-white px-4 py-3 text-sm text-red-700 shadow-2xl shadow-red-100">
+          <div className="pointer-events-none absolute top-0 left-0 right-0 z-20 flex justify-center animate-in fade-in slide-in-from-top-4 duration-300">
+            <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-white px-4 py-3 text-sm text-red-700 shadow-2xl shadow-red-100 transition-all duration-300">
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-none text-red-500" />
               <div>
                 <p className="font-semibold">We need a bit more info</p>
@@ -722,19 +798,29 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
           </div>
         )}
 
-        {STEPS_WITH_TITLES.has(STEPS[currentStep].id) && (
+        {STEPS_WITH_TITLES.has(safeStepId) && (
           <h2 className="mb-2 text-lg font-bold text-gray-900">
-            {STEPS[currentStep].label}
+            {safeStep.label}
           </h2>
         )}
 
         <div className="mb-2 min-h-[520px]">
-          <div
-            key={STEPS[currentStep].id}
-            className="animate-in fade-in slide-in-from-right duration-500"
-          >
-            {renderStep()}
-          </div>
+          {isLoading && currentStep === STEPS.length - 1 ? (
+            <div className="flex min-h-[520px] flex-col items-center justify-center space-y-4">
+              <div className="h-16 w-16 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
+              <div className="space-y-2 text-center">
+                <p className="text-lg font-semibold text-gray-900">Computing your solar savings...</p>
+                <p className="text-sm text-gray-600">Analyzing roof data, calculating incentives, and building financing options</p>
+              </div>
+            </div>
+          ) : (
+            <div
+              key={safeStepId}
+              className="animate-in fade-in slide-in-from-right duration-500"
+            >
+              {renderStep()}
+            </div>
+          )}
         </div>
       </div>
 

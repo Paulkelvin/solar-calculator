@@ -61,8 +61,8 @@ export function calculateFinancing(systemSizeKw: number) {
   const cashROI25 = ((cashMonthlyValue * 12 * 25 - totalSystemCost) / totalSystemCost) * 100;
 
   // === LOAN OPTION ===
-  // 20% down, 6.5% APR, 25-year term
-  const loanDownPayment = totalSystemCost * 0.2;
+  // 10% down, 6.5% APR, 25-year term
+  const loanDownPayment = totalSystemCost * 0.10;
   const loanPrincipal = totalSystemCost - loanDownPayment;
   const monthlyRate = LOAN_INTEREST_RATE / 12;
   const numPayments = LOAN_TERM_YEARS * 12;
@@ -71,7 +71,8 @@ export function calculateFinancing(systemSizeKw: number) {
     (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
     (Math.pow(1 + monthlyRate, numPayments) - 1);
   const loanTotalInterest = loanMonthlyPayment * numPayments - loanPrincipal;
-  const loanROI25 = ((cashMonthlyValue * 12 * 25 - totalSystemCost) / totalSystemCost) * 100;
+  const loanTotalCost = loanDownPayment + loanMonthlyPayment * numPayments;
+  const loanROI25 = ((cashMonthlyValue * 12 * 25 - loanTotalCost) / loanTotalCost) * 100;
 
   // === LEASE OPTION ===
   // Typical lease: $0 down, ~$150-200/month, 20-year term
@@ -81,7 +82,7 @@ export function calculateFinancing(systemSizeKw: number) {
   const leaseTotalCost = leaseMonthlyPayment * leaseTermMonths;
   const leaseElectricityValue = monthlyElectricityCost * leaseTermMonths;
   const leaseNetSavings = leaseElectricityValue - leaseTotalCost;
-  const leaseBreakEven = (leaseMonthlyPayment / monthlyElectricityCost) * 12; // months, typically never breaks even
+  const leaseBreakEven = leaseMonthlyPayment < monthlyElectricityCost ? 0 : (leaseTotalCost - leaseElectricityValue) / (monthlyElectricityCost * 12);
   const leaseROI20 = (leaseNetSavings / leaseTotalCost) * 100;
 
   // === PPA OPTION ===
@@ -116,7 +117,19 @@ export function calculateFinancing(systemSizeKw: number) {
       downPayment: loanDownPayment,
       monthlyPayment: loanMonthlyPayment,
       totalInterest: loanTotalInterest,
-      yearsToBreakEven: (loanDownPayment + 0) / (cashMonthlyValue * 12),
+      yearsToBreakEven: (() => {
+        // Find year where cumulative savings exceed cumulative loan costs
+        let cumulativeSavings = 0;
+        let cumulativeCosts = loanDownPayment;
+        for (let month = 1; month <= numPayments; month++) {
+          cumulativeSavings += cashMonthlyValue;
+          cumulativeCosts += loanMonthlyPayment;
+          if (cumulativeSavings >= cumulativeCosts) return month / 12;
+        }
+        // After loan term, only savings accumulate
+        const remaining = cumulativeCosts - cumulativeSavings;
+        return LOAN_TERM_YEARS + remaining / (cashMonthlyValue * 12);
+      })(),
       roi25Years: loanROI25
     },
     lease: {

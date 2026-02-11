@@ -7,7 +7,8 @@
  * - State utility commission websites
  * - Solar installer industry averages
  * 
- * Note: Federal ITC expired for new homeowner installs after 2025.
+ * ⚠️ IMPORTANT: Federal ITC EXPIRED Dec 31, 2025 - NOT available for any new installations.
+ * Installers may still use commercial ITC for lease/PPA, but homeowners receive NO federal tax credit.
  * Focus on leasing/PPAs where installers claim tax credits and pass savings.
  */
 

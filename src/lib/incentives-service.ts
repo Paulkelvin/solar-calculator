@@ -2,8 +2,9 @@
  * State & Local Incentives Service
  * Phase 5.2 Week 2: Calculate available incentives by state/utility
  * 
- * Note: Federal 30% ITC expired Dec 31, 2025 - NOT included for 2026+ installations
- * Focus: State rebates, utility incentives, net metering value
+ * ⚠️ IMPORTANT: Federal 30% ITC is EXPIRED (ended Dec 31, 2025)
+ * This service ONLY calculates state rebates, utility incentives, and net metering value.
+ * NO federal tax credits are included or calculated for any installations.
  */
 
 export interface StateIncentive {
@@ -175,8 +176,7 @@ export function calculateIncentives(
   const totalAnnualIncentives = stateRebateTotal + utilityRebateTotal + performancePaymentTotal;
   
   const disclaimer = 
-    '🔔 Federal Residential Clean Energy Credit (30% ITC) expired Dec 31, 2025. ' +
-    'Not available for new installations in 2026. Showing state/local incentives only.';
+    'Incentive estimates based on state and local programs. Consult a tax professional for personalized advice.';
   
   return {
     state: stateCode,

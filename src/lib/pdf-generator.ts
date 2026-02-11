@@ -55,6 +55,11 @@ export function generateProposalHTML(
     }).format(value);
 
   // Transform financing data to match the card structure
+  const safeName = leadData.name || 'Not provided';
+  const safeEmail = leadData.email || 'Not provided';
+  const safePhone = leadData.phone || 'Not provided';
+  const safeStreet = leadData.address.street || '';
+  const safeCityStateZip = `${leadData.address.city || ''}, ${leadData.address.state || ''} ${leadData.address.zip || ''}`.trim();
   const financingCards: FinancingCard[] = calculations.financing.map((opt, idx) => {
     const costPerkW = 2.75; // $2.75 per watt average
     const systemCost = calculations.systemSizeKw * 1000 * costPerkW;
@@ -245,23 +250,23 @@ export function generateProposalHTML(
             <div class="two-column">
               <div class="info-box">
                 <div class="info-label">Name</div>
-                <div class="info-value">${leadData.name}</div>
+                <div class="info-value">${safeName}</div>
               </div>
               <div class="info-box">
                 <div class="info-label">Email</div>
-                <div class="info-value">${leadData.email}</div>
+                <div class="info-value">${safeEmail}</div>
               </div>
             </div>
             <div class="two-column">
               <div class="info-box">
                 <div class="info-label">Phone</div>
-                <div class="info-value">${leadData.phone}</div>
+                <div class="info-value">${safePhone}</div>
               </div>
               <div class="info-box">
                 <div class="info-label">Address</div>
                 <div class="info-value">
-                  ${leadData.address.street}<br>
-                  ${leadData.address.city}, ${leadData.address.state} ${leadData.address.zip}
+                  ${safeStreet}<br>
+                  ${safeCityStateZip}
                 </div>
               </div>
             </div>
@@ -413,13 +418,11 @@ export function generateProposalHTML(
 }
 
 /**
- * Generate PDF blob from HTML content using jsPDF
- * This is a server-side implementation for the Node.js runtime
+ * Generate PDF blob from data using jsPDF
+ * Structured PDF generation without HTML parsing
  */
 export async function generatePDFBlob(htmlContent: string): Promise<Buffer> {
   try {
-    // For server-side PDF generation, we'll use a simplified approach
-    // Create a basic PDF with jsPDF
     const pdf = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
@@ -428,44 +431,213 @@ export async function generatePDFBlob(htmlContent: string): Promise<Buffer> {
 
     const pageHeight = pdf.internal.pageSize.getHeight();
     const pageWidth = pdf.internal.pageSize.getWidth();
-    const margin = 10;
+    const margin = 15;
     const textWidth = pageWidth - 2 * margin;
-    let yPosition = margin;
-    const lineHeight = 5;
-    const fontSize = 10;
-
-    pdf.setFontSize(16);
-    pdf.text('Solar Proposal Report', margin, yPosition);
-    yPosition += lineHeight * 2;
-
-    pdf.setFontSize(fontSize);
-    pdf.setTextColor(100);
-    pdf.text('Preliminary Estimate - Phase 1 Mock Data', margin, yPosition);
-    yPosition += lineHeight * 1.5;
-
-    // Extract text content from HTML for the PDF
-    // This is a simplified approach
-    const plainText = htmlContent
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .split('\n')
-      .filter((line) => line.trim().length > 0);
-
-    pdf.setFontSize(fontSize);
-    pdf.setTextColor(0);
-
-    for (const line of plainText) {
-      if (yPosition > pageHeight - margin) {
+    let y = margin;
+    
+    // Helper to add new page if needed
+    const checkPageBreak = (neededSpace: number = 10) => {
+      if (y + neededSpace > pageHeight - margin) {
         pdf.addPage();
-        yPosition = margin;
+        y = margin;
+        return true;
       }
-      const wrappedText = pdf.splitTextToSize(line.trim(), textWidth);
-      pdf.text(wrappedText, margin, yPosition);
-      yPosition += lineHeight * wrappedText.length + 2;
-    }
+      return false;
+    };
+
+    // Helper to add section title
+    let isFirstSection = true;
+    const addSectionTitle = (title: string) => {
+      // Add breathing room above every section except the first
+      if (!isFirstSection) {
+        y += 8;
+      }
+      isFirstSection = false;
+      checkPageBreak(15);
+      pdf.setFontSize(12);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(16, 185, 129); // Green color
+      pdf.text(title, margin, y);
+      y += 5;
+      pdf.setLineWidth(0.5);
+      pdf.setDrawColor(229, 231, 235);
+      pdf.line(margin, y, pageWidth - margin, y);
+      y += 4;
+    };
+
+    // Helper to add info box
+    const addInfoBox = (label: string, value: string, x: number, width: number) => {
+      pdf.setFillColor(249, 250, 251);
+      pdf.rect(x, y, width, 15, 'F');
+      
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(107, 114, 128);
+      pdf.text(label.toUpperCase(), x + 3, y + 5);
+      
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(17, 17, 17);
+      const wrappedValue = pdf.splitTextToSize(value, width - 6);
+      pdf.text(wrappedValue, x + 3, y + 10);
+    };
+
+    // ===== HEADER =====
+    pdf.setFillColor(16, 185, 129);
+    pdf.rect(0, 0, pageWidth, 25, 'F');
+    
+    pdf.setFontSize(18);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(255, 255, 255);
+    pdf.text('Solar Proposal Report', margin, 12);
+    
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.text('Preliminary Estimate - Professional Analysis', margin, 18);
+    
+    y = 35;
+
+    // Badge
+    pdf.setFillColor(254, 243, 199);
+    pdf.setDrawColor(146, 64, 14);
+    pdf.setLineWidth(0.3);
+    pdf.roundedRect(margin, y, 55, 6, 1, 1, 'FD');
+    pdf.setFontSize(7);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(146, 64, 14);
+    pdf.text('ESTIMATED CALCULATIONS', margin + 2, y + 4);
+    
+    y += 12;
+
+    // Extract data from HTML (regex pattern matching)
+    const extractValue = (pattern: RegExp): string => {
+      const match = htmlContent.match(pattern);
+      return match ? match[1].trim() : 'N/A';
+    };
+
+    const name = extractValue(/Name<\/div>\s*<div class="info-value">([^<]+)/);
+    const email = extractValue(/Email<\/div>\s*<div class="info-value">([^<]+)/);
+    const phone = extractValue(/Phone<\/div>\s*<div class="info-value">([^<]+)/);
+    const street = extractValue(/Address<\/div>\s*<div class="info-value">\s*([^<]+)<br>/);
+    const cityStateZip = extractValue(/Address<\/div>\s*<div class="info-value">\s*[^<]+<br>\s*([^<]+)/);
+    const systemSize = extractValue(/System Size<\/div>\s*<div class="info-value">([^<]+)/);
+    const annualProd = extractValue(/Annual Production<\/div>\s*<div class="info-value">([^<]+)/);
+    const roofSize = extractValue(/Roof Size<\/div>\s*<div class="info-value">([^<]+)/);
+    const sunExposure = extractValue(/Sun Exposure<\/div>\s*<div class="info-value">([^<]+)/);
+
+    // ===== PROPERTY INFORMATION =====
+    addSectionTitle('Property & Lead Information');
+    
+    const colWidth = (textWidth - 5) / 2;
+    addInfoBox('NAME', name, margin, colWidth);
+    addInfoBox('EMAIL', email, margin + colWidth + 5, colWidth);
+    y += 20;
+    
+    checkPageBreak(20);
+    addInfoBox('PHONE', phone, margin, colWidth);
+    addInfoBox('ADDRESS', `${street}\n${cityStateZip}`, margin + colWidth + 5, colWidth);
+    y += 20;
+
+    // ===== SYSTEM DESIGN =====
+    addSectionTitle('Estimated System Design');
+    
+    addInfoBox('SYSTEM SIZE', systemSize, margin, colWidth);
+    addInfoBox('ANNUAL PRODUCTION', annualProd, margin + colWidth + 5, colWidth);
+    y += 20;
+    
+    checkPageBreak(20);
+    addInfoBox('ROOF SIZE', roofSize, margin, colWidth);
+    addInfoBox('SUN EXPOSURE', sunExposure, margin + colWidth + 5, colWidth);
+    y += 20;
+
+    // ===== FINANCING =====
+    addSectionTitle('Financing Scenarios');
+    
+    // Cash option
+    checkPageBreak(35);
+    pdf.setFillColor(243, 244, 246);
+    pdf.roundedRect(margin, y, textWidth, 30, 2, 2, 'F');
+    
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(17, 17, 17);
+    pdf.text('Cash Purchase', margin + 3, y + 6);
+    
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(107, 114, 128);
+    
+    const cashCost = extractValue(/Cash Purchase[\s\S]*?Total System Cost:[\s\S]*?<span class="card-value">([^<]+)/);
+    const cashSavings = extractValue(/Cash Purchase[\s\S]*?Annual Savings:[\s\S]*?<span class="card-value[^>]*>([^<]+)/);
+    const cashROI = extractValue(/Cash Purchase[\s\S]*?ROI:[\s\S]*?<span class="card-value">([^<]+)/);
+    
+    pdf.text(`Total Cost: ${cashCost}`, margin + 3, y + 12);
+    pdf.text(`Annual Savings: ${cashSavings}`, margin + 3, y + 18);
+    pdf.text(`2-Year ROI: ${cashROI}`, margin + 3, y + 24);
+    
+    y += 35;
+
+    // Loan option
+    checkPageBreak(35);
+    pdf.setFillColor(243, 244, 246);
+    pdf.roundedRect(margin, y, textWidth, 30, 2, 2, 'F');
+    
+    pdf.setFontSize(11);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(17, 17, 17);
+    pdf.text('Solar Loan', margin + 3, y + 6);
+    
+    pdf.setFontSize(9);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(107, 114, 128);
+    
+    const loanAmount = extractValue(/Solar Loan[\s\S]*?Loan Amount:[\s\S]*?<span class="card-value">([^<]+)/);
+    const monthlyPay = extractValue(/Solar Loan[\s\S]*?Monthly Payment:[\s\S]*?<span class="card-value">([^<]+)/);
+    const loanSavings = extractValue(/Solar Loan[\s\S]*?Year 1 Savings:[\s\S]*?<span class="card-value[^>]*>([^<]+)/);
+    
+    pdf.text(`Loan Amount: ${loanAmount}`, margin + 3, y + 12);
+    pdf.text(`Monthly Payment: ${monthlyPay}`, margin + 3, y + 18);
+    pdf.text(`Year 1 Savings: ${loanSavings}`, margin + 3, y + 24);
+    
+    y += 35;
+
+    // ===== ENVIRONMENTAL =====
+    addSectionTitle('Environmental Impact (Annual)');
+    
+    checkPageBreak(25);
+    pdf.setFillColor(240, 253, 244);
+    pdf.roundedRect(margin, y, textWidth, 20, 2, 2, 'F');
+    
+    const co2 = extractValue(/Metric Tons CO[₂2]<\/div>\s*<\/div>\s*<div class="env-item">\s*<div class="env-number">([^<]+)/);
+    const trees = extractValue(/<div class="env-number">([^<]+)<\/div>\s*<div class="env-label">Trees Equivalent/);
+    
+    pdf.setFontSize(16);
+    pdf.setFont('helvetica', 'bold');
+    pdf.setTextColor(16, 185, 129);
+    const centerX = pageWidth / 2;
+    pdf.text(`${co2} Metric Tons CO2`, centerX, y + 8, { align: 'center' });
+    pdf.setFontSize(14);
+    pdf.text(`${trees} Trees Equivalent`, centerX, y + 16, { align: 'center' });
+    
+    y += 25;
+
+    // ===== FOOTER =====
+    checkPageBreak(15);
+    pdf.setLineWidth(0.3);
+    pdf.setDrawColor(229, 231, 235);
+    pdf.line(margin, y, pageWidth - margin, y);
+    y += 5;
+    
+    pdf.setFontSize(8);
+    pdf.setFont('helvetica', 'normal');
+    pdf.setTextColor(107, 114, 128);
+    const footerText = 'This is a preliminary estimate based on estimated calculations. Final system design requires on-site assessment.';
+    const wrappedFooter = pdf.splitTextToSize(footerText, textWidth);
+    pdf.text(wrappedFooter, pageWidth / 2, y, { align: 'center' });
+    
+    y += wrappedFooter.length * 4 + 3;
+    const dateText = `Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`;
+    pdf.text(dateText, pageWidth / 2, y, { align: 'center' });
 
     // Return as buffer
     return Buffer.from(pdf.output('arraybuffer'));

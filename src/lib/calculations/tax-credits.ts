@@ -1,12 +1,9 @@
 /**
  * Tax Credits Calculation Engine
- * Calculates federal ITC + state-specific tax credits
  * 
- * Formula:
- * Federal ITC = systemCost × federalRate (capped at federal max if applicable)
- * State Credit = (systemCost - federalCredit) × stateRate (capped at state max)
- * Total Tax Benefit = Federal + State
- * Net Cost = systemCost - totalTaxBenefit
+ * ⚠️ DEPRECATED: Federal ITC expired December 31, 2025
+ * This file is maintained only for historical testing purposes.
+ * DO NOT USE in production calculations for 2026+ installations.
  */
 
 import {
@@ -19,13 +16,19 @@ import {
 } from '../../../types/tax-credits';
 
 /**
- * Calculate federal ITC for residential solar
- * 30% of installed cost through 2032 (no residential cap)
+ * @deprecated Federal ITC expired December 31, 2025
+ * This function is for testing/historical purposes only
+ * DO NOT USE for 2026+ installations
  */
 export function calculateFederalITC(
   systemCost: number,
   year: number = new Date().getFullYear()
 ): { rate: number; credit: number } {
+  // For 2026+, return zero credit
+  if (year >= 2026) {
+    return { rate: 0, credit: 0 };
+  }
+  
   const rate = getFederalITCRate(year);
   const credit = systemCost * rate;
 
@@ -74,7 +77,8 @@ export function calculateStateTaxCredit(
 }
 
 /**
- * Calculate total tax credits (federal + state)
+ * @deprecated Federal ITC expired December 31, 2025
+ * Calculate total tax credits (state only for 2026+)
  * Returns detailed breakdown
  */
 export function calculateTotalTaxCredits(
@@ -82,8 +86,8 @@ export function calculateTotalTaxCredits(
 ): TaxCreditResult {
   const { systemCostBeforeTax, state, year } = config;
 
-  // Step 1: Calculate federal ITC
-  const federal = calculateFederalITC(systemCostBeforeTax, year);
+  // Step 1: Federal ITC is ZERO for 2026+ installations
+  const federal = year >= 2026 ? { rate: 0, credit: 0 } : calculateFederalITC(systemCostBeforeTax, year);
 
   // Step 2: Calculate state tax credit
   const stateTax = calculateStateTaxCredit(

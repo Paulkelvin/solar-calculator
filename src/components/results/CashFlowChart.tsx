@@ -115,7 +115,7 @@ export function CashFlowChart({
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
-          <AreaChart data={data}>
+          <AreaChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 25 }}>
             <defs>
               <linearGradient id="cashGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
@@ -137,13 +137,14 @@ export function CashFlowChart({
             <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" />
             <XAxis 
               dataKey="year" 
-              label={{ value: 'Years', position: 'insideBottom', offset: -5 }}
+              label={{ value: 'Years', position: 'insideBottom', offset: -2 }}
               tick={{ fontSize: 11 }}
             />
             <YAxis 
-              label={{ value: 'Cumulative Savings ($)', angle: -90, position: 'insideLeft' }}
+              label={{ value: 'Cumulative Savings ($)', angle: -90, position: 'insideLeft', dy: -10, style: { textAnchor: 'middle' } }}
               tick={{ fontSize: 11 }}
               tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+              width={60}
             />
             <Tooltip
               contentStyle={{
@@ -189,21 +190,11 @@ export function CashFlowChart({
               fill="url(#leaseGradient)"
               name="Solar Lease"
             />
-            
-            {/* PPA */}
-            <Area
-              type="monotone"
-              dataKey="ppaSavings"
-              stroke="#f59e0b"
-              strokeWidth={2}
-              fill="url(#ppaGradient)"
-              name="PPA"
-            />
           </AreaChart>
         </ResponsiveContainer>
 
         {/* Key Metrics */}
-        <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="mt-6 grid grid-cols-3 gap-3">
           <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
             <p className="text-xs text-muted-foreground mb-1">Cash (25yr)</p>
             <p className="text-lg font-bold text-green-700 dark:text-green-400">
@@ -234,20 +225,11 @@ export function CashFlowChart({
               ${(data[25].leaseSavings / 1000).toFixed(0)}k
             </p>
           </div>
-
-          <div className="p-3 bg-amber-50 dark:bg-amber-950 rounded-lg">
-            <p className="text-xs text-muted-foreground mb-1">PPA (25yr)</p>
-            <p className="text-lg font-bold text-amber-700 dark:text-amber-400">
-              ${(data[25].ppaSavings / 1000).toFixed(0)}k
-            </p>
-          </div>
         </div>
 
         <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 rounded-lg">
           <p className="text-xs text-blue-800 dark:text-blue-200">
-            💡 <strong>Note:</strong> Federal ITC expired for new homeowner installs after 2025. 
-            Leasing and PPAs allow installers to claim tax credits and pass savings to you. 
-            Projections include {rateEscalation}% annual utility rate escalation and 0.5% annual system degradation.
+            ℹ️ Projections include {rateEscalation}% annual utility rate escalation and 0.5% annual system degradation. Consult a tax professional for personalized incentive and tax credit guidance.
           </p>
         </div>
       </CardContent>

@@ -35,13 +35,6 @@ const roofTypeOptions: Array<{ value: Roof["roofType"]; label: string; descripti
   { value: "other", label: "Something unique", description: "We'll confirm during site survey" },
 ];
 
-const sunExposureOptions: Array<{ value: Roof["sunExposure"]; label: string; range: string; description: string }> = [
-  { value: "excellent", label: "Full sun", range: "85%+", description: "South / southwest roof with little shade" },
-  { value: "good", label: "Mostly sunny", range: "70-85%", description: "Brief afternoon shade or slight east/west tilt" },
-  { value: "fair", label: "Filtered", range: "55-70%", description: "Trees or neighboring homes clip parts of the day" },
-  { value: "poor", label: "Shaded", range: "<55%", description: "Heavy tree cover or multiple obstructions" },
-];
-
 const exposurePercentLookup: Record<Roof["sunExposure"], number> = {
   excellent: 90,
   good: 78,
@@ -278,7 +271,6 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
 
   const sunExposurePercent = solarData.sunExposurePercentage ?? exposurePercentLookup[formValue.sunExposure];
   const shadingPercent = solarData.shadingPercentage ?? Math.max(0, 100 - sunExposurePercent);
-  const selectedExposureCopy = sunExposureOptions.find((opt) => opt.value === formValue.sunExposure)?.description;
   const mapHeaderMessage = hasMapCoordinates ? (
     <div className="flex w-full flex-wrap items-center justify-between gap-3 text-xs font-semibold text-emerald-900">
       <span>Marker slightly off? Tap change or drag the pin below to re-center.</span>
@@ -350,7 +342,6 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
               <p className="text-2xl font-black text-yellow-900">{shadingPercent}%</p>
             </div>
           </div>
-          {selectedExposureCopy && <p className="mt-4 text-xs text-yellow-900/80">{selectedExposureCopy}</p>}
         </div>
 
         <div className="rounded-3xl border border-emerald-100 bg-white/90 p-5 text-sm shadow-sm">
@@ -462,11 +453,14 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
             })}
             <div className="absolute inset-0 flex items-center justify-center">
               <div
-                className="relative h-16 w-1 origin-bottom"
+                className="relative h-1 w-1"
                 style={{ transform: `rotate(${directionRotation}deg)`, transition: "transform 0.6s ease" }}
               >
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-12 w-1 rounded-full bg-gradient-to-b from-emerald-300 via-emerald-500 to-emerald-700 shadow" />
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 border-l-[6px] border-r-[6px] border-b-[10px] border-l-transparent border-r-transparent border-b-emerald-600 drop-shadow" />
+                {/* Needle pointing outward from center */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-14 w-1 rounded-full bg-gradient-to-t from-emerald-300 via-emerald-500 to-emerald-700 shadow" style={{ transformOrigin: 'bottom center' }} />
+                <div className="absolute -top-[3.6rem] left-1/2 -translate-x-1/2 w-0 border-l-[6px] border-r-[6px] border-b-[10px] border-l-transparent border-r-transparent border-b-emerald-600 drop-shadow" />
+                {/* Small center dot */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-emerald-600 shadow" />
               </div>
             </div>
           </div>
@@ -474,73 +468,33 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-3xl border border-emerald-100 bg-white/90 p-5 shadow-sm">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.35em] text-emerald-600">
-            <p>Roof material</p>
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold normal-case tracking-wide text-emerald-700">Hardware planning</span>
-          </div>
-          <p className="mt-2 text-xs text-gray-500">Pre-filled from aerial cues so we know which mounts to plan for. Update it if your surface differs.</p>
-          <div className="mt-3 grid gap-2 md:grid-cols-2">
-            {roofTypeOptions.map((option) => {
-              const isActive = formValue.roofType === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleChange("roofType", option.value)}
-                  className={`rounded-2xl border px-3 py-3 text-left transition ${
-                    isActive
-                      ? "border-emerald-400 bg-emerald-50 text-emerald-900 shadow"
-                      : "border-gray-200 bg-white text-gray-600 hover:border-emerald-200"
-                  }`}
-                >
-                  <p className="text-sm font-semibold">{option.label}</p>
-                  <p className="text-xs text-gray-500">{option.description}</p>
-                </button>
-              );
-            })}
-          </div>
-          {errors.roofType && <p className="mt-2 text-xs text-red-600">{errors.roofType}</p>}
-          <p className="mt-3 text-[11px] text-gray-500">
-            Defaulted from aerial imagery cues — tweak if your shingles or mounting surface differ.
-          </p>
+      <div className="rounded-3xl border border-emerald-100 bg-white/90 p-5 shadow-sm">
+        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.35em] text-emerald-600">
+          <p>What's your roof surface?</p>
+          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold normal-case tracking-wide text-emerald-700">Helps installers plan mounts</span>
         </div>
-
-        <div className="rounded-3xl border border-amber-100 bg-amber-50/60 p-5 shadow-sm">
-          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-700">
-            <p>Sun behavior</p>
-            <span className="rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-semibold normal-case tracking-wide text-amber-700">Shading model</span>
-          </div>
-          <p className="mt-2 text-xs text-amber-800">Pulled from Google Solar shade analysis so we can pre-calc production. Adjust if you know tree growth or roof usage changes seasonally.</p>
-          <div className="mt-3 space-y-2">
-            {sunExposureOptions.map((option) => {
-              const isActive = formValue.sunExposure === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleChange("sunExposure", option.value)}
-                  className={`w-full rounded-2xl border px-3 py-3 text-left transition ${
-                    isActive
-                      ? "border-amber-400 bg-white text-amber-900 shadow"
-                      : "border-transparent bg-amber-50/60 text-amber-800 hover:border-amber-200"
-                  }`}
-                >
-                  <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-widest">
-                    <span>{option.label}</span>
-                    <span>{option.range}</span>
-                  </div>
-                  <p className="text-xs text-amber-700">{option.description}</p>
-                </button>
-              );
-            })}
-          </div>
-          {errors.sunExposure && <p className="mt-2 text-xs text-red-600">{errors.sunExposure}</p>}
-          <p className="mt-3 text-[11px] text-amber-700">
-            Powered by Google Solar shading analysis for this rooftop — update if trees or obstructions change.
-          </p>
+        <p className="mt-2 text-xs text-gray-500">Pre-filled from aerial cues — update it if your surface differs.</p>
+        <div className="mt-3 grid gap-2 md:grid-cols-2">
+          {roofTypeOptions.map((option) => {
+            const isActive = formValue.roofType === option.value;
+            return (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleChange("roofType", option.value)}
+                className={`rounded-2xl border px-3 py-3 text-left transition ${
+                  isActive
+                    ? "border-emerald-400 bg-emerald-50 text-emerald-900 shadow"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-emerald-200"
+                }`}
+              >
+                <p className="text-sm font-semibold">{option.label}</p>
+                <p className="text-xs text-gray-500">{option.description}</p>
+              </button>
+            );
+          })}
         </div>
+        {errors.roofType && <p className="mt-2 text-xs text-red-600">{errors.roofType}</p>}
       </div>
 
       {showShadingWarning && (
@@ -557,9 +511,6 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
         </div>
       )}
 
-      <p className="text-xs text-gray-500">
-        💡 Values auto-sync with satellite data. Drag the rooftop marker or re-run the address to fine-tune anything that looks off.
-      </p>
     </div>
   );
 }
@@ -610,9 +561,15 @@ function getSunWindowDetails(hours: number, exposurePercentage?: number) {
           : "Panels hit their stride late morning and carry well into early afternoon before shade creeps in.",
     };
   }
+  if (hours >= 3.5) {
+    return {
+      windowLabel: "10:00a – 1:30p",
+      tip: "Moderate sun window — consider panel placement to maximize the strongest midday hours.",
+    };
+  }
   return {
-    windowLabel: "10:00a – 1:30p",
-    tip: "Heavier shade limits shoulder hours. Trimming a couple of western trees could unlock another hour of sun.",
+    windowLabel: "10:30a – 12:30p",
+    tip: "Shorter productive window due to shading. Tree trimming or alternate panel placement could help.",
   };
 }
 

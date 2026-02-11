@@ -104,19 +104,19 @@ const transformSolarApiResponse = (
 };
 
 export function AddressStep({ value, onChange }: AddressStepProps) {
-  // Default address population
+  // Empty default address - user must enter their own
   const defaultAddress: Address = {
-    street: "1600 Amphitheatre Parkway",
-    city: "Mountain View",
-    state: "CA",
-    zip: "94043",
-    latitude: 37.4221,
-    longitude: -122.0841
+    street: "",
+    city: "",
+    state: "",
+    zip: "",
+    latitude: undefined as any,
+    longitude: undefined as any
   };
 
   const initialAddress = (value && value.street) ? value : defaultAddress;
   const [formValue, setFormValue] = useState<Address>(initialAddress);
-  const [inputValue, setInputValue] = useState<string>(formatAddressLine(initialAddress));
+  const [inputValue, setInputValue] = useState<string>(value && value.street ? formatAddressLine(initialAddress) : "");
   
   // Trigger update on mount if using default
   useEffect(() => {

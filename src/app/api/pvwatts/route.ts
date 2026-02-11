@@ -71,8 +71,8 @@ export async function POST(request: Request) {
     }
 
     const apiKey = process.env.NREL_API_KEY;
-    if (!apiKey) {
-      console.warn('NREL_API_KEY not configured - using fallback estimates');
+    if (!apiKey || apiKey.trim() === '') {
+      console.warn('[PVWatts] NREL_API_KEY not configured - using fallback estimates');
       return getFallbackEstimates(systemCapacity, latitude, stateCode);
     }
 
@@ -181,10 +181,9 @@ function getFallbackEstimates(systemCapacity: number, latitude: number, stateCod
   return Response.json({
     success: true,
     source: 'fallback',
-    note: 'Using US average estimates. Add NREL_API_KEY for location-specific data.',
     location: {
-      city: 'US Average',
-      state: '',
+      city: 'Estimated',
+      state: stateCode || '',
       distance: 0,
     },
     production: {

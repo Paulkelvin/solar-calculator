@@ -9,8 +9,9 @@ import type { SolarCalculationResult } from '../../../types/calculations';
 
 const supabase = getSupabaseClient();
 
-// Default installer ID for anonymous leads
-const DEFAULT_INSTALLER_ID = '00000000-0000-0000-0000-000000000000';
+// For anonymous leads, use NULL instead of fake UUID
+// Will be populated when user authenticates
+const DEFAULT_INSTALLER_ID: string | null = null;
 
 export interface SaveLeadParams {
   formData: Partial<CalculatorForm>;
@@ -31,54 +32,54 @@ export async function saveLead(params: SaveLeadParams): Promise<SaveLeadResult> 
   try {
     const { formData, results, solarScore } = params;
 
-    // Prepare lead data
+    // Prepare lead data - schema uses JSONB fields
     const leadData = {
       installer_id: DEFAULT_INSTALLER_ID,
       
-      // Contact info
-      name: formData.contact?.name || 'Anonymous',
-      email: formData.contact?.email || null,
-      phone: formData.contact?.phone || null,
+      // Address as JSONB
+      address: {
+        street: formData.address?.street || '',
+        city: formData.address?.city || '',
+        state: formData.address?.state || 'CA',
+        zip: formData.address?.zip || '',
+        latitude: formData.address?.latitude || null,
+        longitude: formData.address?.longitude || null,
+      },
       
-      // Address
-      address_street: formData.address?.street || '',
-      address_city: formData.address?.city || '',
-      address_state: formData.address?.state || 'CA',
-      address_zip: formData.address?.zip || '',
-      latitude: formData.address?.latitude || null,
-      longitude: formData.address?.longitude || null,
+      // Usage as JSONB
+      usage: {
+        billAmount: formData.usage?.billAmount || null,
+        monthlyKwh: formData.usage?.monthlyKwh || null,
+      },
       
-      // Usage data
-      monthly_bill: formData.usage?.billAmount || null,
-      monthly_kwh: formData.usage?.monthlyKwh || null,
-      annual_kwh: (formData.usage?.monthlyKwh || 0) * 12 || null,
+      // Roof as JSONB
+      roof: {
+        roofType: formData.roof?.roofType || 'asphalt',
+        squareFeet: formData.roof?.squareFeet || null,
+        sunExposure: formData.roof?.sunExposure || 'good',
+      },
       
-      // Roof data
-      roof_type: formData.roof?.roofType || 'asphalt',
-      roof_square_feet: formData.roof?.squareFeet || null,
-      roof_sun_exposure: formData.roof?.sunExposure || 'good',
+      // Preferences as JSONB
+      preferences: {
+        wantsBattery: formData.preferences?.wantsBattery || false,
+        financingType: formData.preferences?.financingType || 'loan',
+        creditScore: formData.preferences?.creditScore || 700,
+        timeline: formData.preferences?.timeline || 'not_sure',
+        notes: formData.preferences?.notes || null,
+      },
       
-      // Preferences
-      battery_included: formData.preferences?.wantsBattery || false,
-      financing_type: formData.preferences?.financingType || 'loan',
-      installation_timeline: formData.preferences?.timeline || 'not_sure',
-      notes: formData.preferences?.notes || null,
+      // Contact as JSONB
+      contact: {
+        name: formData.contact?.name || 'Anonymous',
+        email: formData.contact?.email || null,
+        phone: formData.contact?.phone || null,
+      },
       
-      // Solar score
-      solar_score: solarScore || null,
-      
-      // Lead status
+      // System data
+      system_size_kw: results.systemSizeKw,
+      estimated_annual_production: results.estimatedAnnualProduction,
+      lead_score: solarScore || null,
       status: 'new',
-      lead_source: 'calculator',
-      
-      // Results data (stored as JSONB)
-      estimated_system_size_kw: results.systemSizeKw,
-      estimated_annual_production_kwh: results.estimatedAnnualProduction,
-      estimated_monthly_production_kwh: results.estimatedMonthlyProduction,
-      calculation_results: results, // Full results object
-      
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
     };
 
     // Insert lead
@@ -130,10 +131,10 @@ export async function logActivity(
     const { error } = await supabase
       .from('activity_log')
       .insert({
+        installer_id: DEFAULT_INSTALLER_ID,
         lead_id: leadId,
-        activity_type: activityType,
+        event_type: activityType, // Schema uses event_type
         metadata: metadata || {},
-        created_at: new Date().toISOString(),
       });
 
     if (error) {

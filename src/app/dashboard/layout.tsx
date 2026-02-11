@@ -96,8 +96,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </nav>
 
       {/* Page Content */}
-      <main className="mx-auto max-w-5xl px-4 py-6">
-        {children}
+      <main className="mx-auto max-w-5xl px-4 pt-6 pb-16 overflow-y-auto" style={{ maxHeight: 'calc(100vh - 73px)' }}>
+        <div className="pb-8">
+          {children}
+        </div>
       </main>
     </div>
   );

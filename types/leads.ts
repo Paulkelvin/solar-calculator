@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+const normalizePhone = (val: string) => val.replace(/\D/g, "");
+
 export const addressSchema = z.object({
   street: z.string().min(1, "Address required"),
   city: z.string().min(1, "City required"),
@@ -34,7 +36,9 @@ export const preferencesSchema = z.object({
 export const contactSchema = z.object({
   name: z.string().min(1, "Name required"),
   email: z.string().email("Valid email required"),
-  phone: z.string().regex(/^\d{10,}$/, "Valid phone required")
+  phone: z
+    .string()
+    .refine((val) => normalizePhone(val).length >= 10, "Valid phone required")
 });
 
 export const calculatorFormSchema = z.object({

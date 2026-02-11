@@ -107,7 +107,7 @@ export function SolarScoreTeaser({
                 </div>
                 <div className={`mt-2 inline-flex items-center gap-2 rounded-full px-3 py-1 text-[11px] font-semibold ${grade.badgeClass}`}>
                   <span className="h-2 w-2 rounded-full bg-white/80" />
-                  {grade.label}
+                  <span>{grade.label}</span>
                 </div>
                 <p className="mt-2 text-xs text-gray-500">{rankingDescriptor}</p>
               </div>
@@ -115,7 +115,7 @@ export function SolarScoreTeaser({
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-emerald-600">Top-tier ranking</p>
                 <p className="mt-2 text-2xl font-semibold text-emerald-900">Top {topPercent}%</p>
                 <p className="text-[11px] text-emerald-700">in {country === 'US' ? 'the United States' : country}</p>
-                <p className="mt-2 text-[11px] text-emerald-700/80">Benchmarked against similarly sunny roofs nearby.</p>
+                <p className="mt-2 text-[11px] text-emerald-700/80">Based on sun exposure and roof size in your area.</p>
               </div>
             </div>
             <div className="flex items-center gap-3">

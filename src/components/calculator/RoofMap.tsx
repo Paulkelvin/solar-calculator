@@ -211,12 +211,11 @@ function paintHeatCanvas(
 
   // Pre-compute segment centres and pixel positions
   const pts = segments.map((seg) => {
-    const cx = seg.center
-      ? toX(seg.center.longitude)
-      : toX((seg.bounds.east + seg.bounds.west) / 2);
-    const cy = seg.center
-      ? toY(seg.center.latitude)
-      : toY((seg.bounds.north + seg.bounds.south) / 2);
+    // Always use marker position as the center for heat map
+    const markerLng = (bounds.east + bounds.west) / 2;
+    const markerLat = (bounds.north + bounds.south) / 2;
+    const cx = toX(markerLng);
+    const cy = toY(markerLat);
     const intensity = seg.sunExposure / 100;
     // Radius from area
     const areaM2 = seg.area || 20;
@@ -472,28 +471,24 @@ export function RoofMap({
             </Marker>
           </MapContainer>
 
-          {/* Legend */}
-          {variant === "full" && hasSegments && (
-            <div className="absolute bottom-4 right-4 bg-white/95 dark:bg-gray-900/95 rounded-lg shadow-lg p-3 z-[1200] border border-gray-200 dark:border-gray-700">
-              <p className="text-xs font-semibold mb-2">Sun Exposure</p>
+          {/* Gradient Legend for Heat Map */}
+          <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-md border border-gray-200 z-[1000]">
+            <p className="text-xs font-semibold text-gray-800 mb-2">Solar Potential</p>
+            <div className="space-y-1.5">
               <div className="flex items-center gap-2">
-                <div
-                  className="w-28 h-3 rounded-full"
-                  style={{
-                    background:
-                      "linear-gradient(to right, rgb(30,60,220), rgb(30,240,140), rgb(70,210,40), rgb(255,245,10), rgb(255,100,30))",
-                  }}
-                />
-                <div className="flex justify-between text-[10px] text-muted-foreground w-16">
-                  <span>Low</span>
-                  <span>High</span>
-                </div>
+                <div className="w-4 h-4 rounded bg-yellow-400 border border-yellow-500" />
+                <span className="text-xs text-gray-700">Good</span>
               </div>
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Warm glow = best solar potential
-              </p>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-orange-400 border border-orange-500" />
+                <span className="text-xs text-gray-700">Very Good</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-red-500 border border-red-600" />
+                <span className="text-xs text-gray-700">Excellent</span>
+              </div>
             </div>
-          )}
+          </div>
         </div>
 
       </CardContent>

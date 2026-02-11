@@ -12,7 +12,6 @@ import { RoofImageryViewer } from "./RoofImageryViewer";
 import { CashFlowChart } from "./CashFlowChart";
 import { BillOffsetChart, EnvironmentalImpactChart } from "./EnvironmentalCharts";
 import { WhatIfSliders } from "./WhatIfSliders";
-import { saveLead } from "@/lib/supabase/lead-service";
 import { useCalculatorStore } from "@/store/calculatorStore";
 
 interface ResultsViewProps {
@@ -22,8 +21,6 @@ interface ResultsViewProps {
 
 export function ResultsView({ results, leadData }: ResultsViewProps) {
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
-  const [isSavingLead, setIsSavingLead] = useState(false);
-  const [leadSaved, setLeadSaved] = useState(false);
   const [solarData, setSolarData] = useState<SolarDataResponse | null>(null);
   const [solarLoading, setSolarLoading] = useState(false);
   const [solarError, setSolarError] = useState<string | null>(null);
@@ -166,7 +163,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
     <div className="space-y-8">
       {/* System Overview with Real Solar Data */}
       <div className="rounded-lg border border-border bg-background p-6">
-        <div className="mb-4 inline-block rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800">
+        <div className="mb-4 rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 inline-block">
           {solarData?.source === 'real' ? 'Real Solar Data' : 'Estimated — Phase 1'}
         </div>
 
@@ -283,123 +280,126 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
         </div>
       )}
 
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Financing Options</h3>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {results.financing.map((opt, idx) => (
-            <div
-              key={idx}
-              className="rounded-lg border border-border bg-background p-6 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <h4 className="font-semibold capitalize text-lg">{opt.type}</h4>
-                {opt.description && (
-                  <span className="text-xs text-muted-foreground max-w-xs text-right">
-                    {opt.description}
-                  </span>
-                )}
-              </div>
+      <div className="space-y-6">
+        <div className="text-center">
+          <h3 className="text-2xl font-bold text-gray-900">Step 2: Choose Your Financing Path</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Compare payment options for your selected system size. The system size from Step 1 determines these costs.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {results.financing.filter(f => f.type !== "ppa").map((opt, idx) => {
+            const isPopular = opt.type === "loan";
+            const typeLabels: Record<string, { title: string; tagline: string }> = {
+              cash: { title: "Cash Purchase", tagline: "Own your system outright from day one." },
+              loan: { title: "Solar Loan", tagline: "Spread the cost with competitive financing." },
+              lease: { title: "Solar Lease", tagline: "Go solar with zero upfront investment." },
+              ppa: { title: "Power Purchase", tagline: "Pay only for the energy your panels produce." },
+            };
+            const info = typeLabels[opt.type] || { title: opt.type, tagline: "" };
 
-              <div className="mt-4 space-y-3 text-sm">
-                {/* Down Payment */}
-                {opt.type !== "lease" && opt.type !== "ppa" && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Upfront Cost:</span>
-                    <span className="font-medium">
-                      ${opt.downPayment.toLocaleString()}
+            // Build feature list
+            const features: string[] = [];
+            if (opt.type === "cash") {
+              features.push(
+                `Upfront: $${Math.round(opt.downPayment).toLocaleString()}`,
+                "Full ownership immediately",
+                "No monthly payments",
+                `Break-even: ${opt.payoffYears.toFixed(1)} years`,
+                `${opt.roi.toFixed(0)}% ROI over 25 years`
+              );
+            } else if (opt.type === "loan") {
+              features.push(
+                `${opt.downPayment > 0 ? `Down: $${Math.round(opt.downPayment).toLocaleString()}` : "$0 down"}`,
+                `Interest: $${Math.round(opt.totalInterest).toLocaleString()}`,
+                "Full ownership after term",
+                `Break-even: ${opt.payoffYears.toFixed(1)} years`,
+                `${opt.roi.toFixed(0)}% ROI over 25 years`
+              );
+            } else if (opt.type === "lease") {
+              features.push(
+                "$0 down payment",
+                `${opt.leaseTermYears || 20}-year lease term`,
+                "Maintenance included",
+                `Break-even: ${opt.payoffYears.toFixed(1)} years`,
+                `${opt.roi.toFixed(0)}% ROI over 20 years`
+              );
+            } else if (opt.type === "ppa") {
+              features.push(
+                "$0 down payment",
+                `Rate: $${opt.ppaRatePerKwh?.toFixed(3) || "0.10"}/kWh`,
+                `${opt.ppaEscalatorPercent?.toFixed(1) || "2.5"}% annual escalation`,
+                opt.ppaSavings25Year ? `25yr savings: $${opt.ppaSavings25Year.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : `${opt.roi.toFixed(0)}% ROI over 25 years`,
+                "No maintenance costs"
+              );
+            }
+
+            return (
+              <div
+                key={idx}
+                className={`relative flex flex-col rounded-2xl border-2 p-6 transition-shadow hover:shadow-lg ${
+                  isPopular
+                    ? "border-emerald-500 bg-white shadow-md"
+                    : "border-gray-200 bg-white"
+                }`}
+              >
+                {isPopular && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="rounded-full bg-emerald-500 px-4 py-1 text-xs font-semibold text-white shadow-sm">
+                      Most popular
                     </span>
                   </div>
                 )}
 
-                {(opt.type === "lease" || opt.type === "ppa") && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Down Payment:</span>
-                    <span className="font-medium text-green-600">$0</span>
-                  </div>
-                )}
+                <div className="mb-5">
+                  <h4 className={`text-xl font-bold ${isPopular ? "text-emerald-700" : "text-gray-900"}`}>
+                    {info.title}
+                  </h4>
+                  <p className="mt-1 text-sm text-muted-foreground leading-snug">
+                    {info.tagline}
+                  </p>
+                </div>
 
-                {/* Monthly Payment */}
-                {opt.monthlyPayment > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Monthly Payment:</span>
-                    <span className="font-medium">
-                      ${opt.monthlyPayment.toLocaleString(undefined, {
-                        maximumFractionDigits: 2
-                      })}
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-4xl font-extrabold text-gray-900">
+                      {opt.monthlyPayment > 0
+                        ? `$${Math.round(opt.monthlyPayment).toLocaleString()}`
+                        : `$${Math.round(opt.downPayment).toLocaleString()}`}
                     </span>
-                  </div>
-                )}
-
-                {/* Total Interest (Loan only) */}
-                {opt.totalInterest > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Total Interest:</span>
-                    <span className="font-medium">
-                      ${opt.totalInterest.toLocaleString(undefined, {
-                        maximumFractionDigits: 0
-                      })}
-                    </span>
-                  </div>
-                )}
-
-                {/* Lease Term */}
-                {opt.type === "lease" && opt.leaseTermYears && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Term:</span>
-                    <span className="font-medium">{opt.leaseTermYears} years</span>
-                  </div>
-                )}
-
-                {/* PPA Rate */}
-                {opt.type === "ppa" && opt.ppaRatePerKwh && (
-                  <>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Rate/kWh:</span>
-                      <span className="font-medium">
-                        ${opt.ppaRatePerKwh.toFixed(3)}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Annual Escalation:</span>
-                      <span className="font-medium">
-                        {opt.ppaEscalatorPercent?.toFixed(1)}%
-                      </span>
-                    </div>
-                  </>
-                )}
-
-                <div className="border-t border-border pt-3">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Break-Even:</span>
-                    <span className="font-semibold">
-                      {opt.payoffYears.toFixed(1)} years
+                    <span className="text-sm text-muted-foreground">
+                      {opt.monthlyPayment > 0 ? "/month" : " total"}
                     </span>
                   </div>
                 </div>
 
-                <div className="flex justify-between rounded-md bg-primary/10 px-3 py-2">
-                  <span className="text-muted-foreground">
-                    {opt.type === "lease" ? "20-Year ROI:" : "25-Year ROI:"}
-                  </span>
-                  <span className="font-bold text-primary">
-                    {opt.roi.toFixed(0)}%
-                  </span>
-                </div>
+                <ul className="mb-6 flex-1 space-y-3">
+                  {features.map((feature, fIdx) => (
+                    <li key={fIdx} className="flex items-start gap-2 text-sm text-gray-700">
+                      <svg className="mt-0.5 h-4 w-4 flex-none text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
 
-                {/* PPA 25-Year Savings */}
-                {opt.type === "ppa" && opt.ppaSavings25Year && opt.ppaSavings25Year > 0 && (
-                  <div className="flex justify-between rounded-md bg-green-50 px-3 py-2">
-                    <span className="text-muted-foreground">25-Year Savings:</span>
-                    <span className="font-bold text-green-700">
-                      ${opt.ppaSavings25Year.toLocaleString(undefined, {
-                        maximumFractionDigits: 0
-                      })}
-                    </span>
-                  </div>
-                )}
+                <button
+                  className={`w-full rounded-xl py-3 text-sm font-semibold transition-colors ${
+                    isPopular
+                      ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-md"
+                      : "border-2 border-gray-300 bg-white text-gray-700 hover:border-emerald-400 hover:text-emerald-700"
+                  }`}
+                  onClick={() => {
+                    // Scroll to download section
+                    document.getElementById("download-report")?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                >
+                  Select {info.title.split(" ")[0]}
+                </button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -462,10 +462,6 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
       {/* System Design Comparison */}
       {systemDesignOptions.length > 0 && (
         <div className="rounded-lg border border-border bg-background p-6">
-          <h3 className="font-semibold mb-4">System Design Options</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Compare different system sizes and find the best fit for your home and budget.
-          </p>
           <SystemDesignComparison 
             options={systemDesignOptions}
             selectedOption={selectedDesignOption}
@@ -506,16 +502,6 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
         </div>
       </div>
 
-      <div className="rounded-md bg-blue-50 p-4 text-sm text-blue-700">
-        <p className="font-medium">Next Steps (Phase 2–3):</p>
-        <ul className="mt-2 list-inside list-disc space-y-1 text-xs">
-          <li>Detailed system design from satellite imagery</li>
-          <li>Complete financing comparison (Cash, Loan, Lease/PPA)</li>
-          <li>Incentive & tax credit calculations</li>
-          <li>PDF proposal generation</li>
-        </ul>
-      </div>
-
       {/* 25-Year Cash Flow Projections */}
       <CashFlowChart
         systemCost={results.systemSizeKw * 3000} // ~$3/watt estimate
@@ -529,7 +515,8 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
       />
 
       {/* Environmental Impact & Bill Offset Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden">
+        <div className="min-w-0">
         <BillOffsetChart
           offsetPercentage={
             ((results.estimatedAnnualProduction / ((leadData?.usage?.monthlyKwh || 1000) * 12)) * 100) || 85
@@ -537,63 +524,27 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
           annualConsumption={(leadData?.usage?.monthlyKwh || 1000) * 12}
           annualProduction={results.estimatedAnnualProduction}
         />
+        </div>
 
+        <div className="min-w-0">
         <EnvironmentalImpactChart
           annualProduction={results.estimatedAnnualProduction}
-          co2OffsetTons={(results.estimatedAnnualProduction * 0.0007) || 5.6} // 0.7kg CO₂/kWh
-          treesEquivalent={Math.round((results.estimatedAnnualProduction * 0.0007 * 40) || 220)} // ~40 trees/ton CO₂
+          co2OffsetTons={(results.estimatedAnnualProduction * 0.0007) || 5.6}
+          treesEquivalent={Math.round((results.estimatedAnnualProduction * 0.0007 * 40) || 220)}
         />
+        </div>
       </div>
 
-      {/* What-If Analysis Sliders */}
-      <WhatIfSliders
+      {/* What-If Analysis Sliders - Hidden for user simplicity */}
+      {/* <WhatIfSliders
         baseSystemCost={results.systemSizeKw * 3000}
         baseAnnualProduction={results.estimatedAnnualProduction}
         baseUtilityRate={0.15}
-      />
+      /> */}
 
-      {/* Save Lead to Dashboard */}
-      {!leadSaved && (
-        <div className="rounded-lg border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 p-6">
-          <h3 className="text-lg font-semibold mb-2">💾 Save Your Results</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Save this solar estimate to your dashboard for future reference and track your progress.
-          </p>
-          <button
-            onClick={async () => {
-              setIsSavingLead(true);
-              const result = await saveLead({
-                formData: leadData || {},
-                results,
-                solarScore: solarScoreData.solarScore,
-              });
-              setIsSavingLead(false);
-              if (result.success) {
-                setLeadSaved(true);
-              } else {
-                alert(`Failed to save: ${result.error}`);
-              }
-            }}
-            disabled={isSavingLead}
-            className="w-full rounded-lg bg-green-600 px-6 py-3 font-semibold text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isSavingLead ? "Saving..." : "💾 Save to Dashboard"}
-          </button>
-        </div>
-      )}
-
-      {leadSaved && (
-        <div className="rounded-lg border-2 border-green-500 bg-green-50 dark:bg-green-950 p-6 text-center">
-          <p className="text-lg font-semibold text-green-700 dark:text-green-300 mb-2">
-            ✅ Results Saved!
-          </p>
-          <p className="text-sm text-green-600 dark:text-green-400">
-            Your solar estimate has been saved to the dashboard. You can view it anytime.
-          </p>
-        </div>
-      )}
-
+      {/* Download PDF Report */}
       <button
+        id="download-report"
         onClick={handleDownloadPDF}
         disabled={isDownloadingPDF || !leadData}
         className="w-full rounded-lg bg-primary px-6 py-3 font-semibold text-white hover:bg-primary disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"

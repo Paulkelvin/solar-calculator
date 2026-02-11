@@ -28,6 +28,7 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
   const [averageRate, setAverageRate] = useState<number>(0.14); // Default $0.14/kWh
   const [isEnergyProfileLoading, setIsEnergyProfileLoading] = useState(false);
   const [showEnergyProfile, setShowEnergyProfile] = useState(false);
+  const [nrelStatus, setNrelStatus] = useState<'idle' | 'loading' | 'ready'>('idle');
 
   const { setUsage, solarData, shouldSuggestBattery } = useCalculatorStore();
 
@@ -35,6 +36,9 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
   useEffect(() => {
     let typingTimer: ReturnType<typeof setTimeout> | null = null;
     let processingTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // Reset NREL status so stale 'ready' state doesn't flash the profile
+    setNrelStatus('idle');
 
     const resetProfile = () => {
       setAnnualKwh(null);
@@ -108,6 +112,12 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
 
   const handleTabSelect = (target: "bill" | "kwh") => {
     setActiveTab(target);
+    // Clear the other field so only one input drives calculations
+    if (target === "bill") {
+      setMonthlyKwh("");
+    } else {
+      setBillAmount("");
+    }
   };
 
   const validate = (data: Partial<Usage>) => {
@@ -220,58 +230,66 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
         </span>
       </div>
 
-      {(isEnergyProfileLoading || (showEnergyProfile && annualKwh && annualCost)) && (
+      {/* Hidden renderer — keeps NREL fetching in background, reports status */}
+      <div className="hidden">
+        <LiveProductionPreview onStatusChange={setNrelStatus} />
+      </div>
+
+      {/* Show combined loading while either local calc or NREL is pending - with minimum display time */}
+      {(isEnergyProfileLoading || (showEnergyProfile && annualKwh && nrelStatus === 'loading')) && (
+        <div className="space-y-2 animate-in fade-in duration-300">
+          <h3 className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-1">
+            Your Annual Energy Profile
+          </h3>
+          <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-emerald-700 shadow-sm">
+            <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+            <span className="animate-pulse">Crunching usage trends &amp; fetching solar production data…</span>
+          </div>
+        </div>
+      )}
+
+      {/* Only reveal everything once BOTH local calc AND NREL are done */}
+      {showEnergyProfile && annualKwh && annualCost && nrelStatus === 'ready' && (
         <div className="space-y-2">
           <h3 className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-1">
             Your Annual Energy Profile
           </h3>
 
-          {isEnergyProfileLoading && (
-            <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-emerald-700 shadow-sm">
-              <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
-              <span>Crunching usage trends…</span>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-3 bg-blue-50 rounded border border-blue-200">
+              <p className="text-xs text-blue-700 mb-1">Annual Usage</p>
+              <p className="text-lg font-bold text-blue-900">{annualKwh.toLocaleString()}</p>
+              <p className="text-xs text-blue-600">kWh/year</p>
+            </div>
+
+            <div className="p-3 bg-green-50 rounded border border-green-200">
+              <p className="text-xs text-green-700 mb-1">Annual Cost</p>
+              <p className="text-lg font-bold text-green-900">${annualCost.toLocaleString()}</p>
+              <p className="text-xs text-green-600">per year</p>
+            </div>
+          </div>
+
+          {solarData?.solarScore && (
+            <div className="p-3 bg-purple-50 rounded border border-purple-200">
+              <p className="text-xs text-purple-700 mb-1">Recommended System Size</p>
+              <p className="text-lg font-bold text-purple-900">{Math.round((annualKwh / 1200) * 10) / 10} kW</p>
+              <p className="text-xs text-purple-600">Offsets ~{Math.round(((solarData?.sunExposurePercentage || 80) * 0.9))}% of usage</p>
             </div>
           )}
 
-          {showEnergyProfile && annualKwh && annualCost && (
-            <>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="p-3 bg-blue-50 rounded border border-blue-200">
-                  <p className="text-xs text-blue-700 mb-1">Annual Usage</p>
-                  <p className="text-lg font-bold text-blue-900">{annualKwh.toLocaleString()}</p>
-                  <p className="text-xs text-blue-600">kWh/year</p>
-                </div>
-
-                <div className="p-3 bg-green-50 rounded border border-green-200">
-                  <p className="text-xs text-green-700 mb-1">Annual Cost</p>
-                  <p className="text-lg font-bold text-green-900">${annualCost.toLocaleString()}</p>
-                  <p className="text-xs text-green-600">per year</p>
-                </div>
-              </div>
-
-              {solarData?.solarScore && (
-                <div className="p-3 bg-purple-50 rounded border border-purple-200">
-                  <p className="text-xs text-purple-700 mb-1">Recommended System Size</p>
-                  <p className="text-lg font-bold text-purple-900">{Math.round((annualKwh / 1200) * 10) / 10} kW</p>
-                  <p className="text-xs text-purple-600">Offsets ~{Math.round(((solarData?.sunExposurePercentage || 80) * 0.9))}% of usage</p>
-                </div>
-              )}
-
-              {shouldSuggestBattery() && (
-                <div className="p-2 bg-amber-50 rounded border border-amber-300">
-                  <p className="text-xs font-medium text-amber-900">🔋 Battery Storage Recommended</p>
-                  <p className="text-xs text-amber-700 mt-1">Save an additional 15-20% with battery storage.</p>
-                </div>
-              )}
-            </>
+          {shouldSuggestBattery() && (
+            <div className="p-2 bg-amber-50 rounded border border-amber-300">
+              <p className="text-xs font-medium text-amber-900">🔋 Battery Storage Recommended</p>
+              <p className="text-xs text-amber-700 mt-1">Save an additional 15-20% with battery storage.</p>
+            </div>
           )}
+
+          {/* Live Production Preview — lands with energy profile */}
+          <div className="mt-4">
+            <LiveProductionPreview />
+          </div>
         </div>
       )}
-
-      {/* Live Production Preview from PVWatts */}
-      <div className="mt-6">
-        <LiveProductionPreview />
-      </div>
     </div>
   );
 }

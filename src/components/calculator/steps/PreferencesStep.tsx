@@ -69,7 +69,7 @@ export function PreferencesStep({ value, onChange }: PreferencesStepProps) {
 
       <div>
         <label className="block text-sm font-medium mb-2">Financing Preference</label>
-        <p className="text-xs text-muted-foreground mb-2">We log this to pre-tailor the financing preview; you can still pick the exact package on the Financial screen.</p>
+        <p className="text-xs text-muted-foreground mb-2">Your selection helps us prepare a tailored financing preview on the next screen.</p>
         <div className="space-y-2">
           {[
             { id: "cash", label: "Cash Purchase" },
@@ -92,7 +92,8 @@ export function PreferencesStep({ value, onChange }: PreferencesStepProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">Timeline</label>
+        <label className="block text-sm font-medium mb-2">When do you plan to install?</label>
+        <p className="text-xs text-muted-foreground mb-3">Helps us prioritize your quote and coordinate scheduling.</p>
         <div className="space-y-2">
           {[
             { id: "immediate", label: "Immediate (0-1 month)" },

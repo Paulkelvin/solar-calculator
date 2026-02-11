@@ -7,7 +7,7 @@ export default function DashboardPage() {
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold">Leads Dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          Phase 6.3: Leads management with search, filtering, export, and activity tracking.
+          Manage leads, track activity, and export data.
         </p>
       </header>
 
