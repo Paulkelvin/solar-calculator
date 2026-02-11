@@ -54,7 +54,8 @@ const transformSolarApiResponse = (
     0
   );
   const panelConfigs = Array.isArray(data?.panelConfigs) ? data.panelConfigs : [];
-  const primaryConfig = panelConfigs[0];
+  // Use the LAST (largest) config — panelConfigs are sorted ascending by panelsCount
+  const primaryConfig = panelConfigs[panelConfigs.length - 1] || panelConfigs[0];
   const estimatedAnnualProduction = Math.max(
     4000,
     Math.round(primaryConfig?.yearlyEnergyKwh || totalSolarPotential || totalArea * 120)

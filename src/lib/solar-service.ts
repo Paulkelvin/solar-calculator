@@ -89,7 +89,8 @@ function transformGoogleSolarResponse(googleResponse: any): SolarDataResponse {
 
     const roofSegments = googleResponse.roofSegments || [];
     const panelConfigs = googleResponse.panelConfigs || [];
-    const topConfig = panelConfigs[0];
+    // Use the LAST (largest) config — panelConfigs are sorted ascending by panelsCount
+    const maxConfig = panelConfigs[panelConfigs.length - 1] || panelConfigs[0];
 
     const totalAreaMeters = googleResponse.wholeRoofArea || roofSegments.reduce((sum: number, seg: any) => sum + (seg.area || 0), 0);
     const roofAreaSqft = totalAreaMeters ? Math.round(totalAreaMeters * 10.764) : MOCK_SOLAR_RESPONSE.roofAreaSqft;
@@ -98,9 +99,9 @@ function transformGoogleSolarResponse(googleResponse: any): SolarDataResponse {
       ? roofSegments.reduce((sum: number, seg: any) => sum + (seg.sunExposure ?? 75), 0) / roofSegments.length
       : 75;
 
-    const estimatedAnnualKwh = topConfig?.yearlyEnergyKwh || Math.round((avgSunExposure / 100) * 10000);
-    const panelCapacityWatts = topConfig
-      ? Math.round((topConfig.systemSizeKw ?? (topConfig.panelsCount || 0) * 0.4) * 1000)
+    const estimatedAnnualKwh = maxConfig?.yearlyEnergyKwh || Math.round((avgSunExposure / 100) * 10000);
+    const panelCapacityWatts = maxConfig
+      ? Math.round((maxConfig.systemSizeKw ?? (maxConfig.panelsCount || 0) * 0.4) * 1000)
       : Math.round((googleResponse.maxArrayPanels || 18) * 400);
 
     const solarPotentialLevel = avgSunExposure >= 80 ? 'high' : avgSunExposure >= 60 ? 'medium' : 'low';
@@ -114,7 +115,7 @@ function transformGoogleSolarResponse(googleResponse: any): SolarDataResponse {
       estimatedMonthlyKwh: Math.round(estimatedAnnualKwh / 12),
       solarPotential: solarPotentialLevel,
       roofAreaSqft,
-      sunExposurePercentage: Math.round(avgSunExposure),
+      sunExposurePercentage: Math.max(0, Math.min(100, Math.round(avgSunExposure))),
       shadingPercentage,
       confidence,
       source,

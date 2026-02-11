@@ -69,13 +69,13 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
         return;
       }
 
-      // Calculate sun factor from solar data (sunlight availability ratio)
-      // Typical system produces annual kWh based on sun exposure
-      let sunFactor = 1.2; // Default conservative estimate
+      // Derive sunFactor using same thresholds as solar.ts / calculateSystemSize:
+      //   excellent (>=85%) = 1.15, good (>=70%) = 1.0,
+      //   fair (>=55%) = 0.85, poor (<55%) = 0.7
+      let sunFactor = 1.0; // Default
       if (solarData) {
-        // Sun factor approximation: annual production / (system size in kW * 365 days * 4 peak hours)
-        // For now, use exposure percentage as proxy (85% = 1.2 factor, 75% = 1.0)
-        sunFactor = 0.85 + (solarData.sunExposurePercentage / 100) * 0.4;
+        const pct = solarData.sunExposurePercentage;
+        sunFactor = pct >= 85 ? 1.15 : pct >= 70 ? 1.0 : pct >= 55 ? 0.85 : 0.7;
       }
       
       const state = leadData?.address?.state || 'CA';
@@ -102,11 +102,21 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
   const effectiveResults = useMemo(() => {
     if (!solarData) return results; // No real data — use mock calculation as-is
 
-    const realSystemSizeKw = solarData.panelCapacityWatts / 1000;
-    const realAnnualProduction = solarData.estimatedAnnualKwh;
-    const realMonthlyProduction = solarData.estimatedMonthlyKwh;
+    // Use the SMALLER of: user-need-based size (from performSolarCalculation)
+    // and Google Solar's max roof capacity. This way the system is sized to
+    // the user's consumption but never exceeds roof capacity.
+    const googleMaxKw = solarData.panelCapacityWatts / 1000;
+    const realSystemSizeKw = Math.min(results.systemSizeKw, googleMaxKw);
 
-    // Recalculate financing with the real system size
+    // If Google Solar + NREL give us a production-per-kW ratio, use it;
+    // otherwise fall back to the default 1200 kWh/kW.
+    const googleProdPerKw = googleMaxKw > 0
+      ? solarData.estimatedAnnualKwh / googleMaxKw
+      : 1200;
+    const realAnnualProduction = Math.round(realSystemSizeKw * googleProdPerKw);
+    const realMonthlyProduction = Math.round(realAnnualProduction / 12);
+
+    // Recalculate financing with the consumption-constrained system size
     const financingData = calculateFinancing(realSystemSizeKw);
     const environmental = calculateEnvironmental(realSystemSizeKw, realAnnualProduction);
 

@@ -130,8 +130,16 @@ export async function POST(request: Request) {
     const apiTime = Date.now() - startTime;
     console.log(`[Google Solar API] ✓ Success - ${data.imageryQuality} quality imagery from ${data.imageryDate.year}-${data.imageryDate.month} ($0.025, ${apiTime}ms)`);
 
+    // maxSunshineHours is the peak sunshine hours/year for ANY point on the roof.
+    // sunshineQuantiles values are also in hours/year — normalize to 0-100%.
+    const maxSunshineHours = data.solarPotential.maxSunshineHoursPerYear || 1800;
+
     const roofSegments = data.solarPotential.roofSegmentStats.map(segment => {
       const footprint = resolveSegmentFootprint(segment);
+      // Convert median sunshine hours to a 0-100 sun-exposure percentage
+      const medianHours = segment.stats.sunshineQuantiles[5] || 0;
+      const sunExposurePct = Math.max(0, Math.min(100, Math.round((medianHours / maxSunshineHours) * 100)));
+
       return {
         bounds: {
           north: segment.boundingBox.ne.latitude,
@@ -143,9 +151,10 @@ export async function POST(request: Request) {
         area: segment.stats.areaMeters2,
         solarPotential: calculateSegmentProduction(
           segment.stats.areaMeters2,
-          segment.stats.sunshineQuantiles
+          segment.stats.sunshineQuantiles,
+          maxSunshineHours
         ),
-        sunExposure: segment.stats.sunshineQuantiles[5] || 75, // Median quantile
+        sunExposure: sunExposurePct, // 0-100 percentage (was raw hours — bug fix)
         azimuth: segment.azimuthDegrees,
         tilt: segment.pitchDegrees,
         footprint: footprint.points,
@@ -168,7 +177,9 @@ export async function POST(request: Request) {
       maxSunshineHours: data.solarPotential.maxSunshineHoursPerYear,
       wholeRoofArea: data.solarPotential.wholeRoofStats.areaMeters2,
       carbonOffset: data.solarPotential.carbonOffsetFactorKgPerMwh,
-      panelConfigs: data.solarPotential.solarPanelConfigs.slice(0, 5).map(config => ({
+      // Configs are sorted ascending by panelsCount. Slice the LAST 5 so the
+      // largest (max-panel) configuration comes last and is easy to pick.
+      panelConfigs: data.solarPotential.solarPanelConfigs.slice(-5).map(config => ({
         panelsCount: config.panelsCount,
         yearlyEnergyKwh: config.yearlyEnergyDcKwh,
         systemSizeKw: config.panelsCount * 0.4, // Assume 400W panels
@@ -190,16 +201,21 @@ export async function POST(request: Request) {
 /**
  * Calculate annual kWh production for a roof segment
  */
-function calculateSegmentProduction(areaMeters2: number, sunshineQuantiles: number[]): number {
-  // Use median sunshine quantile (index 5)
-  const sunExposure = sunshineQuantiles[5] || 75;
-  
+function calculateSegmentProduction(
+  areaMeters2: number,
+  sunshineQuantiles: number[],
+  maxSunshineHours: number = 1800
+): number {
+  // Normalize median sunshine hours to 0-1 fraction
+  const medianHours = sunshineQuantiles[5] || 0;
+  const sunFraction = Math.min(1, medianHours / maxSunshineHours);
+
   // Estimate: Area * panel efficiency (20%) * sun hours (4.5 avg) * 365 days
   const panelArea = areaMeters2 * 0.85; // 85% usable area
   const annualProduction = panelArea * 0.20 * 4.5 * 365;
-  
-  // Adjust by sun exposure percentage
-  return Math.round(annualProduction * (sunExposure / 100));
+
+  // Adjust by sun exposure fraction
+  return Math.round(annualProduction * sunFraction);
 }
 
 /**
