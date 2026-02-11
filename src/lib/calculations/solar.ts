@@ -179,7 +179,7 @@ export function calculateEnvironmental(
   const gridIndependence = Math.min(100, (annualProduction / typicalHomeConsumption) * 100);
 
   return {
-    annualCO2Offset,
+    annualCO2Offset: Math.round(annualCO2Offset),
     treesEquivalent: Math.round(treesEquivalent),
     gridIndependence: Math.round(gridIndependence)
   };

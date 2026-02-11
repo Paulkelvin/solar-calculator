@@ -26,7 +26,13 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
     }
 
     // Calculate recommended system size (80% offset — industry standard)
-    const recommendedSize = Math.round((usage.annualKwh * 0.8 / 1200) * 10) / 10; // 80% of consumption / ~1200 kWh/kW/year
+    let recommendedSize = Math.round((usage.annualKwh * 0.8 / 1200) * 10) / 10;
+
+    // Apply roof constraint: ~54 sq ft per kW, ~60% usable area (matches performSolarCalculation)
+    if (solarData.roofAreaSqft && solarData.roofAreaSqft > 0) {
+      const roofConstraint = Math.round(((solarData.roofAreaSqft * 0.6) / 54) * 10) / 10;
+      recommendedSize = Math.min(recommendedSize, roofConstraint);
+    }
 
     const timer = setTimeout(async () => {
       setIsLoading(true);

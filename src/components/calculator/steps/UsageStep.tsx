@@ -272,7 +272,16 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
           {solarData?.solarScore && (
             <div className="p-3 bg-purple-50 rounded border border-purple-200">
               <p className="text-xs text-purple-700 mb-1">Recommended Solar System</p>
-              <p className="text-lg font-bold text-purple-900">{Math.round((annualKwh * 0.8 / 1200) * 10) / 10} kW</p>
+              <p className="text-lg font-bold text-purple-900">{(() => {
+                let size = Math.round((annualKwh * 0.8 / 1200) * 10) / 10;
+                // Apply roof constraint if available (matches performSolarCalculation)
+                const roofSqft = solarData?.roofAreaSqft;
+                if (roofSqft && roofSqft > 0) {
+                  const roofMax = Math.round(((roofSqft * 0.6) / 54) * 10) / 10;
+                  size = Math.min(size, roofMax);
+                }
+                return size;
+              })()} kW</p>
               <p className="text-xs text-purple-600">Replaces ~{Math.round(((solarData?.sunExposurePercentage || 80) * 0.9))}% of your electricity bill</p>
             </div>
           )}
