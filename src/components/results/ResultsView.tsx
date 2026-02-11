@@ -58,13 +58,21 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
     loadSolarData();
   }, [leadData?.address?.latitude, leadData?.address?.longitude]);
 
+  // Compute actual annual consumption — derive from billAmount when monthlyKwh is missing
+  const annualConsumption = useMemo(() => {
+    if (leadData?.usage?.monthlyKwh && leadData.usage.monthlyKwh > 0) {
+      return leadData.usage.monthlyKwh * 12;
+    }
+    if (leadData?.usage?.billAmount && leadData.usage.billAmount > 0) {
+      return Math.round((leadData.usage.billAmount / BASE_ELECTRICITY_RATE) * 12);
+    }
+    return 12000; // safe fallback
+  }, [leadData?.usage?.monthlyKwh, leadData?.usage?.billAmount]);
+
   // Generate system design options when component mounts and data is available
   useEffect(() => {
     const generateDesignOptions = () => {
-      // Calculate annual consumption from usage data
-      const annualConsumptionKwh = (leadData?.usage?.monthlyKwh || 0) * 12;
-      
-      if (annualConsumptionKwh === 0) {
+      if (annualConsumption === 0) {
         console.log('No consumption data available for system design');
         return;
       }
@@ -81,7 +89,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
       const state = leadData?.address?.state || 'CA';
 
       try {
-        const options = generateSystemDesignOptions(annualConsumptionKwh, sunFactor, state);
+        const options = generateSystemDesignOptions(annualConsumption, sunFactor, state);
         setSystemDesignOptions(options);
         
         // Select the first option (Standard) by default
@@ -94,7 +102,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
     };
 
     generateDesignOptions();
-  }, [leadData?.usage?.monthlyKwh, solarData?.sunExposurePercentage, leadData?.address?.state]);
+  }, [annualConsumption, solarData?.sunExposurePercentage, leadData?.address?.state]);
 
   // === UNIFIED RESULTS ===
   // When Google Solar provides real data, recalculate financing to match
@@ -204,7 +212,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
             },
             usage: {
               monthlyBill: leadData.usage?.billAmount,
-              annualKwh: (leadData.usage?.monthlyKwh || 0) * 12
+              annualKwh: annualConsumption
             },
             roof: {
               size: leadData.roof?.squareFeet || 0,
@@ -593,9 +601,9 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
         <div className="min-w-0">
         <BillOffsetChart
           offsetPercentage={
-            ((effectiveResults.estimatedAnnualProduction / ((leadData?.usage?.monthlyKwh || 1000) * 12)) * 100) || 85
+            Math.min(100, Math.round((effectiveResults.estimatedAnnualProduction / annualConsumption) * 100)) || 85
           }
-          annualConsumption={(leadData?.usage?.monthlyKwh || 1000) * 12}
+          annualConsumption={annualConsumption}
           annualProduction={effectiveResults.estimatedAnnualProduction}
         />
         </div>
