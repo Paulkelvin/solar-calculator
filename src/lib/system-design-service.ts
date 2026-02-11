@@ -67,14 +67,12 @@ export function generateSystemDesignOptions(
   maxCapacityKw?: number,
   productionPerKw?: number
 ): SystemDesignOption[] {
-  // Use Google Solar's actual production per kW when available,
-  // otherwise fall back to AVG_PRODUCTION_PER_KW (1200)
-  const effectiveProdPerKw = productionPerKw && productionPerKw > 0
+  // Effective production rate (kWh per kW installed per year)
+  // Google Solar: actual satellite-measured value (already accounts for local sun)
+  // Mock: national average adjusted by sun factor
+  const effectiveProdRate = productionPerKw && productionPerKw > 0
     ? productionPerKw
-    : AVG_PRODUCTION_PER_KW;
-
-  // System size needed for 100% offset (divide by production per kW)
-  const adjustedProduction = annualConsumptionKwh / (effectiveProdPerKw / AVG_PRODUCTION_PER_KW) / sunFactor;
+    : AVG_PRODUCTION_PER_KW * sunFactor;
 
   // Roof constraint: ~54 sq ft per kW, ~60% usable area
   const roofMaxKw = roofAreaSqft && roofAreaSqft > 0
@@ -104,8 +102,8 @@ export function generateSystemDesignOptions(
   ];
 
   return coveragePercentages.map((coverage, idx) => {
-    const targetProduction = (adjustedProduction * coverage) / 100;
-    let systemSizeKw = targetProduction / AVG_PRODUCTION_PER_KW;
+    // System size = consumption × target % / effective production rate
+    let systemSizeKw = (annualConsumptionKwh * coverage / 100) / effectiveProdRate;
 
     // Apply capacity constraint (tighter of roof area formula and Google Solar max)
     if (effectiveMaxKw < Infinity) {
@@ -114,8 +112,8 @@ export function generateSystemDesignOptions(
 
     const systemCost = FIXED_INSTALL_OVERHEAD + systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
 
-    // Production metrics — use real production per kW when available
-    const annualProduction = systemSizeKw * effectiveProdPerKw;
+    // Production uses same rate as sizing, so offset = exactly coverage %
+    const annualProduction = systemSizeKw * effectiveProdRate;
     const actualCoverage = (annualProduction / annualConsumptionKwh) * 100;
 
     // Financial metrics

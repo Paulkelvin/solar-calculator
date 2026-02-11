@@ -294,7 +294,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
             <div className="rounded-md bg-secondary p-4">
               <p className="text-xs text-muted-foreground">System Size</p>
               <p className="mt-1 text-2xl font-bold">
-                {effectiveResults.systemSizeKw} kW
+                {effectiveResults.systemSizeKw.toFixed(1)} kW
               </p>
             </div>
 
