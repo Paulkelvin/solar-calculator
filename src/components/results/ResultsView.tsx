@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import type { SolarCalculationResult } from "../../../types/calculations";
 import type { CalculatorForm } from "../../../types/leads";
 import { fetchSolarData } from "@/lib/solar-service";
 import type { SolarDataResponse } from "@/lib/solar-service";
 import { generateSystemDesignOptions } from "@/lib/system-design-service";
 import type { SystemDesignOption } from "@/lib/system-design-service";
+import { calculateFinancing, calculateEnvironmental, BASE_ELECTRICITY_RATE } from "@/lib/calculations/solar";
 import { SystemDesignComparison } from "./SystemDesignComparison";
 import { RoofImageryViewer } from "./RoofImageryViewer";
 import { CashFlowChart } from "./CashFlowChart";
@@ -94,6 +95,79 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
 
     generateDesignOptions();
   }, [leadData?.usage?.monthlyKwh, solarData?.sunExposurePercentage, leadData?.address?.state]);
+
+  // === UNIFIED RESULTS ===
+  // When Google Solar provides real data, recalculate financing to match
+  // so the system size, production, AND financing cards all agree.
+  const effectiveResults = useMemo(() => {
+    if (!solarData) return results; // No real data — use mock calculation as-is
+
+    const realSystemSizeKw = solarData.panelCapacityWatts / 1000;
+    const realAnnualProduction = solarData.estimatedAnnualKwh;
+    const realMonthlyProduction = solarData.estimatedMonthlyKwh;
+
+    // Recalculate financing with the real system size
+    const financingData = calculateFinancing(realSystemSizeKw);
+    const environmental = calculateEnvironmental(realSystemSizeKw, realAnnualProduction);
+
+    const financing = [
+      {
+        type: "cash" as const,
+        totalCost: financingData.totalSystemCost,
+        downPayment: financingData.totalSystemCost,
+        monthlyPayment: 0,
+        totalInterest: 0,
+        payoffYears: financingData.cash.yearsToBreakEven,
+        roi: financingData.cash.roi25Years,
+        description: "Pay upfront, own your system from day 1"
+      },
+      {
+        type: "loan" as const,
+        totalCost: financingData.totalSystemCost,
+        downPayment: financingData.loan.downPayment,
+        monthlyPayment: financingData.loan.monthlyPayment,
+        totalInterest: financingData.loan.totalInterest,
+        payoffYears: financingData.loan.yearsToBreakEven,
+        roi: financingData.loan.roi25Years,
+        description: "Finance with competitive rates, own after payoff"
+      },
+      {
+        type: "lease" as const,
+        totalCost: financingData.lease.totalCost,
+        downPayment: 0,
+        monthlyPayment: financingData.lease.monthlyPayment,
+        totalInterest: 0,
+        payoffYears: financingData.lease.yearsToBreakEven,
+        roi: financingData.lease.roi20Years,
+        leaseDownPayment: 0,
+        leaseMonthlyPayment: financingData.lease.monthlyPayment,
+        leaseTermYears: financingData.lease.termYears,
+        description: "Zero down, predictable monthly payment"
+      },
+      {
+        type: "ppa" as const,
+        totalCost: financingData.ppa.totalCost,
+        downPayment: 0,
+        monthlyPayment: financingData.ppa.monthlyPayment,
+        totalInterest: 0,
+        payoffYears: 25,
+        roi: financingData.ppa.roi25Years,
+        ppaRatePerKwh: financingData.ppa.ratePerKwh,
+        ppaEscalatorPercent: financingData.ppa.escalator * 100,
+        ppaSavings25Year: financingData.ppa.savings25Year,
+        description: "Pay for power produced, guaranteed savings"
+      }
+    ];
+
+    return {
+      ...results,
+      systemSizeKw: Math.round(realSystemSizeKw * 100) / 100,
+      estimatedAnnualProduction: Math.round(realAnnualProduction),
+      estimatedMonthlyProduction: Math.round(realMonthlyProduction),
+      financing,
+      environmental,
+    };
+  }, [results, solarData]);
 
   const handleDownloadPDF = async () => {
     if (!leadData) {
@@ -193,27 +267,21 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
             <div className="rounded-md bg-secondary p-4">
               <p className="text-xs text-muted-foreground">System Size</p>
               <p className="mt-1 text-2xl font-bold">
-                {solarData 
-                  ? (solarData.panelCapacityWatts / 1000).toFixed(1)
-                  : results.systemSizeKw} kW
+                {effectiveResults.systemSizeKw} kW
               </p>
             </div>
 
             <div className="rounded-md bg-secondary p-4">
               <p className="text-xs text-muted-foreground">Annual Production</p>
               <p className="mt-1 text-2xl font-bold">
-                {solarData
-                  ? solarData.estimatedAnnualKwh.toLocaleString()
-                  : results.estimatedAnnualProduction.toLocaleString()} kWh
+                {effectiveResults.estimatedAnnualProduction.toLocaleString()} kWh
               </p>
             </div>
 
             <div className="rounded-md bg-secondary p-4">
               <p className="text-xs text-muted-foreground">Monthly Avg</p>
               <p className="mt-1 text-2xl font-bold">
-                {solarData
-                  ? solarData.estimatedMonthlyKwh.toLocaleString()
-                  : results.estimatedMonthlyProduction.toLocaleString()} kWh
+                {effectiveResults.estimatedMonthlyProduction.toLocaleString()} kWh
               </p>
             </div>
           </div>
@@ -228,11 +296,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
             ? { lat: leadData.address.latitude, lng: leadData.address.longitude }
             : undefined
         }
-        solarPotentialKwhAnnual={
-          solarData
-            ? solarData.estimatedAnnualKwh
-            : results.estimatedAnnualProduction
-        }
+        solarPotentialKwhAnnual={effectiveResults.estimatedAnnualProduction}
         roofImageryUrl={undefined}
       />
 
@@ -288,7 +352,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
           </p>
         </div>
         <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-          {results.financing.filter(f => f.type !== "ppa").map((opt, idx) => {
+          {effectiveResults.financing.filter(f => f.type !== "ppa").map((opt, idx) => {
             const isPopular = opt.type === "loan";
             const typeLabels: Record<string, { title: string; tagline: string }> = {
               cash: { title: "Cash Purchase", tagline: "Own your system outright from day one." },
@@ -477,7 +541,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
           <div>
             <p className="text-xs text-muted-foreground">CO₂ Offset (Annual)</p>
             <p className="mt-2 text-2xl font-bold">
-              {results.environmental.annualCO2Offset.toLocaleString(undefined, {
+              {effectiveResults.environmental.annualCO2Offset.toLocaleString(undefined, {
                 maximumFractionDigits: 0
               })}
             </p>
@@ -487,7 +551,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
           <div>
             <p className="text-xs text-muted-foreground">Trees Equivalent</p>
             <p className="mt-2 text-2xl font-bold">
-              {results.environmental.treesEquivalent}
+              {effectiveResults.environmental.treesEquivalent}
             </p>
             <p className="text-xs text-muted-foreground">trees/year</p>
           </div>
@@ -495,7 +559,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
           <div>
             <p className="text-xs text-muted-foreground">Grid Independence</p>
             <p className="mt-2 text-2xl font-bold">
-              {results.environmental.gridIndependence}%
+              {effectiveResults.environmental.gridIndependence}%
             </p>
             <p className="text-xs text-muted-foreground">of consumption</p>
           </div>
@@ -504,12 +568,12 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
 
       {/* 25-Year Cash Flow Projections */}
       <CashFlowChart
-        systemCost={results.systemSizeKw * 1000 * 2.75} // $2.75/watt
-        annualSavings={results.estimatedAnnualProduction * 0.14} // $0.14/kWh
-        loanMonthlyPayment={results.financing.find(f => f.type === 'loan')?.monthlyPayment || 150}
-        leaseMonthlyPayment={results.financing.find(f => f.type === 'lease')?.monthlyPayment || 120}
-        ppaRate={results.financing.find(f => f.type === 'ppa')?.ppaRatePerKwh || 0.10}
-        annualProduction={results.estimatedAnnualProduction}
+        systemCost={effectiveResults.systemSizeKw * 1000 * 2.75}
+        annualSavings={effectiveResults.estimatedAnnualProduction * 0.14}
+        loanMonthlyPayment={effectiveResults.financing.find(f => f.type === 'loan')?.monthlyPayment || 150}
+        leaseMonthlyPayment={effectiveResults.financing.find(f => f.type === 'lease')?.monthlyPayment || 120}
+        ppaRate={effectiveResults.financing.find(f => f.type === 'ppa')?.ppaRatePerKwh || 0.10}
+        annualProduction={effectiveResults.estimatedAnnualProduction}
         utilityRate={0.14}
         rateEscalation={2.5}
       />
@@ -519,26 +583,26 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
         <div className="min-w-0">
         <BillOffsetChart
           offsetPercentage={
-            ((results.estimatedAnnualProduction / ((leadData?.usage?.monthlyKwh || 1000) * 12)) * 100) || 85
+            ((effectiveResults.estimatedAnnualProduction / ((leadData?.usage?.monthlyKwh || 1000) * 12)) * 100) || 85
           }
           annualConsumption={(leadData?.usage?.monthlyKwh || 1000) * 12}
-          annualProduction={results.estimatedAnnualProduction}
+          annualProduction={effectiveResults.estimatedAnnualProduction}
         />
         </div>
 
         <div className="min-w-0">
         <EnvironmentalImpactChart
-          annualProduction={results.estimatedAnnualProduction}
-          co2OffsetTons={(results.estimatedAnnualProduction * 0.0004) || 5.6}
-          treesEquivalent={Math.round((results.estimatedAnnualProduction * 0.0004 / 0.02) || 220)}
+          annualProduction={effectiveResults.estimatedAnnualProduction}
+          co2OffsetTons={(effectiveResults.estimatedAnnualProduction * 0.0004) || 5.6}
+          treesEquivalent={Math.round((effectiveResults.estimatedAnnualProduction * 0.0004 / 0.02) || 220)}
         />
         </div>
       </div>
 
       {/* What-If Analysis Sliders - Hidden for user simplicity */}
       {/* <WhatIfSliders
-        baseSystemCost={results.systemSizeKw * 1000 * 2.75}
-        baseAnnualProduction={results.estimatedAnnualProduction}
+        baseSystemCost={effectiveResults.systemSizeKw * 1000 * 2.75}
+        baseAnnualProduction={effectiveResults.estimatedAnnualProduction}
         baseUtilityRate={0.14}
       /> */}
 

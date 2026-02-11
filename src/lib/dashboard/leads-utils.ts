@@ -4,6 +4,7 @@
  */
 
 import type { Lead, CalculatorForm } from '../../../types';
+import { BASE_ELECTRICITY_RATE } from '../calculations/solar';
 
 /**
  * Filter options for leads dashboard
@@ -107,7 +108,7 @@ export function filterLeads(leads: Lead[], filters: LeadFilters): Lead[] {
     // System size range filter (estimated)
     if (filters.systemSizeRange) {
       // Estimate system size from usage
-      const monthlyKwh = lead.usage.monthlyKwh || lead.usage.billAmount! / 0.135;
+      const monthlyKwh = lead.usage.monthlyKwh || lead.usage.billAmount! / BASE_ELECTRICITY_RATE;
       const estimatedSystemSize = monthlyKwh * 12 * 0.8 / 1200;
       if (estimatedSystemSize < filters.systemSizeRange.min || estimatedSystemSize > filters.systemSizeRange.max) {
         return false;
@@ -171,14 +172,14 @@ export function sortLeads(leads: Lead[], sort: LeadSort): Lead[] {
 
       case 'systemSize':
         // Estimated from usage
-        aValue = a.usage.monthlyKwh || a.usage.billAmount! / 0.135;
-        bValue = b.usage.monthlyKwh || b.usage.billAmount! / 0.135;
+        aValue = a.usage.monthlyKwh || a.usage.billAmount! / BASE_ELECTRICITY_RATE;
+        bValue = b.usage.monthlyKwh || b.usage.billAmount! / BASE_ELECTRICITY_RATE;
         break;
 
       case 'estimatedAnnualProduction':
         // Estimated annual production
-        const aMonthly = a.usage.monthlyKwh || a.usage.billAmount! / 0.135;
-        const bMonthly = b.usage.monthlyKwh || b.usage.billAmount! / 0.135;
+        const aMonthly = a.usage.monthlyKwh || a.usage.billAmount! / BASE_ELECTRICITY_RATE;
+        const bMonthly = b.usage.monthlyKwh || b.usage.billAmount! / BASE_ELECTRICITY_RATE;
         aValue = aMonthly * 12 * 0.8;
         bValue = bMonthly * 12 * 0.8;
         break;
@@ -241,7 +242,7 @@ export function getAvailableFilters(leads: Lead[]) {
     if (lead.lead_score > maxScore) maxScore = lead.lead_score;
 
     // System size range
-    const monthlyKwh = lead.usage.monthlyKwh || lead.usage.billAmount! / 0.135;
+    const monthlyKwh = lead.usage.monthlyKwh || lead.usage.billAmount! / BASE_ELECTRICITY_RATE;
     const systemSize = monthlyKwh * 12 * 0.8 / 1200;
     if (systemSize < minSystemSize) minSystemSize = systemSize;
     if (systemSize > maxSystemSize) maxSystemSize = systemSize;
@@ -460,12 +461,12 @@ export function getTopLeads(
         bValue = b.preferences.creditScore || 700;
         break;
       case 'systemSize':
-        aValue = a.usage.monthlyKwh || a.usage.billAmount! / 0.135;
-        bValue = b.usage.monthlyKwh || b.usage.billAmount! / 0.135;
+        aValue = a.usage.monthlyKwh || a.usage.billAmount! / BASE_ELECTRICITY_RATE;
+        bValue = b.usage.monthlyKwh || b.usage.billAmount! / BASE_ELECTRICITY_RATE;
         break;
       case 'estimatedProduction':
-        const aMonthly = a.usage.monthlyKwh || a.usage.billAmount! / 0.135;
-        const bMonthly = b.usage.monthlyKwh || b.usage.billAmount! / 0.135;
+        const aMonthly = a.usage.monthlyKwh || a.usage.billAmount! / BASE_ELECTRICITY_RATE;
+        const bMonthly = b.usage.monthlyKwh || b.usage.billAmount! / BASE_ELECTRICITY_RATE;
         aValue = aMonthly * 12 * 0.8;
         bValue = bMonthly * 12 * 0.8;
         break;

@@ -25,8 +25,8 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
       return;
     }
 
-    // Calculate recommended system size
-    const recommendedSize = Math.round((usage.annualKwh / 1200) * 10) / 10; // ~1200 kWh/kW/year average
+    // Calculate recommended system size (80% offset — industry standard)
+    const recommendedSize = Math.round((usage.annualKwh * 0.8 / 1200) * 10) / 10; // 80% of consumption / ~1200 kWh/kW/year
 
     const timer = setTimeout(async () => {
       setIsLoading(true);

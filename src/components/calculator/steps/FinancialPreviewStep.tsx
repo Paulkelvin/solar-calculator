@@ -58,7 +58,7 @@ export function FinancialPreviewStep({
     if (!monthlyBill) return null;
 
     const annualBill = monthlyBill * 12;
-    const baseline = annualBill * 0.75; // assume 75% offset
+    const baseline = annualBill * 0.8; // 80% offset (matches performSolarCalculation)
     return {
       min: Math.round(baseline * 0.9),
       max: Math.round(baseline * 1.1),

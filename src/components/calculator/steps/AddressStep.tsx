@@ -61,7 +61,7 @@ const transformSolarApiResponse = (
   );
   const normalizedStateCode = stateCode?.toUpperCase();
   const stateIncentives = normalizedStateCode ? getStateIncentives(normalizedStateCode) : null;
-  const utilityRate = stateIncentives?.averageUtilityRate ?? 0.16;
+  const utilityRate = stateIncentives?.averageUtilityRate ?? 0.14;
   const estimatedSavingsMin = Math.max(
     500,
     Math.round(estimatedAnnualProduction * utilityRate * 0.65)
