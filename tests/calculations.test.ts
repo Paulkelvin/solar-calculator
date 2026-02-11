@@ -90,7 +90,7 @@ describe("Solar Calculations", () => {
 
       expect(financing.loan.monthlyPayment).toBeGreaterThan(0);
       expect(financing.loan.totalInterest).toBeGreaterThan(0);
-      expect(financing.loan.downPayment).toBe(financing.totalSystemCost * 0.2);
+      expect(financing.loan.downPayment).toBe(financing.totalSystemCost * 0.1);
     });
 
     it("should calculate lease with zero down payment", () => {
@@ -156,7 +156,7 @@ describe("Solar Calculations", () => {
       expect(result.estimatedMonthlyProduction).toBeGreaterThan(0);
       expect(result.financing).toHaveLength(4);
       expect(result.environmental).toBeDefined();
-      expect(result.confidence).toBe("mocked");
+      expect(result.confidence).toBe("preliminary");
     });
 
     it("should have 4 financing cards (cash, loan, lease, ppa)", () => {

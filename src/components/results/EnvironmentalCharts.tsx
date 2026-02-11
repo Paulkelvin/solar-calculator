@@ -45,10 +45,10 @@ export function BillOffsetChart({
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percent, cx, x, y }: { name: string; percent: number; cx: number; x: number; y: number }) => {
-                const label = `${name}: ${Math.round(percent * 100)}%`;
+              label={({ name, percent, cx, x, y }: { name?: string; percent?: number; cx?: number; x?: number; y?: number }) => {
+                const label = `${name || ''}: ${Math.round((percent || 0) * 100)}%`;
                 // Position text anchor based on which side of the pie it's on
-                const anchor = x > cx ? "start" : "end";
+                const anchor = (x || 0) > (cx || 0) ? "start" : "end";
                 return (
                   <text
                     x={x}

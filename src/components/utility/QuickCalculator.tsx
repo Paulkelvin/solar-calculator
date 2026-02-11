@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { Calculator, X } from "lucide-react";
 
 interface QuickCalculatorProps {
@@ -8,143 +8,145 @@ interface QuickCalculatorProps {
   onToggle: (open: boolean) => void;
 }
 
-// Lightweight four-function calculator with sign toggle and percent
-// Avoids eval; uses deterministic arithmetic
+const OP_SYMBOLS: Record<string, string> = {
+  "+": "+",
+  "-": "−",
+  "*": "×",
+  "/": "÷",
+};
+
+function calc(a: number, b: number, op: string): number {
+  switch (op) {
+    case "+": return a + b;
+    case "-": return a - b;
+    case "*": return a * b;
+    case "/": return b === 0 ? Infinity : a / b;
+    default: return b;
+  }
+}
+
+function trimResult(value: number): string {
+  return parseFloat(value.toFixed(10)).toString();
+}
+
 export function QuickCalculator({ isOpen, onToggle }: QuickCalculatorProps) {
   const [display, setDisplay] = useState("0");
-  const [pendingOp, setPendingOp] = useState<"+" | "-" | "*" | "/" | null>(null);
+  const [expression, setExpression] = useState(""); // shows e.g. "8 ×"
+  const [pendingOp, setPendingOp] = useState<string | null>(null);
   const [storedValue, setStoredValue] = useState<number | null>(null);
   const [clearNext, setClearNext] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
 
-  const resetAll = () => {
+  const resetAll = useCallback(() => {
     setDisplay("0");
+    setExpression("");
     setPendingOp(null);
     setStoredValue(null);
     setClearNext(false);
-    setError(null);
-  };
+    setHasError(false);
+  }, []);
 
-  const commitOperation = (op: "+" | "-" | "*" | "/") => {
-    if (error) resetAll();
+  const commitOperation = useCallback((op: string) => {
+    if (hasError) { resetAll(); return; }
     const current = parseFloat(display);
 
     if (storedValue === null) {
       setStoredValue(current);
+      setExpression(`${display} ${OP_SYMBOLS[op]}`);
     } else if (pendingOp) {
-      const result = calculate(storedValue, current, pendingOp);
+      const result = calc(storedValue, current, pendingOp);
       if (Number.isFinite(result)) {
         setStoredValue(result);
         setDisplay(trimResult(result));
+        setExpression(`${trimResult(result)} ${OP_SYMBOLS[op]}`);
       } else {
-        setError("Error");
+        setHasError(true);
         setDisplay("Error");
+        setExpression("");
         return;
       }
     }
 
     setPendingOp(op);
     setClearNext(true);
-  };
+  }, [display, storedValue, pendingOp, hasError, resetAll]);
 
-  const handleEquals = () => {
-    if (error) {
-      resetAll();
-      return;
-    }
-
+  const handleEquals = useCallback(() => {
+    if (hasError) { resetAll(); return; }
     if (pendingOp === null || storedValue === null) return;
 
     const current = parseFloat(display);
-    const result = calculate(storedValue, current, pendingOp);
+    const result = calc(storedValue, current, pendingOp);
     if (Number.isFinite(result)) {
+      setExpression(`${trimResult(storedValue)} ${OP_SYMBOLS[pendingOp]} ${display} =`);
       setDisplay(trimResult(result));
       setStoredValue(null);
       setPendingOp(null);
       setClearNext(true);
     } else {
-      setError("Error");
+      setHasError(true);
       setDisplay("Error");
+      setExpression("");
     }
-  };
+  }, [display, storedValue, pendingOp, hasError, resetAll]);
 
-  const handleDigit = (digit: string) => {
-    if (error) resetAll();
-    setDisplay((prev) => {
-      if (clearNext || prev === "0") {
-        setClearNext(false);
-        return digit;
-      }
-      return prev + digit;
-    });
-  };
+  const handleDigit = useCallback((digit: string) => {
+    if (hasError) resetAll();
+    if (clearNext) {
+      setClearNext(false);
+      setDisplay(digit);
+    } else {
+      setDisplay((prev) => prev === "0" ? digit : prev + digit);
+    }
+  }, [clearNext, hasError, resetAll]);
 
-  const handleDecimal = () => {
-    if (error) resetAll();
-    setDisplay((prev) => {
-      if (clearNext) {
-        setClearNext(false);
-        return "0.";
-      }
-      if (prev.includes(".")) return prev;
-      return prev + ".";
-    });
-  };
+  const handleDecimal = useCallback(() => {
+    if (hasError) resetAll();
+    if (clearNext) {
+      setClearNext(false);
+      setDisplay("0.");
+    } else {
+      setDisplay((prev) => prev.includes(".") ? prev : prev + ".");
+    }
+  }, [clearNext, hasError, resetAll]);
 
-  const handleToggleSign = () => {
-    if (error) resetAll();
+  const handleToggleSign = useCallback(() => {
+    if (hasError) resetAll();
     setDisplay((prev) => {
       if (prev === "0" || prev === "0.") return prev;
       return prev.startsWith("-") ? prev.slice(1) : `-${prev}`;
     });
-  };
+  }, [hasError, resetAll]);
 
-  const handlePercent = () => {
-    if (error) resetAll();
+  const handlePercent = useCallback(() => {
+    if (hasError) resetAll();
     const value = parseFloat(display) / 100;
     setDisplay(trimResult(value));
-  };
+  }, [display, hasError, resetAll]);
 
-  const trimResult = (value: number) => {
-    // Limit floating point noise but keep meaningful digits
-    return parseFloat(value.toFixed(10)).toString();
-  };
-
-  const calculate = (a: number, b: number, op: "+" | "-" | "*" | "/") => {
-    switch (op) {
-      case "+":
-        return a + b;
-      case "-":
-        return a - b;
-      case "*":
-        return a * b;
-      case "/":
-        return b === 0 ? Infinity : a / b;
-    }
-  };
-
-  const buttons: Array<{ label: string; action: () => void; variant?: "accent" | "primary" }>
-    = useMemo(() => ([
-      { label: "AC", action: resetAll },
-      { label: "+/−", action: handleToggleSign },
-      { label: "%", action: handlePercent },
-      { label: "÷", action: () => commitOperation("/") },
-      { label: "7", action: () => handleDigit("7") },
-      { label: "8", action: () => handleDigit("8") },
-      { label: "9", action: () => handleDigit("9") },
-      { label: "×", action: () => commitOperation("*") },
-      { label: "4", action: () => handleDigit("4") },
-      { label: "5", action: () => handleDigit("5") },
-      { label: "6", action: () => handleDigit("6") },
-      { label: "−", action: () => commitOperation("-") },
-      { label: "1", action: () => handleDigit("1") },
-      { label: "2", action: () => handleDigit("2") },
-      { label: "3", action: () => handleDigit("3") },
-      { label: "+", action: () => commitOperation("+") },
-      { label: "0", action: () => handleDigit("0") },
-      { label: ".", action: handleDecimal },
-      { label: "=", action: handleEquals, variant: "primary" },
-    ]), [pendingOp, storedValue, clearNext, error]);
+  // Button definitions - NO useMemo, just a plain array
+  // Each row: [row0], [row1], ... for a 4-column grid
+  const buttons = [
+    { label: "AC", action: resetAll, style: "top" },
+    { label: "+/−", action: handleToggleSign, style: "top" },
+    { label: "%", action: handlePercent, style: "top" },
+    { label: "÷", action: () => commitOperation("/"), style: "op" },
+    { label: "7", action: () => handleDigit("7"), style: "num" },
+    { label: "8", action: () => handleDigit("8"), style: "num" },
+    { label: "9", action: () => handleDigit("9"), style: "num" },
+    { label: "×", action: () => commitOperation("*"), style: "op" },
+    { label: "4", action: () => handleDigit("4"), style: "num" },
+    { label: "5", action: () => handleDigit("5"), style: "num" },
+    { label: "6", action: () => handleDigit("6"), style: "num" },
+    { label: "−", action: () => commitOperation("-"), style: "op" },
+    { label: "1", action: () => handleDigit("1"), style: "num" },
+    { label: "2", action: () => handleDigit("2"), style: "num" },
+    { label: "3", action: () => handleDigit("3"), style: "num" },
+    { label: "+", action: () => commitOperation("+"), style: "op" },
+    { label: "0", action: () => handleDigit("0"), style: "num", span: 2 },
+    { label: ".", action: handleDecimal, style: "num" },
+    { label: "=", action: handleEquals, style: "eq" },
+  ];
 
   return (
     <div className="pointer-events-none z-50 flex flex-col items-end gap-3 fixed bottom-4 right-4 md:absolute md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:-right-3">
@@ -187,32 +189,33 @@ export function QuickCalculator({ isOpen, onToggle }: QuickCalculatorProps) {
 
         <div className="px-4 pt-4 pb-3">
           <div className="rounded-xl bg-gray-900 px-3 py-4 text-right text-white">
-            <div className="text-xs uppercase tracking-wide text-emerald-200">Result</div>
+            {/* Expression line: shows e.g. "8 × 5 =" */}
+            <div className="text-xs text-emerald-300 min-h-[1.25rem] tabular-nums truncate">
+              {expression || "\u00A0"}
+            </div>
             <div className="mt-1 text-3xl font-semibold tabular-nums" aria-live="polite">{display}</div>
           </div>
         </div>
 
         <div className="grid grid-cols-4 gap-2 px-4 pb-4">
-          {buttons.map((btn) => {
-            const isPrimary = btn.variant === "primary";
-            const isAccent = btn.variant === "accent";
-            return (
-              <button
-                key={btn.label}
-                type="button"
-                onClick={btn.action}
-                className={`h-12 rounded-xl text-sm font-semibold transition active:scale-[0.98] ${
-                  isPrimary
-                    ? "bg-emerald-600 text-white shadow hover:bg-emerald-500 text-lg font-bold"
-                    : isAccent
+          {buttons.map((btn) => (
+            <button
+              key={btn.label}
+              type="button"
+              onClick={btn.action}
+              className={`h-12 rounded-xl text-sm font-semibold transition active:scale-[0.98] ${
+                btn.style === "eq"
+                  ? "bg-emerald-600 text-white shadow hover:bg-emerald-500 text-lg font-bold"
+                  : btn.style === "op"
+                    ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 text-lg font-bold"
+                    : btn.style === "top"
                       ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
                       : "bg-gray-50 text-gray-900 hover:bg-gray-100 border border-gray-200"
-                } ${btn.label === "0" ? "col-span-2" : ""} ${btn.label === "=" ? "col-span-2" : ""}`}
-              >
-                  <span className="leading-none">{btn.label}</span>
-              </button>
-            );
-          })}
+              } ${btn.span === 2 ? "col-span-2" : ""}`}
+            >
+              <span className="leading-none">{btn.label}</span>
+            </button>
+          ))}
         </div>
       </div>
     </div>

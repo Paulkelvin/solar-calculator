@@ -31,8 +31,8 @@ export function CashFlowChart({
   leaseMonthlyPayment = 0,
   ppaRate = 0.10,
   annualProduction = 10000,
-  utilityRate = 0.15,
-  rateEscalation = 3.5,
+  utilityRate = 0.14,
+  rateEscalation = 2.5,
 }: CashFlowChartProps) {
   // Generate 25-year cash flow projections
   const data: CashFlowData[] = [];

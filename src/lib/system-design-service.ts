@@ -19,11 +19,16 @@ export interface SystemDesignOption {
   recommendedFor: string;
 }
 
-const SYSTEM_COST_PER_WATT = 2.75;
-const AVG_PRODUCTION_PER_KW = 1200; // kWh/year per kW
-const LOAN_INTEREST_RATE = 0.065;
-const LOAN_TERM_YEARS = 25;
-const ELECTRICITY_RATE = 0.135; // $/kWh average
+// Import centralized constants to avoid drift between calculation modules
+import {
+  SYSTEM_COST_PER_WATT,
+  AVG_PRODUCTION_PER_KW,
+  LOAN_INTEREST_RATE,
+  LOAN_TERM_YEARS,
+  BASE_ELECTRICITY_RATE,
+  RATE_ESCALATION,
+  PANEL_DEGRADATION
+} from './calculations/solar';
 
 /**
  * Calculate monthly loan payment using standard amortization
@@ -80,44 +85,43 @@ export function generateSystemDesignOptions(
 
     // Financial metrics
     const monthlyProduction = annualProduction / 12;
-    const monthlyElectricitySavings = monthlyProduction * ELECTRICITY_RATE;
+    const monthlyElectricitySavings = monthlyProduction * BASE_ELECTRICITY_RATE;
     const firstYearSavings = monthlyElectricitySavings * 12;
 
-    // Loan calculation
+    // Loan calculation (10% down to match solar.ts)
+    const loanDownPayment = systemCost * 0.10;
+    const loanPrincipal = systemCost - loanDownPayment;
     const monthlyPayment = calculateMonthlyPayment(
-      systemCost,
+      loanPrincipal,
       LOAN_INTEREST_RATE,
       LOAN_TERM_YEARS
     );
 
-    // ROI calculation (25-year)
+    // ROI calculation (25-year) with rate escalation AND panel degradation
     let totalSavings = 0;
-    let remainingMonths = LOAN_TERM_YEARS * 12;
-    let monthlyPayout = monthlyElectricitySavings;
-
-    // Years 1-25 with inflation assumption (2.5% annual increase in electricity costs)
     for (let year = 0; year < 25; year++) {
-      const yearlyRate = Math.pow(1.025, year);
-      for (let month = 0; month < 12; month++) {
-        totalSavings += monthlyPayout * yearlyRate;
-      }
-      monthlyPayout = monthlyElectricitySavings * Math.pow(1.025, year + 1);
+      // Electricity rates go up, panel output goes down
+      const rateMultiplier = Math.pow(1 + RATE_ESCALATION, year);
+      const degradationMultiplier = Math.pow(1 - PANEL_DEGRADATION, year);
+      const yearSavings = firstYearSavings * rateMultiplier * degradationMultiplier;
+      totalSavings += yearSavings;
     }
 
     const totalInvestment = systemCost;
     const roi25Year = ((totalSavings - totalInvestment) / totalInvestment) * 100;
 
-    // Payback period (when cumulative savings > system cost)
+    // Payback period (cash purchase: when cumulative savings > system cost)
     let cumulativeSavings = 0;
-    let paybackMonths = 0;
-    monthlyPayout = monthlyElectricitySavings;
+    let paybackMonths = 300; // default 25yr if never pays back
 
-    for (let month = 0; month < 360; month++) {
-      const yearFraction = month / 12;
-      const inflatedRate = monthlyElectricitySavings * Math.pow(1.025, yearFraction);
-      cumulativeSavings += inflatedRate;
+    for (let month = 0; month < 300; month++) {
+      const year = month / 12;
+      const rateMultiplier = Math.pow(1 + RATE_ESCALATION, year);
+      const degradationMultiplier = Math.pow(1 - PANEL_DEGRADATION, year);
+      const monthlySaving = (firstYearSavings / 12) * rateMultiplier * degradationMultiplier;
+      cumulativeSavings += monthlySaving;
 
-      if (cumulativeSavings >= totalInvestment && paybackMonths === 0) {
+      if (cumulativeSavings >= totalInvestment) {
         paybackMonths = month;
         break;
       }

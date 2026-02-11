@@ -90,7 +90,7 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-green-600" />
-            <CardTitle className="text-lg">Live Production Estimate</CardTitle>
+            <CardTitle className="text-lg">What Solar Will Produce For You</CardTitle>
           </div>
           {estimate.source === 'fallback' && (
             <Badge className="border border-amber-200 bg-amber-50 text-amber-800 text-xs shadow-sm">
@@ -117,33 +117,36 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
           <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
             <div className="flex items-center gap-1 mb-1">
               <Zap className="h-4 w-4 text-yellow-600" />
-              <p className="text-xs text-muted-foreground">Annual kWh</p>
+              <p className="text-xs text-muted-foreground">Solar Will Produce</p>
             </div>
             <p className="text-xl font-bold text-green-700 dark:text-green-400">
               {estimate.production.annual.toLocaleString()}
             </p>
+            <p className="text-xs text-muted-foreground">kWh/year</p>
           </div>
 
           {/* Bill Offset */}
           <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
             <div className="flex items-center gap-1 mb-1">
               <TrendingUp className="h-4 w-4 text-blue-600" />
-              <p className="text-xs text-muted-foreground">Bill Offset</p>
+              <p className="text-xs text-muted-foreground">Bill Coverage</p>
             </div>
             <p className="text-xl font-bold text-blue-700 dark:text-blue-400">
               {billOffset}%
             </p>
+            <p className="text-xs text-muted-foreground">of your usage</p>
           </div>
 
           {/* Annual Savings */}
           <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
             <div className="flex items-center gap-1 mb-1">
               <DollarSign className="h-4 w-4 text-green-600" />
-              <p className="text-xs text-muted-foreground">Savings/Year</p>
+              <p className="text-xs text-muted-foreground">You'll Save</p>
             </div>
             <p className="text-xl font-bold text-green-700 dark:text-green-400">
               ${estimate.savings.annual.toLocaleString()}
             </p>
+            <p className="text-xs text-muted-foreground">per year</p>
           </div>
         </div>
 

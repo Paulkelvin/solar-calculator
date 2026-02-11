@@ -30,8 +30,7 @@ export function SystemDesignComparison({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">;
-
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
           {options.map((option, idx) => {
             const isSelected = selectedOption?.name === option.name;
 

@@ -1,9 +1,14 @@
 import type { CalculationInput, SolarCalculationResult } from "../../../types/calculations";
 
-const SYSTEM_COST_PER_WATT = 2.75;
-const AVG_PRODUCTION_PER_KW = 1200; // kWh/year, regional adjustment possible
-const LOAN_INTEREST_RATE = 0.065;
-const LOAN_TERM_YEARS = 25;
+// === CENTRAL CONSTANTS ===
+// All financial calculations should use these values
+export const SYSTEM_COST_PER_WATT = 2.75;
+export const AVG_PRODUCTION_PER_KW = 1200; // kWh/year, regional adjustment possible
+export const LOAN_INTEREST_RATE = 0.065;
+export const LOAN_TERM_YEARS = 25;
+export const BASE_ELECTRICITY_RATE = 0.14; // $/kWh US average
+export const RATE_ESCALATION = 0.025; // 2.5% annual electricity rate increase
+export const PANEL_DEGRADATION = 0.005; // 0.5% per year
 
 /**
  * Calculate system size based on usage and roof constraints.
@@ -13,9 +18,8 @@ export function calculateSystemSize(input: CalculationInput): number {
   let estimatedMonthlyKwh = input.monthlyKwh;
 
   if (!estimatedMonthlyKwh && input.billAmount) {
-    // Rough estimate: $0.12-0.15 per kWh in US (mock average)
-    const pricePerKwh = 0.135;
-    estimatedMonthlyKwh = input.billAmount / pricePerKwh;
+    // Convert bill amount to kWh using our standard rate
+    estimatedMonthlyKwh = input.billAmount / BASE_ELECTRICITY_RATE;
   }
 
   if (!estimatedMonthlyKwh) {
@@ -38,8 +42,8 @@ export function calculateSystemSize(input: CalculationInput): number {
   // System size = adjustedProduction / average annual kWh per kW
   const systemSize = adjustedProduction / AVG_PRODUCTION_PER_KW;
 
-  // Constrain by roof size (rough: 100 sq ft per 3kW)
-  const roofConstraint = (input.roofSquareFeet / 100) * 3;
+  // Constrain by roof size (~54 sq ft per kW of panels, ~60% usable roof area)
+  const roofConstraint = (input.roofSquareFeet * 0.6) / 54;
 
   return Math.min(systemSize, roofConstraint);
 }
@@ -48,16 +52,17 @@ export function calculateSystemSize(input: CalculationInput): number {
  * Phase 3.4: Expanded financing calculation for 4 options:
  * Cash, Loan, Lease (with $0 down), and PPA (power purchase agreement).
  */
-export function calculateFinancing(systemSizeKw: number) {
+export function calculateFinancing(systemSizeKw: number, sunFactor: number = 1.0) {
   const totalSystemCost = systemSizeKw * 1000 * SYSTEM_COST_PER_WATT; // kW * 1000 W/kW * $/W
-  const annualProduction = systemSizeKw * AVG_PRODUCTION_PER_KW;
+  // CRITICAL FIX: Apply sunFactor to production so it matches what panels actually produce
+  const annualProduction = systemSizeKw * AVG_PRODUCTION_PER_KW * sunFactor;
   const monthlyProduction = annualProduction / 12;
-  const baseElectricityRate = 0.135; // mock rate $/kWh
-  const monthlyElectricityCost = monthlyProduction * baseElectricityRate;
+  const monthlyElectricityCost = monthlyProduction * BASE_ELECTRICITY_RATE;
 
   // === CASH OPTION ===
   const cashMonthlyValue = monthlyElectricityCost;
-  const cashPaybackMonths = totalSystemCost / (cashMonthlyValue * 12);
+  // CRITICAL FIX: This was dividing by 12 twice. totalSystemCost / annualSavings = years directly
+  const cashPaybackYears = totalSystemCost / (cashMonthlyValue * 12);
   const cashROI25 = ((cashMonthlyValue * 12 * 25 - totalSystemCost) / totalSystemCost) * 100;
 
   // === LOAN OPTION ===
@@ -75,20 +80,23 @@ export function calculateFinancing(systemSizeKw: number) {
   const loanROI25 = ((cashMonthlyValue * 12 * 25 - loanTotalCost) / loanTotalCost) * 100;
 
   // === LEASE OPTION ===
-  // Typical lease: $0 down, ~$150-200/month, 20-year term
-  // Lease payment typically covers 60-70% of electricity savings
-  const leaseMonthlyPayment = Math.max(150, monthlyElectricityCost * 0.65);
+  // Typical lease: $0 down, payment at 65% of electricity savings, 20-year term
+  const leaseMonthlyPayment = Math.max(50, monthlyElectricityCost * 0.65);
   const leaseTermMonths = 20 * 12;
   const leaseTotalCost = leaseMonthlyPayment * leaseTermMonths;
   const leaseElectricityValue = monthlyElectricityCost * leaseTermMonths;
   const leaseNetSavings = leaseElectricityValue - leaseTotalCost;
-  const leaseBreakEven = leaseMonthlyPayment < monthlyElectricityCost ? 0 : (leaseTotalCost - leaseElectricityValue) / (monthlyElectricityCost * 12);
+  // CRITICAL FIX: Lease break-even = when cumulative net savings > 0
+  // Since lease has no upfront cost, break-even is immediate if payment < savings
+  const leaseBreakEvenYears = leaseMonthlyPayment < monthlyElectricityCost
+    ? 0.1 // effectively immediate (first month you save)
+    : (leaseTotalCost / (monthlyElectricityCost * 12)); // years until value = cost
   const leaseROI20 = (leaseNetSavings / leaseTotalCost) * 100;
 
   // === PPA OPTION ===
   // Power Purchase Agreement: $0 down, pay per kWh generated
   // Typical PPA rate: $0.08-0.12/kWh (lower than grid rate)
-  const ppaRatePerKwh = baseElectricityRate * 0.75; // 75% of grid rate (~$0.10/kWh)
+  const ppaRatePerKwh = BASE_ELECTRICITY_RATE * 0.75; // 75% of grid rate (~$0.10/kWh)
   const ppaEscalator = 0.025; // 2.5% annual escalation
   const ppaTermYears = 25;
 
@@ -99,7 +107,7 @@ export function calculateFinancing(systemSizeKw: number) {
     const escalatedRate = ppaRatePerKwh * Math.pow(1 + ppaEscalator, year);
     ppaTotalCost += annualProduction * escalatedRate;
     // Assume grid rate also escalates at same rate for comparison
-    ppaElectricityValue += annualProduction * (baseElectricityRate * Math.pow(1 + ppaEscalator, year));
+    ppaElectricityValue += annualProduction * (BASE_ELECTRICITY_RATE * Math.pow(1 + ppaEscalator, year));
   }
   const ppaSavings25Year = ppaElectricityValue - ppaTotalCost;
   const ppaMonthlyPayment = (annualProduction / 12) * ppaRatePerKwh; // avg first year
@@ -110,7 +118,7 @@ export function calculateFinancing(systemSizeKw: number) {
     cash: {
       upfront: totalSystemCost,
       monthly: 0,
-      yearsToBreakEven: cashPaybackMonths / 12,
+      yearsToBreakEven: cashPaybackYears,
       roi25Years: cashROI25
     },
     loan: {
@@ -137,7 +145,7 @@ export function calculateFinancing(systemSizeKw: number) {
       monthlyPayment: leaseMonthlyPayment,
       termYears: 20,
       totalCost: leaseTotalCost,
-      yearsToBreakEven: leaseBreakEven / 12, // simplified
+      yearsToBreakEven: leaseBreakEvenYears,
       roi20Years: leaseROI20
     },
     ppa: {
@@ -184,10 +192,20 @@ export function performSolarCalculation(
   input: CalculationInput
 ): SolarCalculationResult {
   const systemSizeKw = calculateSystemSize(input);
-  const annualProduction = systemSizeKw * AVG_PRODUCTION_PER_KW;
+  
+  // Get sun factor for this input
+  const sunFactor = {
+    poor: 0.7,
+    fair: 0.85,
+    good: 1.0,
+    excellent: 1.15
+  }[input.sunExposure] || 1.0;
+
+  // Apply sunFactor to production (matches calculateSystemSize logic)
+  const annualProduction = systemSizeKw * AVG_PRODUCTION_PER_KW * sunFactor;
   const monthlyProduction = annualProduction / 12;
 
-  const financingData = calculateFinancing(systemSizeKw);
+  const financingData = calculateFinancing(systemSizeKw, sunFactor);
 
   const financing = [
     {

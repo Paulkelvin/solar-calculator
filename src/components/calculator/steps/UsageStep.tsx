@@ -239,7 +239,7 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
       {(isEnergyProfileLoading || (showEnergyProfile && annualKwh && nrelStatus === 'loading')) && (
         <div className="space-y-2 animate-in fade-in duration-300">
           <h3 className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-1">
-            Your Annual Energy Profile
+            What You Pay Now (Without Solar)
           </h3>
           <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-emerald-700 shadow-sm">
             <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
@@ -252,28 +252,28 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
       {showEnergyProfile && annualKwh && annualCost && nrelStatus === 'ready' && (
         <div className="space-y-2">
           <h3 className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-1">
-            Your Annual Energy Profile
+            What You Pay Now (Without Solar)
           </h3>
 
           <div className="grid grid-cols-2 gap-2">
             <div className="p-3 bg-blue-50 rounded border border-blue-200">
-              <p className="text-xs text-blue-700 mb-1">Annual Usage</p>
+              <p className="text-xs text-blue-700 mb-1">Your Annual Usage</p>
               <p className="text-lg font-bold text-blue-900">{annualKwh.toLocaleString()}</p>
-              <p className="text-xs text-blue-600">kWh/year</p>
+              <p className="text-xs text-blue-600">kWh you consume yearly</p>
             </div>
 
             <div className="p-3 bg-green-50 rounded border border-green-200">
-              <p className="text-xs text-green-700 mb-1">Annual Cost</p>
+              <p className="text-xs text-green-700 mb-1">Your Annual Cost</p>
               <p className="text-lg font-bold text-green-900">${annualCost.toLocaleString()}</p>
-              <p className="text-xs text-green-600">per year</p>
+              <p className="text-xs text-green-600">what you pay now</p>
             </div>
           </div>
 
           {solarData?.solarScore && (
             <div className="p-3 bg-purple-50 rounded border border-purple-200">
-              <p className="text-xs text-purple-700 mb-1">Recommended System Size</p>
+              <p className="text-xs text-purple-700 mb-1">Recommended Solar System</p>
               <p className="text-lg font-bold text-purple-900">{Math.round((annualKwh / 1200) * 10) / 10} kW</p>
-              <p className="text-xs text-purple-600">Offsets ~{Math.round(((solarData?.sunExposurePercentage || 80) * 0.9))}% of usage</p>
+              <p className="text-xs text-purple-600">Replaces ~{Math.round(((solarData?.sunExposurePercentage || 80) * 0.9))}% of your electricity bill</p>
             </div>
           )}
 

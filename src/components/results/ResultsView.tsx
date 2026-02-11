@@ -504,14 +504,14 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
 
       {/* 25-Year Cash Flow Projections */}
       <CashFlowChart
-        systemCost={results.systemSizeKw * 3000} // ~$3/watt estimate
-        annualSavings={results.estimatedAnnualProduction * 0.15} // $0.15/kWh estimate
+        systemCost={results.systemSizeKw * 1000 * 2.75} // $2.75/watt
+        annualSavings={results.estimatedAnnualProduction * 0.14} // $0.14/kWh
         loanMonthlyPayment={results.financing.find(f => f.type === 'loan')?.monthlyPayment || 150}
         leaseMonthlyPayment={results.financing.find(f => f.type === 'lease')?.monthlyPayment || 120}
         ppaRate={results.financing.find(f => f.type === 'ppa')?.ppaRatePerKwh || 0.10}
         annualProduction={results.estimatedAnnualProduction}
-        utilityRate={0.15}
-        rateEscalation={3.5}
+        utilityRate={0.14}
+        rateEscalation={2.5}
       />
 
       {/* Environmental Impact & Bill Offset Charts */}
@@ -529,17 +529,17 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
         <div className="min-w-0">
         <EnvironmentalImpactChart
           annualProduction={results.estimatedAnnualProduction}
-          co2OffsetTons={(results.estimatedAnnualProduction * 0.0007) || 5.6}
-          treesEquivalent={Math.round((results.estimatedAnnualProduction * 0.0007 * 40) || 220)}
+          co2OffsetTons={(results.estimatedAnnualProduction * 0.0004) || 5.6}
+          treesEquivalent={Math.round((results.estimatedAnnualProduction * 0.0004 / 0.02) || 220)}
         />
         </div>
       </div>
 
       {/* What-If Analysis Sliders - Hidden for user simplicity */}
       {/* <WhatIfSliders
-        baseSystemCost={results.systemSizeKw * 3000}
+        baseSystemCost={results.systemSizeKw * 1000 * 2.75}
         baseAnnualProduction={results.estimatedAnnualProduction}
-        baseUtilityRate={0.15}
+        baseUtilityRate={0.14}
       /> */}
 
       {/* Download PDF Report */}
