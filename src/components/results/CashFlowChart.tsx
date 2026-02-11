@@ -17,6 +17,7 @@ interface CashFlowChartProps {
   systemCost: number;
   annualSavings: number;
   loanMonthlyPayment?: number;
+  loanDownPayment?: number;
   leaseMonthlyPayment?: number;
   ppaRate?: number; // $/kWh
   annualProduction?: number;
@@ -28,6 +29,7 @@ export function CashFlowChart({
   systemCost,
   annualSavings,
   loanMonthlyPayment = 0,
+  loanDownPayment = 0,
   leaseMonthlyPayment = 0,
   ppaRate = 0.10,
   annualProduction = 10000,
@@ -38,7 +40,7 @@ export function CashFlowChart({
   const data: CashFlowData[] = [];
   
   let cashCumulative = -systemCost; // Start with upfront cost
-  let loanCumulative = 0; // No upfront cost
+  let loanCumulative = -loanDownPayment; // Start with down payment cost
   let leaseCumulative = 0; // No upfront cost
   let ppaCumulative = 0; // No upfront cost
   

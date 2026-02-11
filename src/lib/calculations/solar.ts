@@ -51,21 +51,47 @@ export function calculateSystemSize(input: CalculationInput): number {
 /**
  * Phase 3.4: Expanded financing calculation for 4 options:
  * Cash, Loan, Lease (with $0 down), and PPA (power purchase agreement).
+ *
+ * ALL payback and ROI calculations now include:
+ *   - 2.5%/yr utility rate escalation  (RATE_ESCALATION)
+ *   - 0.5%/yr linear panel degradation (PANEL_DEGRADATION)
+ * This matches the 25-Year Savings Trajectory chart exactly.
  */
 export function calculateFinancing(systemSizeKw: number, sunFactor: number = 1.0) {
-  const totalSystemCost = systemSizeKw * 1000 * SYSTEM_COST_PER_WATT; // kW * 1000 W/kW * $/W
-  // CRITICAL FIX: Apply sunFactor to production so it matches what panels actually produce
+  const totalSystemCost = systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
   const annualProduction = systemSizeKw * AVG_PRODUCTION_PER_KW * sunFactor;
   const monthlyProduction = annualProduction / 12;
   const monthlyElectricityCost = monthlyProduction * BASE_ELECTRICITY_RATE;
+  const baseAnnualSavings = monthlyElectricityCost * 12; // year-1 savings before escalation
 
-  // === CASH OPTION ===
-  const cashMonthlyValue = monthlyElectricityCost;
-  // CRITICAL FIX: This was dividing by 12 twice. totalSystemCost / annualSavings = years directly
-  const cashPaybackYears = totalSystemCost / (cashMonthlyValue * 12);
-  const cashROI25 = ((cashMonthlyValue * 12 * 25 - totalSystemCost) / totalSystemCost) * 100;
+  // --- Helper: year-N savings with escalation + linear degradation ---
+  // Matches CashFlowChart: escalation = (1 + 2.5%)^year, degradation = 1 - year*0.5%
+  function savingsForYear(year: number): number {
+    const escalation = Math.pow(1 + RATE_ESCALATION, year);
+    const degradation = Math.max(0, 1 - year * PANEL_DEGRADATION);
+    return baseAnnualSavings * escalation * degradation;
+  }
 
-  // === LOAN OPTION ===
+  // --- 25-year cumulative savings ---
+  let total25YrSavings = 0;
+  for (let y = 1; y <= 25; y++) total25YrSavings += savingsForYear(y);
+
+  // === CASH ===
+  const cashPaybackYears = (() => {
+    let cum = 0;
+    for (let y = 1; y <= 25; y++) {
+      const ys = savingsForYear(y);
+      cum += ys;
+      if (cum >= totalSystemCost) {
+        const prev = cum - ys;
+        return (y - 1) + (totalSystemCost - prev) / ys;
+      }
+    }
+    return 25;
+  })();
+  const cashROI25 = ((total25YrSavings - totalSystemCost) / totalSystemCost) * 100;
+
+  // === LOAN ===
   // 10% down, 6.5% APR, 25-year term
   const loanDownPayment = totalSystemCost * 0.10;
   const loanPrincipal = totalSystemCost - loanDownPayment;
@@ -77,40 +103,65 @@ export function calculateFinancing(systemSizeKw: number, sunFactor: number = 1.0
     (Math.pow(1 + monthlyRate, numPayments) - 1);
   const loanTotalInterest = loanMonthlyPayment * numPayments - loanPrincipal;
   const loanTotalCost = loanDownPayment + loanMonthlyPayment * numPayments;
-  const loanROI25 = ((cashMonthlyValue * 12 * 25 - loanTotalCost) / loanTotalCost) * 100;
+  const loanROI25 = ((total25YrSavings - loanTotalCost) / loanTotalCost) * 100;
 
-  // === LEASE OPTION ===
-  // Typical lease: $0 down, payment at 65% of electricity savings, 20-year term
+  const loanBreakEven = (() => {
+    let cum = -loanDownPayment;
+    for (let y = 1; y <= 25; y++) {
+      const ys = savingsForYear(y);
+      const loanYearPayment = y <= LOAN_TERM_YEARS ? loanMonthlyPayment * 12 : 0;
+      const net = ys - loanYearPayment;
+      cum += net;
+      if (cum >= 0) {
+        const prev = cum - net;
+        return net > 0 ? (y - 1) + (-prev) / net : y;
+      }
+    }
+    // Still negative at year 25 — extrapolate
+    if (cum < 0) return 25 + (-cum) / savingsForYear(25);
+    return 25;
+  })();
+
+  // === LEASE ===
   const leaseMonthlyPayment = Math.max(50, monthlyElectricityCost * 0.65);
-  const leaseTermMonths = 20 * 12;
-  const leaseTotalCost = leaseMonthlyPayment * leaseTermMonths;
-  const leaseElectricityValue = monthlyElectricityCost * leaseTermMonths;
-  const leaseNetSavings = leaseElectricityValue - leaseTotalCost;
-  // CRITICAL FIX: Lease break-even = when cumulative net savings > 0
-  // Since lease has no upfront cost, break-even is immediate if payment < savings
-  const leaseBreakEvenYears = leaseMonthlyPayment < monthlyElectricityCost
-    ? 0.1 // effectively immediate (first month you save)
-    : (leaseTotalCost / (monthlyElectricityCost * 12)); // years until value = cost
-  const leaseROI20 = (leaseNetSavings / leaseTotalCost) * 100;
+  const leaseTerm = 20;
 
-  // === PPA OPTION ===
-  // Power Purchase Agreement: $0 down, pay per kWh generated
-  // Typical PPA rate: $0.08-0.12/kWh (lower than grid rate)
-  const ppaRatePerKwh = BASE_ELECTRICITY_RATE * 0.75; // 75% of grid rate (~$0.10/kWh)
-  const ppaEscalator = 0.025; // 2.5% annual escalation
+  let leaseTotalSavings = 0;
+  const leaseTotalPayments = leaseMonthlyPayment * 12 * leaseTerm;
+  for (let y = 1; y <= leaseTerm; y++) leaseTotalSavings += savingsForYear(y);
+  const leaseNetSavings = leaseTotalSavings - leaseTotalPayments;
+  const leaseROI20 = (leaseNetSavings / leaseTotalPayments) * 100;
+
+  const leaseBreakEven = (() => {
+    // If monthly payment < month-1 savings → immediate break even
+    if (leaseMonthlyPayment < monthlyElectricityCost) return 0.1;
+    let cum = 0;
+    for (let y = 1; y <= leaseTerm; y++) {
+      const net = savingsForYear(y) - leaseMonthlyPayment * 12;
+      cum += net;
+      if (cum >= 0) {
+        const prev = cum - net;
+        return net > 0 ? (y - 1) + (-prev) / net : y;
+      }
+    }
+    return leaseTerm;
+  })();
+
+  // === PPA ===
+  const ppaRatePerKwh = BASE_ELECTRICITY_RATE * 0.75;
+  const ppaEscalator = 0.025;
   const ppaTermYears = 25;
 
-  // Calculate 25-year PPA cost with escalation
   let ppaTotalCost = 0;
   let ppaElectricityValue = 0;
   for (let year = 0; year < ppaTermYears; year++) {
+    const yearProd = annualProduction * Math.max(0, 1 - (year + 1) * PANEL_DEGRADATION);
     const escalatedRate = ppaRatePerKwh * Math.pow(1 + ppaEscalator, year);
-    ppaTotalCost += annualProduction * escalatedRate;
-    // Assume grid rate also escalates at same rate for comparison
-    ppaElectricityValue += annualProduction * (BASE_ELECTRICITY_RATE * Math.pow(1 + ppaEscalator, year));
+    ppaTotalCost += yearProd * escalatedRate;
+    ppaElectricityValue += yearProd * (BASE_ELECTRICITY_RATE * Math.pow(1 + RATE_ESCALATION, year));
   }
   const ppaSavings25Year = ppaElectricityValue - ppaTotalCost;
-  const ppaMonthlyPayment = (annualProduction / 12) * ppaRatePerKwh; // avg first year
+  const ppaMonthlyPayment = (annualProduction / 12) * ppaRatePerKwh;
   const ppaROI25 = (ppaSavings25Year / ppaTotalCost) * 100;
 
   return {
@@ -125,27 +176,15 @@ export function calculateFinancing(systemSizeKw: number, sunFactor: number = 1.0
       downPayment: loanDownPayment,
       monthlyPayment: loanMonthlyPayment,
       totalInterest: loanTotalInterest,
-      yearsToBreakEven: (() => {
-        // Find year where cumulative savings exceed cumulative loan costs
-        let cumulativeSavings = 0;
-        let cumulativeCosts = loanDownPayment;
-        for (let month = 1; month <= numPayments; month++) {
-          cumulativeSavings += cashMonthlyValue;
-          cumulativeCosts += loanMonthlyPayment;
-          if (cumulativeSavings >= cumulativeCosts) return month / 12;
-        }
-        // After loan term, only savings accumulate
-        const remaining = cumulativeCosts - cumulativeSavings;
-        return LOAN_TERM_YEARS + remaining / (cashMonthlyValue * 12);
-      })(),
+      yearsToBreakEven: loanBreakEven,
       roi25Years: loanROI25
     },
     lease: {
       downPayment: 0,
       monthlyPayment: leaseMonthlyPayment,
-      termYears: 20,
-      totalCost: leaseTotalCost,
-      yearsToBreakEven: leaseBreakEvenYears,
+      termYears: leaseTerm,
+      totalCost: leaseTotalPayments,
+      yearsToBreakEven: leaseBreakEven,
       roi20Years: leaseROI20
     },
     ppa: {

@@ -589,6 +589,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
         systemCost={effectiveResults.systemSizeKw * 1000 * 2.75}
         annualSavings={effectiveResults.estimatedAnnualProduction * 0.14}
         loanMonthlyPayment={effectiveResults.financing.find(f => f.type === 'loan')?.monthlyPayment || 150}
+        loanDownPayment={effectiveResults.financing.find(f => f.type === 'loan')?.downPayment || 0}
         leaseMonthlyPayment={effectiveResults.financing.find(f => f.type === 'lease')?.monthlyPayment || 120}
         ppaRate={effectiveResults.financing.find(f => f.type === 'ppa')?.ppaRatePerKwh || 0.10}
         annualProduction={effectiveResults.estimatedAnnualProduction}

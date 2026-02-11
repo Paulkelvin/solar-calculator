@@ -45,6 +45,9 @@ function calculateMonthlyPayment(
     (Math.pow(1 + monthlyRate, numPayments) - 1);
 }
 
+// Fixed installation overhead: permits, engineering, monitoring, interconnection
+const FIXED_INSTALL_OVERHEAD = 5000;
+
 /**
  * Generate 3 system design options based on annual consumption
  * 
@@ -90,16 +93,14 @@ export function generateSystemDesignOptions(
       systemSizeKw = Math.min(systemSizeKw, roofMaxKw);
     }
 
-    const systemCost = systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
+    const systemCost = FIXED_INSTALL_OVERHEAD + systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
 
     // Production metrics
     const annualProduction = systemSizeKw * AVG_PRODUCTION_PER_KW * sunFactor;
     const actualCoverage = (annualProduction / annualConsumptionKwh) * 100;
 
     // Financial metrics
-    const monthlyProduction = annualProduction / 12;
-    const monthlyElectricitySavings = monthlyProduction * BASE_ELECTRICITY_RATE;
-    const firstYearSavings = monthlyElectricitySavings * 12;
+    const firstYearSavings = annualProduction * BASE_ELECTRICITY_RATE;
 
     // Loan calculation (10% down to match solar.ts)
     const loanDownPayment = systemCost * 0.10;
@@ -110,37 +111,34 @@ export function generateSystemDesignOptions(
       LOAN_TERM_YEARS
     );
 
-    // ROI calculation (25-year) with rate escalation AND panel degradation
-    let totalSavings = 0;
-    for (let year = 0; year < 25; year++) {
-      // Electricity rates go up, panel output goes down
-      const rateMultiplier = Math.pow(1 + RATE_ESCALATION, year);
-      const degradationMultiplier = Math.pow(1 - PANEL_DEGRADATION, year);
-      const yearSavings = firstYearSavings * rateMultiplier * degradationMultiplier;
-      totalSavings += yearSavings;
+    // --- Savings helper: matches CashFlowChart / calculateFinancing ---
+    // Linear degradation + rate escalation (year is 1-based)
+    function savingsForYear(year: number): number {
+      const escalation = Math.pow(1 + RATE_ESCALATION, year);
+      const degradation = Math.max(0, 1 - year * PANEL_DEGRADATION);
+      return firstYearSavings * escalation * degradation;
     }
 
-    const totalInvestment = systemCost;
-    const roi25Year = ((totalSavings - totalInvestment) / totalInvestment) * 100;
+    // ROI calculation (25-year)
+    let totalSavings = 0;
+    for (let year = 1; year <= 25; year++) {
+      totalSavings += savingsForYear(year);
+    }
 
-    // Payback period (cash purchase: when cumulative savings > system cost)
+    const roi25Year = ((totalSavings - systemCost) / systemCost) * 100;
+
+    // Payback period (cash purchase: when cumulative savings >= system cost)
     let cumulativeSavings = 0;
-    let paybackMonths = 300; // default 25yr if never pays back
-
-    for (let month = 0; month < 300; month++) {
-      const year = month / 12;
-      const rateMultiplier = Math.pow(1 + RATE_ESCALATION, year);
-      const degradationMultiplier = Math.pow(1 - PANEL_DEGRADATION, year);
-      const monthlySaving = (firstYearSavings / 12) * rateMultiplier * degradationMultiplier;
-      cumulativeSavings += monthlySaving;
-
-      if (cumulativeSavings >= totalInvestment) {
-        paybackMonths = month;
+    let paybackYearsResult = 25.0;
+    for (let y = 1; y <= 25; y++) {
+      const ys = savingsForYear(y);
+      cumulativeSavings += ys;
+      if (cumulativeSavings >= systemCost) {
+        const prev = cumulativeSavings - ys;
+        paybackYearsResult = (y - 1) + (systemCost - prev) / ys;
         break;
       }
     }
-
-    const paybackYears = paybackMonths / 12;
 
     return {
       name: names[idx],
@@ -151,7 +149,7 @@ export function generateSystemDesignOptions(
       systemCostUSD: Math.round(systemCost),
       monthlyPaymentLoan: Math.round(monthlyPayment),
       firstYearSavings: Math.round(firstYearSavings),
-      paybackYears: Math.round(paybackYears * 10) / 10,
+      paybackYears: Math.round(paybackYearsResult * 10) / 10,
       roi25Year: Math.round(roi25Year),
       recommendedFor: recommendedFors[idx]
     };

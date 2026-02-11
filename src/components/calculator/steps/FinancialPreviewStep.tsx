@@ -66,7 +66,7 @@ export function FinancialPreviewStep({
     }
 
     return null;
-  }, [solarSnapshot?.estimatedSavingsRange, usage?.billAmount, usage?.monthlyKwh]);
+  }, [preview, solarSnapshot?.estimatedSavingsRange]);
 
   const financingCards = useMemo(() => {
     if (!preview) return [];
