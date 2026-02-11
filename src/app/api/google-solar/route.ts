@@ -134,10 +134,10 @@ export async function POST(request: Request) {
     // sunshineQuantiles values are also in hours/year — normalize to 0-100%.
     const maxSunshineHours = data.solarPotential.maxSunshineHoursPerYear || 1800;
 
-    const roofSegments = data.solarPotential.roofSegmentStats.map(segment => {
+    const roofSegments = (data.solarPotential.roofSegmentStats || []).map(segment => {
       const footprint = resolveSegmentFootprint(segment);
       // Convert median sunshine hours to a 0-100 sun-exposure percentage
-      const medianHours = segment.stats.sunshineQuantiles[5] || 0;
+      const medianHours = segment.stats?.sunshineQuantiles?.[5] || 0;
       const sunExposurePct = Math.max(0, Math.min(100, Math.round((medianHours / maxSunshineHours) * 100)));
 
       return {
@@ -172,18 +172,36 @@ export async function POST(request: Request) {
       roofSegments,
       roofOutline: roofOutline?.points ?? (roofSegments[0]?.footprint ?? null),
       roofOutlineSource: roofOutline?.source ?? (roofSegments[0]?.footprintSource ?? null),
-      maxArrayPanels: data.solarPotential.maxArrayPanelsCount,
-      maxArrayArea: data.solarPotential.maxArrayAreaMeters2,
-      maxSunshineHours: data.solarPotential.maxSunshineHoursPerYear,
-      wholeRoofArea: data.solarPotential.wholeRoofStats.areaMeters2,
-      carbonOffset: data.solarPotential.carbonOffsetFactorKgPerMwh,
+      maxArrayPanels: data.solarPotential.maxArrayPanelsCount || 0,
+      maxArrayArea: data.solarPotential.maxArrayAreaMeters2 || 0,
+      maxSunshineHours: data.solarPotential.maxSunshineHoursPerYear || 0,
+      wholeRoofArea: data.solarPotential.wholeRoofStats?.areaMeters2 || 0,
+      carbonOffset: data.solarPotential.carbonOffsetFactorKgPerMwh || 0,
       // Configs are sorted ascending by panelsCount. Slice the LAST 5 so the
       // largest (max-panel) configuration comes last and is easy to pick.
-      panelConfigs: data.solarPotential.solarPanelConfigs.slice(-5).map(config => ({
-        panelsCount: config.panelsCount,
-        yearlyEnergyKwh: config.yearlyEnergyDcKwh,
-        systemSizeKw: config.panelsCount * 0.4, // Assume 400W panels
-      })),
+      // When solarPanelConfigs is missing (some buildings), derive a single
+      // config from maxArrayPanelsCount so we still have Google Solar capacity.
+      panelConfigs: (() => {
+        const configs = (data.solarPotential.solarPanelConfigs || []).slice(-5).map((config: any) => ({
+          panelsCount: config.panelsCount,
+          yearlyEnergyKwh: config.yearlyEnergyDcKwh,
+          systemSizeKw: config.panelsCount * 0.4, // Assume 400W panels
+        }));
+        // Fallback: derive from maxArrayPanelsCount when no panel configs exist
+        if (configs.length === 0 && data.solarPotential.maxArrayPanelsCount > 0) {
+          const panelCount = data.solarPotential.maxArrayPanelsCount;
+          const systemKw = panelCount * 0.4;
+          // Estimate production from sunshine hours + panel area
+          const peakSunHrs = (maxSunshineHours / 365) || 4.5;
+          const yearlyKwh = Math.round(systemKw * peakSunHrs * 365 * 0.80); // 80% performance ratio
+          configs.push({
+            panelsCount: panelCount,
+            yearlyEnergyKwh: yearlyKwh,
+            systemSizeKw: systemKw,
+          });
+        }
+        return configs;
+      })(),
       _source: 'google_solar_api',
     };
 
