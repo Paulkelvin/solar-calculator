@@ -93,7 +93,10 @@ const transformSolarApiResponse = (
       Math.min(100, Math.round((avgSunExposure + Math.min(totalArea * 0.1, 50)) / 2))
     ),
     peakSunHours,
-    percentileRanking: avgSunExposure > 85 ? 10 : avgSunExposure > 70 ? 25 : 50,
+    percentileRanking: (() => {
+      const score = Math.max(0, Math.min(100, Math.round((avgSunExposure + Math.min(totalArea * 0.1, 50)) / 2)));
+      return score >= 85 ? 10 : score >= 70 ? 25 : score >= 55 ? 50 : 75;
+    })(),
     estimatedSavingsRange: {
       min: estimatedSavingsMin,
       max: estimatedSavingsMax

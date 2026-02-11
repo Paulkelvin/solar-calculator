@@ -92,9 +92,21 @@ export function CashFlowChart({
     }
   }
   
-  // Calculate payback years for each option
-  const cashPayback = data.findIndex(d => d.cashSavings > 0);
-  const loanPayback = data.findIndex(d => d.loanSavings > 0);
+  // Calculate payback years for each option — interpolate for decimal precision
+  const interpolatePayback = (key: 'cashSavings' | 'loanSavings') => {
+    for (let i = 1; i < data.length; i++) {
+      if (data[i][key] >= 0 && data[i - 1][key] < 0) {
+        // Linear interpolation between year i-1 and year i
+        const prev = data[i - 1][key];
+        const curr = data[i][key];
+        const fraction = -prev / (curr - prev);
+        return Math.round(((i - 1) + fraction) * 10) / 10;
+      }
+    }
+    return 0;
+  };
+  const cashPayback = interpolatePayback('cashSavings');
+  const loanPayback = interpolatePayback('loanSavings');
   
   return (
     <Card className="border-2 border-blue-300">
@@ -202,7 +214,7 @@ export function CashFlowChart({
             </p>
             {cashPayback > 0 && (
               <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                ⏱ {cashPayback}yr payback
+                ⏱ {cashPayback.toFixed(1)}yr payback
               </p>
             )}
           </div>
@@ -214,7 +226,7 @@ export function CashFlowChart({
             </p>
             {loanPayback > 0 && (
               <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                ⏱ {loanPayback}yr payback
+                ⏱ {loanPayback.toFixed(1)}yr payback
               </p>
             )}
           </div>

@@ -165,7 +165,8 @@ export function calculateFinancing(systemSizeKw: number, sunFactor: number = 1.0
  */
 export function calculateEnvironmental(
   systemSizeKw: number,
-  annualProduction: number
+  annualProduction: number,
+  annualConsumption?: number
 ) {
   // CO2 offset: avg US grid ~0.4 kg CO2 per kWh
   const co2PerKwh = 0.4;
@@ -174,9 +175,10 @@ export function calculateEnvironmental(
   // Trees: mature tree absorbs ~20 kg CO2/year
   const treesEquivalent = annualCO2Offset / 20;
 
-  // Grid independence: % of typical home consumption covered by solar
-  const typicalHomeConsumption = 10800; // kWh/year US average
-  const gridIndependence = Math.min(100, (annualProduction / typicalHomeConsumption) * 100);
+  // Grid independence: % of actual household consumption covered by solar
+  // Use actual consumption when available; fall back to US average (10,800 kWh/yr)
+  const effectiveConsumption = annualConsumption && annualConsumption > 0 ? annualConsumption : 10800;
+  const gridIndependence = Math.min(100, (annualProduction / effectiveConsumption) * 100);
 
   return {
     annualCO2Offset: Math.round(annualCO2Offset),
@@ -256,7 +258,15 @@ export function performSolarCalculation(
     }
   ];
 
-  const environmental = calculateEnvironmental(systemSizeKw, annualProduction);
+  // Derive actual annual consumption for environmental metrics
+  let annualConsumption: number | undefined;
+  if (input.monthlyKwh) {
+    annualConsumption = input.monthlyKwh * 12;
+  } else if (input.billAmount) {
+    annualConsumption = (input.billAmount / BASE_ELECTRICITY_RATE) * 12;
+  }
+
+  const environmental = calculateEnvironmental(systemSizeKw, annualProduction, annualConsumption);
 
   return {
     systemSizeKw: Math.round(systemSizeKw * 100) / 100,

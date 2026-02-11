@@ -220,7 +220,10 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
           stateName: data._stateName,
           solarScore: Math.min(100, Math.round((avgSunExposure + totalArea * 0.1) / 2)),
           peakSunHours: data.peakSunHours || 4.5,
-          percentileRanking: avgSunExposure > 85 ? 10 : avgSunExposure > 70 ? 25 : 50,
+          percentileRanking: (() => {
+            const score = Math.min(100, Math.round((avgSunExposure + totalArea * 0.1) / 2));
+            return score >= 85 ? 10 : score >= 70 ? 25 : score >= 55 ? 50 : 75;
+          })(),
         };
 
         setSolarData(nextSolarData);
@@ -229,7 +232,7 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
 
         const updatedRoof: Roof = {
           roofType: formValue.roofType || defaultRoof.roofType,
-          squareFeet: Math.max(1200, nextSolarData.roofAreaSqft || formValue.squareFeet || defaultRoof.squareFeet),
+          squareFeet: nextSolarData.roofAreaSqft || formValue.squareFeet || defaultRoof.squareFeet,
           sunExposure: determineSunExposure(nextSolarData.sunExposurePercentage),
         };
 

@@ -50,20 +50,17 @@ export function FinancialPreviewStep({
   }, [hasInputs, roof, usage?.monthlyKwh, usage?.billAmount, address, preferences?.wantsBattery]);
 
   const savingsRange = useMemo(() => {
-    // Always compute savings from the user's actual bill/usage when available.
-    // solarSnapshot.estimatedSavingsRange is based on raw roof potential (Google Solar),
-    // which doesn't reflect the user's consumption and produces misleading numbers.
-    const monthlyBill = usage?.billAmount ?? (usage?.monthlyKwh ? usage.monthlyKwh * 0.14 : null);
-    if (monthlyBill) {
-      const annualBill = monthlyBill * 12;
-      const baseline = annualBill * 0.8; // 80% offset (matches performSolarCalculation)
+    // Use the actual constrained production from performSolarCalculation
+    // instead of assuming 80% bill offset (roof may limit system size)
+    if (preview) {
+      const annualSavings = preview.estimatedAnnualProduction * 0.14;
       return {
-        min: Math.round(baseline * 0.9),
-        max: Math.round(baseline * 1.1),
+        min: Math.round(annualSavings * 0.9),
+        max: Math.round(annualSavings * 1.1),
       };
     }
 
-    // Fall back to solarSnapshot only when no bill data exists
+    // Fall back to solarSnapshot only when no preview exists
     if (solarSnapshot?.estimatedSavingsRange) {
       return solarSnapshot.estimatedSavingsRange;
     }

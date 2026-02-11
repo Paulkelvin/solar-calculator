@@ -51,14 +51,21 @@ function calculateMonthlyPayment(
  * @param annualConsumptionKwh - Annual electricity consumption in kWh
  * @param sunFactor - Adjustment factor for sun exposure (0.7-1.15)
  * @param stateForIncentives - State for incentive lookup (optional)
+ * @param roofAreaSqft - Roof area in sqft for constraining system size
  * @returns Array of 3 system options (conservative, standard, aggressive)
  */
 export function generateSystemDesignOptions(
   annualConsumptionKwh: number,
   sunFactor: number = 1.0,
-  stateForIncentives?: string
+  stateForIncentives?: string,
+  roofAreaSqft?: number
 ): SystemDesignOption[] {
   const adjustedProduction = annualConsumptionKwh / sunFactor;
+
+  // Roof constraint: ~54 sq ft per kW, ~60% usable area
+  const roofMaxKw = roofAreaSqft && roofAreaSqft > 0
+    ? (roofAreaSqft * 0.6) / 54
+    : Infinity;
 
   // 3 options: cover 60%, 80%, 100% of consumption
   const coveragePercentages = [60, 80, 100];
@@ -76,7 +83,13 @@ export function generateSystemDesignOptions(
 
   return coveragePercentages.map((coverage, idx) => {
     const targetProduction = (adjustedProduction * coverage) / 100;
-    const systemSizeKw = targetProduction / AVG_PRODUCTION_PER_KW;
+    let systemSizeKw = targetProduction / AVG_PRODUCTION_PER_KW;
+
+    // Apply roof constraint
+    if (roofMaxKw < Infinity) {
+      systemSizeKw = Math.min(systemSizeKw, roofMaxKw);
+    }
+
     const systemCost = systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
 
     // Production metrics

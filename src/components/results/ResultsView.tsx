@@ -87,9 +87,10 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
       }
       
       const state = leadData?.address?.state || 'CA';
+      const roofSqft = solarData?.roofAreaSqft || leadData?.roof?.squareFeet;
 
       try {
-        const options = generateSystemDesignOptions(annualConsumption, sunFactor, state);
+        const options = generateSystemDesignOptions(annualConsumption, sunFactor, state, roofSqft);
         setSystemDesignOptions(options);
         
         // Select the first option (Standard) by default
@@ -102,7 +103,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
     };
 
     generateDesignOptions();
-  }, [annualConsumption, solarData?.sunExposurePercentage, leadData?.address?.state]);
+  }, [annualConsumption, solarData?.sunExposurePercentage, solarData?.roofAreaSqft, leadData?.address?.state, leadData?.roof?.squareFeet]);
 
   // === UNIFIED RESULTS ===
   // When Google Solar provides REAL data, recalculate to match.
@@ -125,7 +126,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
     const effectiveSunFactor = googleProdPerKw / AVG_PRODUCTION_PER_KW;
 
     const financingData = calculateFinancing(realSystemSizeKw, effectiveSunFactor);
-    const environmental = calculateEnvironmental(realSystemSizeKw, realAnnualProduction);
+    const environmental = calculateEnvironmental(realSystemSizeKw, realAnnualProduction, annualConsumption);
 
     const financing = [
       {
