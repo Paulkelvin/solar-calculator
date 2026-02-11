@@ -141,7 +141,7 @@ export function FinancialPreviewStep({
                 <p className="text-xs uppercase tracking-wide text-gray-500">{option.type === "cash" ? "Cash Purchase" : "Solar Loan"}</p>
                 <p className="text-xl font-semibold text-gray-900 capitalize">{option.type}</p>
               </div>
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-semibold text-gray-600">Phase 1 preview</span>
+              <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-semibold text-gray-600">{googleSolar ? 'Google Solar data' : 'Phase 1 preview'}</span>
             </div>
             <div className="mt-4 space-y-2 text-sm">
               {option.downPayment > 0 && (

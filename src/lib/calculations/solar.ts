@@ -268,16 +268,31 @@ export function performSolarCalculation(
 
   if (googleSolar && googleSolar.annualProductionKwh > 0 && googleSolar.systemSizeKw > 0) {
     // === GOOGLE SOLAR: Single source of truth ===
-    // Constrain Google Solar's max capacity by the user's actual energy needs
-    const mockSystemSize = calculateSystemSize(input);
-    systemSizeKw = Math.min(googleSolar.systemSizeKw, mockSystemSize);
+    const googleProdPerKw = googleSolar.annualProductionKwh / googleSolar.systemSizeKw;
 
-    // Scale production proportionally if we're using a smaller system than Google Solar's max
-    const scaleFactor = systemSizeKw / googleSolar.systemSizeKw;
-    annualProduction = Math.round(googleSolar.annualProductionKwh * scaleFactor);
+    // Derive annual consumption from the same inputs as calculateSystemSize
+    let estimatedMonthlyKwh = input.monthlyKwh;
+    if (!estimatedMonthlyKwh && input.billAmount) {
+      estimatedMonthlyKwh = input.billAmount / BASE_ELECTRICITY_RATE;
+    }
+    if (!estimatedMonthlyKwh) estimatedMonthlyKwh = 500;
+    const annualConsumption = estimatedMonthlyKwh * 12;
+
+    // Size for 80% offset using Google Solar's REAL production per kW
+    // (not the 1200 kWh/kW national average)
+    let idealSize = (annualConsumption * 0.8) / googleProdPerKw;
+
+    // Apply roof constraint from user input (same formula as calculateSystemSize)
+    if (input.roofSquareFeet > 0) {
+      const roofConstraint = (input.roofSquareFeet * 0.6) / 54;
+      idealSize = Math.min(idealSize, roofConstraint);
+    }
+
+    // Cap at Google Solar's maximum roof capacity
+    systemSizeKw = Math.min(idealSize, googleSolar.systemSizeKw);
+    annualProduction = Math.round(systemSizeKw * googleProdPerKw);
 
     // Derive sunFactor so calculateFinancing produces consistent numbers
-    const googleProdPerKw = googleSolar.annualProductionKwh / googleSolar.systemSizeKw;
     sunFactor = googleProdPerKw / AVG_PRODUCTION_PER_KW;
   } else {
     // === MOCK FALLBACK: estimate when Google Solar unavailable ===

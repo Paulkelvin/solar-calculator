@@ -26,14 +26,28 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
       return;
     }
 
-    // Use centralized getSunFactor helper (eliminates duplication)
-    const sunFactor = getSunFactor({ sunExposurePercentage: solarData.sunExposurePercentage });
+    // === SYSTEM SIZING ===
+    // When Google Solar is available, use its production-per-kW for sizing
+    // (matches performSolarCalculation and UsageStep sizing)
+    const hasGoogleSolar = solarData.panelCapacityWatts && solarData.panelCapacityWatts > 0
+      && solarData.annualProduction && solarData.annualProduction > 0
+      && solarData.googleSolarSource === 'real';
 
-    // Calculate recommended system size (80% offset — industry standard)
-    // Divide by sunFactor: better sun → fewer kW needed (matches calculateSystemSize)
-    let recommendedSize = Math.round((usage.annualKwh * 0.8 / (AVG_PRODUCTION_PER_KW * sunFactor)) * 10) / 10;
+    let recommendedSize: number;
+    if (hasGoogleSolar) {
+      const googleMaxKw = solarData.panelCapacityWatts! / 1000;
+      const googleProdPerKw = solarData.annualProduction! / googleMaxKw;
+      recommendedSize = Math.round(Math.min(
+        usage.annualKwh * 0.8 / googleProdPerKw,
+        googleMaxKw
+      ) * 10) / 10;
+    } else {
+      // Fallback to mock formula when Google Solar unavailable
+      const sunFactor = getSunFactor({ sunExposurePercentage: solarData.sunExposurePercentage });
+      recommendedSize = Math.round((usage.annualKwh * 0.8 / (AVG_PRODUCTION_PER_KW * sunFactor)) * 10) / 10;
+    }
 
-    // Apply roof constraint: ~54 sq ft per kW, ~60% usable area (matches performSolarCalculation)
+    // Apply roof constraint: ~54 sq ft per kW, ~60% usable area
     if (solarData.roofAreaSqft && solarData.roofAreaSqft > 0) {
       const roofConstraint = Math.round(((solarData.roofAreaSqft * 0.6) / 54) * 10) / 10;
       recommendedSize = Math.min(recommendedSize, roofConstraint);
@@ -106,13 +120,21 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
   const billOffset = calculateBillOffset(estimate.production.annual, usage.annualKwh || 0);
   const monthlyData = formatMonthlyData(estimate.production.monthly);
 
+  // Determine if Google Solar is the primary data source —
+  // if so, suppress conflicting NREL headline numbers (they use a different production model)
+  const hasGoogleSolar = !!(solarData.panelCapacityWatts && solarData.panelCapacityWatts > 0
+    && solarData.annualProduction && solarData.annualProduction > 0
+    && solarData.googleSolarSource === 'real');
+
   return (
     <Card className="border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 shadow-lg">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Zap className="h-5 w-5 text-green-600" />
-            <CardTitle className="text-lg">What Solar Will Produce For You</CardTitle>
+            <CardTitle className="text-lg">
+              {hasGoogleSolar ? 'Seasonal Production Pattern' : 'What Solar Will Produce For You'}
+            </CardTitle>
           </div>
           {estimate.source === 'fallback' && (
             <Badge className="border border-amber-200 bg-amber-50 text-amber-800 text-xs shadow-sm">
@@ -131,9 +153,15 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
             Based on {estimate.location.city}, {estimate.location.state} weather data
           </p>
         )}
+        {hasGoogleSolar && (
+          <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">
+            Monthly pattern from NREL weather data. Financial estimates use Google Solar satellite analysis.
+          </p>
+        )}
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Key Metrics */}
+        {/* Key Metrics — only shown when Google Solar is NOT available (avoids conflicting numbers) */}
+        {!hasGoogleSolar && (
         <div className="grid grid-cols-3 gap-3">
           {/* Annual Production */}
           <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
@@ -171,17 +199,20 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
             <p className="text-xs text-muted-foreground">per year</p>
           </div>
         </div>
+        )}
 
-        {/* Monthly Chart Toggle */}
+        {/* Monthly Chart Toggle — when Google Solar active, chart is the main content */}
+        {!hasGoogleSolar && (
         <button
           onClick={() => setShowMonthly(!showMonthly)}
           className="w-full text-sm text-blue-600 dark:text-blue-400 hover:underline"
         >
           {showMonthly ? '▲ Hide' : '▼ Show'} Monthly Breakdown
         </button>
+        )}
 
         {/* Monthly Production Chart */}
-        {showMonthly && (
+        {(showMonthly || hasGoogleSolar) && (
           <div className="p-4 bg-white dark:bg-gray-800 rounded-lg">
             <p className="text-xs font-medium mb-3">Monthly Solar Production (kWh)</p>
             <ResponsiveContainer width="100%" height={200}>
