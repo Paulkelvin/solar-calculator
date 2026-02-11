@@ -61,7 +61,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
   // Compute actual annual consumption — derive from billAmount when monthlyKwh is missing
   const annualConsumption = useMemo(() => {
     if (leadData?.usage?.monthlyKwh && leadData.usage.monthlyKwh > 0) {
-      return leadData.usage.monthlyKwh * 12;
+      return Math.round(leadData.usage.monthlyKwh * 12);
     }
     if (leadData?.usage?.billAmount && leadData.usage.billAmount > 0) {
       return Math.round((leadData.usage.billAmount / BASE_ELECTRICITY_RATE) * 12);
@@ -610,6 +610,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
         <div className="min-w-0">
         <EnvironmentalImpactChart
           annualProduction={effectiveResults.estimatedAnnualProduction}
+          annualConsumption={annualConsumption}
           co2OffsetTons={(effectiveResults.estimatedAnnualProduction * 0.0004) || 5.6}
           treesEquivalent={Math.round((effectiveResults.estimatedAnnualProduction * 0.0004 / 0.02) || 220)}
         />

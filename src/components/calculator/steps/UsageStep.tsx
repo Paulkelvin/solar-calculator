@@ -143,7 +143,8 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
     if (!isNaN(num) && num > 0) {
       // Pass both billAmount AND estimated monthlyKwh so downstream
       // consumers (ResultsView, PDF export) always have kWh data.
-      const estimatedKwh = Math.round(num / averageRate);
+      // Keep monthlyKwh unrounded so annualKwh rounding matches UsageStep display.
+      const estimatedKwh = num / averageRate;
       validate({ billAmount: num, monthlyKwh: estimatedKwh });
     } else if (val === "") {
       setErrors({});

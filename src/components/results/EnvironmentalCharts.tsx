@@ -103,25 +103,26 @@ export function BillOffsetChart({
 
 interface EnvironmentalImpactChartProps {
   annualProduction: number; // kWh
+  annualConsumption: number; // kWh — user’s actual usage
   co2OffsetTons: number;
   treesEquivalent: number;
 }
 
 export function EnvironmentalImpactChart({
   annualProduction,
+  annualConsumption,
   co2OffsetTons,
   treesEquivalent,
 }: EnvironmentalImpactChartProps) {
-  // Breakdown: Solar offset vs remaining grid emissions
-  // co2OffsetTons = what solar saves; remaining = typical household total minus saved
-  const typicalHouseholdCO2 = annualProduction > 0
-    ? co2OffsetTons / Math.min(1, annualProduction / 10800) // scale to full consumption
-    : co2OffsetTons * 2;
-  const remainingGridCO2 = Math.max(0, typicalHouseholdCO2 - co2OffsetTons);
+  // Compute CO\u2082 ratio using actual user consumption, not hardcoded 10800 avg.
+  // Total household CO\u2082 = consumption * 0.0004 tons/kWh (same factor used for offset)
+  const totalHouseholdCO2 = annualConsumption * 0.0004;
+  const solarSavedCO2 = Math.min(co2OffsetTons, totalHouseholdCO2);
+  const remainingGridCO2 = Math.max(0, totalHouseholdCO2 - solarSavedCO2);
 
   const data = [
-    { name: "CO\u2082 Saved (Solar)", value: co2OffsetTons, color: "#22c55e" },
-    { name: "Remaining Grid CO\u2082", value: remainingGridCO2, color: "#ef4444" },
+    { name: "CO\u2082 Saved (Solar)", value: Number(solarSavedCO2.toFixed(2)), color: "#22c55e" },
+    { name: "Remaining Grid CO\u2082", value: Number(remainingGridCO2.toFixed(2)), color: "#ef4444" },
   ];
 
   return (
