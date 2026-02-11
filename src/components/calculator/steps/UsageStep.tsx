@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { usageSchema, type Usage } from "../../../../types/leads";
 import { useCalculatorStore } from "../../../store/calculatorStore";
+import { getSunFactor, AVG_PRODUCTION_PER_KW, BASE_ELECTRICITY_RATE } from "@/lib/calculations/solar";
 import { Zap, DollarSign, Loader2 } from "lucide-react";
 import { LiveProductionPreview } from "../LiveProductionPreview";
 
@@ -25,7 +26,7 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
   // Live estimates
   const [annualKwh, setAnnualKwh] = useState<number | null>(null);
   const [annualCost, setAnnualCost] = useState<number | null>(null);
-  const [averageRate, setAverageRate] = useState<number>(0.14); // Default $0.14/kWh
+  const [averageRate, setAverageRate] = useState<number>(BASE_ELECTRICITY_RATE); // Default from constant
   const [isEnergyProfileLoading, setIsEnergyProfileLoading] = useState(false);
   const [showEnergyProfile, setShowEnergyProfile] = useState(false);
   const [nrelStatus, setNrelStatus] = useState<'idle' | 'loading' | 'ready'>('idle');
@@ -274,27 +275,41 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
           </div>
 
           {solarData?.solarScore && annualKwh && (() => {
-            // Derive sunFactor (mirrors calculateSystemSize + RoofStep thresholds)
-            const pct = solarData?.sunExposurePercentage;
-            const sf = !pct ? 1.0 : pct >= 85 ? 1.15 : pct >= 70 ? 1.0 : pct >= 55 ? 0.85 : 0.7;
-            let size = Math.round((annualKwh * 0.8 / (1200 * sf)) * 10) / 10;
-            // Apply roof constraint if available (matches performSolarCalculation)
-            const roofSqft = solarData?.roofAreaSqft;
-            if (roofSqft && roofSqft > 0) {
-              const roofMax = Math.round(((roofSqft * 0.6) / 54) * 10) / 10;
-              size = Math.min(size, roofMax);
+            // === GOOGLE SOLAR: single source of truth ===
+            // When Google Solar provides real capacity data, use it directly
+            const hasGoogleSolar = solarData?.panelCapacityWatts && solarData.panelCapacityWatts > 0
+              && solarData?.annualProduction && solarData.annualProduction > 0
+              && solarData?.googleSolarSource === 'real';
+
+            let size: number;
+            let offsetPct: number;
+
+            if (hasGoogleSolar) {
+              const googleMaxKw = solarData.panelCapacityWatts! / 1000;
+              const googleProdPerKw = solarData.annualProduction! / googleMaxKw;
+              // Size the system for 80% of usage, constrained by Google Solar's max
+              size = Math.round(Math.min(annualKwh * 0.8 / googleProdPerKw, googleMaxKw) * 10) / 10;
+              const actualProduction = size * googleProdPerKw;
+              offsetPct = Math.min(100, Math.round((actualProduction / annualKwh) * 100));
+            } else {
+              // Fallback to mock formula when Google Solar unavailable
+              const sf = getSunFactor({ sunExposurePercentage: solarData?.sunExposurePercentage });
+              size = Math.round((annualKwh * 0.8 / (AVG_PRODUCTION_PER_KW * sf)) * 10) / 10;
+              const roofSqft = solarData?.roofAreaSqft;
+              if (roofSqft && roofSqft > 0) {
+                const roofMax = Math.round(((roofSqft * 0.6) / 54) * 10) / 10;
+                size = Math.min(size, roofMax);
+              }
+              offsetPct = Math.min(100, Math.round((size * AVG_PRODUCTION_PER_KW * sf) / annualKwh * 100));
             }
-            // Use NREL actual production for offset when available;
-            // otherwise fall back to formula estimate
-            const actualNrelProduction = productionData?.annualKwh;
-            const offsetPct = actualNrelProduction && actualNrelProduction > 0
-              ? Math.min(100, Math.round((actualNrelProduction / annualKwh) * 100))
-              : Math.min(100, Math.round((size * 1200 * sf) / annualKwh * 100));
             return (
               <div className="p-3 bg-purple-50 rounded border border-purple-200">
                 <p className="text-xs text-purple-700 mb-1">Recommended Solar System</p>
                 <p className="text-lg font-bold text-purple-900">{size} kW</p>
-                <p className="text-xs text-purple-600">Replaces ~{offsetPct}% of your electricity bill</p>
+                <p className="text-xs text-purple-600">
+                  Replaces ~{offsetPct}% of your electricity bill
+                  {!hasGoogleSolar && ' (estimate)'}
+                </p>
               </div>
             );
           })()}

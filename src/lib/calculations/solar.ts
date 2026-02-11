@@ -12,6 +12,35 @@ export const PANEL_DEGRADATION = 0.005; // 0.5% per year
 export const FIXED_INSTALL_OVERHEAD = 5000; // permits, engineering, monitoring, interconnection
 
 /**
+ * Derive sun factor from sun exposure percentage or text label.
+ * Centralized to eliminate 4-way duplication across solar.ts, ResultsView, UsageStep, LiveProductionPreview.
+ */
+export function getSunFactor(input: { sunExposure?: string; sunExposurePercentage?: number }): number {
+  // Percentage-based (from Google Solar)
+  if (input.sunExposurePercentage != null) {
+    const pct = input.sunExposurePercentage;
+    if (pct >= 85) return 1.15;
+    if (pct >= 70) return 1.0;
+    if (pct >= 55) return 0.85;
+    return 0.7;
+  }
+  // Text-label-based (from form input)
+  if (input.sunExposure) {
+    return { poor: 0.7, fair: 0.85, good: 1.0, excellent: 1.15 }[input.sunExposure] ?? 1.0;
+  }
+  return 1.0;
+}
+
+/**
+ * Google Solar override data — when available, these values become the
+ * single source of truth for ALL financial calculations.
+ */
+export interface GoogleSolarOverride {
+  systemSizeKw: number;        // panelCapacityWatts / 1000
+  annualProductionKwh: number; // estimatedAnnualKwh / yearlyEnergyKwh
+}
+
+/**
  * Calculate system size based on usage and roof constraints.
  * Mock logic: estimate from monthly consumption or bill.
  */
@@ -30,13 +59,8 @@ export function calculateSystemSize(input: CalculationInput): number {
   // Assume 80% offset of consumption (Phase 1 mock)
   const targetAnnualProduction = estimatedMonthlyKwh * 12 * 0.8;
 
-  // Adjust for sun exposure (simple factor)
-  const sunFactor = {
-    poor: 0.7,
-    fair: 0.85,
-    good: 1.0,
-    excellent: 1.15
-  }[input.sunExposure] || 1.0;
+  // Adjust for sun exposure
+  const sunFactor = getSunFactor({ sunExposure: input.sunExposure });
 
   const adjustedProduction = targetAnnualProduction / sunFactor;
 
@@ -229,24 +253,40 @@ export function calculateEnvironmental(
 
 /**
  * Main orchestrator for solar calculation. Returns Phase 1 mock results.
+ *
+ * When `googleSolar` override is provided, those values become the single
+ * source of truth for system size, production, and all derived financials.
+ * The mock formula is only used as a fallback when Google Solar data is unavailable.
  */
 export function performSolarCalculation(
-  input: CalculationInput
+  input: CalculationInput,
+  googleSolar?: GoogleSolarOverride
 ): SolarCalculationResult {
-  const systemSizeKw = calculateSystemSize(input);
-  
-  // Get sun factor for this input
-  const sunFactor = {
-    poor: 0.7,
-    fair: 0.85,
-    good: 1.0,
-    excellent: 1.15
-  }[input.sunExposure] || 1.0;
+  let systemSizeKw: number;
+  let annualProduction: number;
+  let sunFactor: number;
 
-  // Apply sunFactor to production (matches calculateSystemSize logic)
-  const annualProduction = systemSizeKw * AVG_PRODUCTION_PER_KW * sunFactor;
+  if (googleSolar && googleSolar.annualProductionKwh > 0 && googleSolar.systemSizeKw > 0) {
+    // === GOOGLE SOLAR: Single source of truth ===
+    // Constrain Google Solar's max capacity by the user's actual energy needs
+    const mockSystemSize = calculateSystemSize(input);
+    systemSizeKw = Math.min(googleSolar.systemSizeKw, mockSystemSize);
+
+    // Scale production proportionally if we're using a smaller system than Google Solar's max
+    const scaleFactor = systemSizeKw / googleSolar.systemSizeKw;
+    annualProduction = Math.round(googleSolar.annualProductionKwh * scaleFactor);
+
+    // Derive sunFactor so calculateFinancing produces consistent numbers
+    const googleProdPerKw = googleSolar.annualProductionKwh / googleSolar.systemSizeKw;
+    sunFactor = googleProdPerKw / AVG_PRODUCTION_PER_KW;
+  } else {
+    // === MOCK FALLBACK: estimate when Google Solar unavailable ===
+    systemSizeKw = calculateSystemSize(input);
+    sunFactor = getSunFactor({ sunExposure: input.sunExposure });
+    annualProduction = systemSizeKw * AVG_PRODUCTION_PER_KW * sunFactor;
+  }
+
   const monthlyProduction = annualProduction / 12;
-
   const financingData = calculateFinancing(systemSizeKw, sunFactor);
 
   const financing = [

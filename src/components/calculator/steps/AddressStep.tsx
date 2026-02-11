@@ -60,6 +60,13 @@ const transformSolarApiResponse = (
     4000,
     Math.round(primaryConfig?.yearlyEnergyKwh || totalSolarPotential || totalArea * 120)
   );
+  // Google Solar canonical capacity — single source of truth for financial calcs
+  const panelCapacityWatts = primaryConfig?.systemSizeKw
+    ? Math.round(primaryConfig.systemSizeKw * 1000)
+    : 0;
+  const googleSolarSource: 'real' | 'mock' = data?._source === 'google_solar_api' && primaryConfig?.yearlyEnergyKwh
+    ? 'real'
+    : 'mock';
   const normalizedStateCode = stateCode?.toUpperCase();
   const stateIncentives = normalizedStateCode ? getStateIncentives(normalizedStateCode) : null;
   const utilityRate = stateIncentives?.averageUtilityRate ?? 0.14;
@@ -80,6 +87,8 @@ const transformSolarApiResponse = (
     optimalTilt: Math.max(0, Math.min(60, data?.roofSegments?.[0]?.tilt || 20)),
     optimalAzimuth: Math.max(0, Math.min(360, data?.roofSegments?.[0]?.azimuth || 180)),
     maxPanels: Math.max(0, Math.round(data?.maxArrayPanels || 30)),
+    panelCapacityWatts,       // Google Solar max capacity in watts
+    googleSolarSource,        // Whether this is real satellite data or a mock
     roofSegments: segments,
     roofCenter,
     roofOutline: data?.roofOutline,

@@ -11,6 +11,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { BASE_ELECTRICITY_RATE } from '../calculations/solar';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -78,7 +79,7 @@ export async function calculateIncentiveValue(
   systemSizeKw: number,
   systemCostUsd: number,
   annualProductionKwh: number,
-  utilityRatePerKwh: number = 0.14
+  utilityRatePerKwh: number = BASE_ELECTRICITY_RATE
 ): Promise<IncentiveSummary> {
   const incentives = await fetchIncentivesByState(stateCode);
   

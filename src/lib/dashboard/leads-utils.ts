@@ -4,7 +4,7 @@
  */
 
 import type { Lead, CalculatorForm } from '../../../types';
-import { BASE_ELECTRICITY_RATE } from '../calculations/solar';
+import { BASE_ELECTRICITY_RATE, AVG_PRODUCTION_PER_KW } from '../calculations/solar';
 
 /**
  * Filter options for leads dashboard
@@ -109,7 +109,7 @@ export function filterLeads(leads: Lead[], filters: LeadFilters): Lead[] {
     if (filters.systemSizeRange) {
       // Estimate system size from usage
       const monthlyKwh = lead.usage.monthlyKwh || lead.usage.billAmount! / BASE_ELECTRICITY_RATE;
-      const estimatedSystemSize = monthlyKwh * 12 * 0.8 / 1200;
+      const estimatedSystemSize = monthlyKwh * 12 * 0.8 / AVG_PRODUCTION_PER_KW;
       if (estimatedSystemSize < filters.systemSizeRange.min || estimatedSystemSize > filters.systemSizeRange.max) {
         return false;
       }
@@ -243,7 +243,7 @@ export function getAvailableFilters(leads: Lead[]) {
 
     // System size range
     const monthlyKwh = lead.usage.monthlyKwh || lead.usage.billAmount! / BASE_ELECTRICITY_RATE;
-    const systemSize = monthlyKwh * 12 * 0.8 / 1200;
+    const systemSize = monthlyKwh * 12 * 0.8 / AVG_PRODUCTION_PER_KW;
     if (systemSize < minSystemSize) minSystemSize = systemSize;
     if (systemSize > maxSystemSize) maxSystemSize = systemSize;
 

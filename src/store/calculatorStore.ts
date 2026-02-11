@@ -41,6 +41,9 @@ export interface SolarData {
   optimalAzimuth?: number;
   maxPanels?: number;
   annualProduction?: number;
+  // Google Solar canonical capacity — single source of truth for financial calculations
+  panelCapacityWatts?: number; // Max system capacity from Google Solar (e.g. 7500 = 7.5kW)
+  googleSolarSource?: 'real' | 'mock'; // Whether Google Solar returned real satellite data
   roofSegments?: RoofSegment[]; // Roof segments from Google Solar API
   roofCenter?: { latitude: number; longitude: number };
   roofOutline?: Array<{ latitude: number; longitude: number }>;

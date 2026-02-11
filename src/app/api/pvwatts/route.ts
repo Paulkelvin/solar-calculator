@@ -7,6 +7,7 @@
  */
 
 import { getPeakSunHours } from "@/lib/state-sun-hours";
+import { BASE_ELECTRICITY_RATE } from "@/lib/calculations/solar";
 
 export const dynamic = 'force-dynamic';
 
@@ -116,8 +117,8 @@ export async function POST(request: Request) {
     const monthlyProduction = data.outputs.ac_monthly;
     const capacityFactor = data.outputs.capacity_factor;
     
-    // Estimate savings using the same rate as the rest of the app
-    const averageRate = 0.14;
+    // Estimate savings using the centralized rate constant
+    const averageRate = BASE_ELECTRICITY_RATE;
     const annualSavings = Math.round(annualProduction * averageRate);
     const monthlySavings = monthlyProduction.map(kwh => Math.round(kwh * averageRate));
 
@@ -174,7 +175,7 @@ function getFallbackEstimates(systemCapacity: number, latitude: number, stateCod
     Math.round((annualProduction / 12) * factor)
   );
 
-  const averageRate = 0.14;
+  const averageRate = BASE_ELECTRICITY_RATE;
   const annualSavings = Math.round(annualProduction * averageRate);
   const monthlySavings = monthlyProduction.map(kwh => Math.round(kwh * averageRate));
 

@@ -16,6 +16,7 @@ import type {
   IncentiveCalculationInput,
   IncentiveSummary,
 } from '../../../types/incentives';
+import { AVG_PRODUCTION_PER_KW } from './solar';
 
 /**
  * Comprehensive incentive database - 500+ records
@@ -753,8 +754,8 @@ export function lookupIncentives(
     } else if (inc.unit === '$/watt') {
       benefit = inc.amount * input.systemSizeKw * 1000;
     } else if (inc.unit === '$/kWh') {
-      // Estimate: 25-year production * rate
-      benefit = inc.amount * input.systemSizeKw * 1200 * 25;
+      // Estimate: 25-year production * rate — uses centralized constant
+      benefit = inc.amount * input.systemSizeKw * AVG_PRODUCTION_PER_KW * 25;
     } else if (inc.unit === 'percentage') {
       benefit = (inc.amount / 100) * input.systemCost;
     }

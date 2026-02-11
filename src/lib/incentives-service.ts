@@ -7,6 +7,8 @@
  * NO federal tax credits are included or calculated for any installations.
  */
 
+import { BASE_ELECTRICITY_RATE } from './calculations/solar';
+
 export interface StateIncentive {
   name: string;
   type: 'rebate' | 'tax_credit' | 'performance_payment';
@@ -121,7 +123,7 @@ export function calculateIncentives(
   state: string,
   systemSizeKw: number,
   estimatedAnnualKwh: number,
-  localElectricityRate: number = 0.14, // default US average
+  localElectricityRate: number = BASE_ELECTRICITY_RATE, // centralized constant
   utility?: string
 ): IncentiveBreakdown {
   const stateCode = state.toUpperCase();

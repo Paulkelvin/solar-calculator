@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, DollarSign } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from "recharts";
+import { BASE_ELECTRICITY_RATE } from "@/lib/calculations/solar";
 
 interface CashFlowData {
   year: number;
@@ -33,7 +34,7 @@ export function CashFlowChart({
   leaseMonthlyPayment = 0,
   ppaRate = 0.10,
   annualProduction = 10000,
-  utilityRate = 0.14,
+  utilityRate = BASE_ELECTRICITY_RATE,
   rateEscalation = 2.5,
 }: CashFlowChartProps) {
   // Generate 25-year cash flow projections

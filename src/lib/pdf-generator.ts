@@ -63,7 +63,8 @@ export function generateProposalHTML(
   const safeCityStateZip = `${leadData.address.city || ''}, ${leadData.address.state || ''} ${leadData.address.zip || ''}`.trim();
   const financingCards: FinancingCard[] = calculations.financing.map((opt, idx) => {
     const systemCost = FIXED_INSTALL_OVERHEAD + calculations.systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
-    const annualSavings = (calculations.systemSizeKw * AVG_PRODUCTION_PER_KW) * BASE_ELECTRICITY_RATE;
+    // Use the actual production from the calculation result (Google Solar when available)
+    const annualSavings = calculations.estimatedAnnualProduction * BASE_ELECTRICITY_RATE;
     
     return {
       label: opt.type === 'cash' ? '💰 Cash Purchase' : '🏦 Solar Loan',

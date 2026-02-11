@@ -7,7 +7,7 @@ import { fetchSolarData } from "@/lib/solar-service";
 import type { SolarDataResponse } from "@/lib/solar-service";
 import { generateSystemDesignOptions } from "@/lib/system-design-service";
 import type { SystemDesignOption } from "@/lib/system-design-service";
-import { calculateFinancing, calculateEnvironmental, BASE_ELECTRICITY_RATE, AVG_PRODUCTION_PER_KW, SYSTEM_COST_PER_WATT, FIXED_INSTALL_OVERHEAD } from "@/lib/calculations/solar";
+import { calculateFinancing, calculateEnvironmental, BASE_ELECTRICITY_RATE, AVG_PRODUCTION_PER_KW, SYSTEM_COST_PER_WATT, FIXED_INSTALL_OVERHEAD, getSunFactor } from "@/lib/calculations/solar";
 import { SystemDesignComparison } from "./SystemDesignComparison";
 import { RoofImageryViewer } from "./RoofImageryViewer";
 import { CashFlowChart } from "./CashFlowChart";
@@ -77,20 +77,16 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
         return;
       }
 
-      // Derive sunFactor using same thresholds as solar.ts / calculateSystemSize:
-      //   excellent (>=85%) = 1.15, good (>=70%) = 1.0,
-      //   fair (>=55%) = 0.85, poor (<55%) = 0.7
-      let sunFactor = 1.0; // Default
-      if (solarData) {
-        const pct = solarData.sunExposurePercentage;
-        sunFactor = pct >= 85 ? 1.15 : pct >= 70 ? 1.0 : pct >= 55 ? 0.85 : 0.7;
-      }
+      // Derive sunFactor using centralized helper (eliminates duplication)
+      const sunFactor = solarData
+        ? getSunFactor({ sunExposurePercentage: solarData.sunExposurePercentage })
+        : 1.0;
       
       const state = leadData?.address?.state || 'CA';
       const roofSqft = solarData?.roofAreaSqft || leadData?.roof?.squareFeet;
 
       // Pass Google Solar's actual capacity cap and production-per-kW
-      // so design tiers use the same constraints as effectiveResults
+      // so design tiers use the same constraints as the results
       const googleMaxKw = solarData?.source === 'real' && solarData.panelCapacityWatts
         ? solarData.panelCapacityWatts / 1000
         : undefined;
@@ -118,8 +114,10 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
   }, [annualConsumption, solarData?.sunExposurePercentage, solarData?.roofAreaSqft, solarData?.panelCapacityWatts, solarData?.estimatedAnnualKwh, solarData?.source, leadData?.address?.state, leadData?.roof?.squareFeet]);
 
   // === UNIFIED RESULTS ===
-  // When Google Solar provides REAL data, recalculate to match.
-  // When data is MOCK, use performSolarCalculation as-is (mock ratios are arbitrary).
+  // The `results` object from CalculatorWizard already has Google Solar baked in
+  // via performSolarCalculation(input, googleSolar). This memo provides a secondary
+  // override for when the ResultsView's own solarData fetch returns real data
+  // (in case the wizard didn't have it yet, or for the re-fetch on results page).
   const effectiveResults = useMemo(() => {
     if (!solarData || solarData.source === 'mock') return results;
 
@@ -133,8 +131,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
     const realAnnualProduction = Math.round(realSystemSizeKw * googleProdPerKw);
     const realMonthlyProduction = Math.round(realAnnualProduction / 12);
 
-    // Derive effective sunFactor so calculateFinancing's internal production
-    // matches the actual Google Solar production estimate
+    // Derive effective sunFactor so calculateFinancing uses Google Solar production
     const effectiveSunFactor = googleProdPerKw / AVG_PRODUCTION_PER_KW;
 
     const financingData = calculateFinancing(realSystemSizeKw, effectiveSunFactor);
@@ -197,7 +194,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
       financing,
       environmental,
     };
-  }, [results, solarData]);
+  }, [results, solarData, annualConsumption]);
 
   const handleDownloadPDF = async () => {
     if (!leadData) {
@@ -599,13 +596,13 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
       {/* 25-Year Cash Flow Projections */}
       <CashFlowChart
         systemCost={FIXED_INSTALL_OVERHEAD + effectiveResults.systemSizeKw * 1000 * SYSTEM_COST_PER_WATT}
-        annualSavings={effectiveResults.estimatedAnnualProduction * 0.14}
+        annualSavings={effectiveResults.estimatedAnnualProduction * BASE_ELECTRICITY_RATE}
         loanMonthlyPayment={effectiveResults.financing.find(f => f.type === 'loan')?.monthlyPayment || 150}
         loanDownPayment={effectiveResults.financing.find(f => f.type === 'loan')?.downPayment || 0}
         leaseMonthlyPayment={effectiveResults.financing.find(f => f.type === 'lease')?.monthlyPayment || 120}
         ppaRate={effectiveResults.financing.find(f => f.type === 'ppa')?.ppaRatePerKwh || 0.10}
         annualProduction={effectiveResults.estimatedAnnualProduction}
-        utilityRate={0.14}
+        utilityRate={BASE_ELECTRICITY_RATE}
         rateEscalation={2.5}
       />
 

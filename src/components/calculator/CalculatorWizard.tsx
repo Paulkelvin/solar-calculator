@@ -9,7 +9,8 @@ import { RoofStep } from "./steps/RoofStep";
 import { PreferencesStep } from "./steps/PreferencesStep";
 import { ContactStep } from "./steps/ContactStep";
 import { FinancialPreviewStep } from "./steps/FinancialPreviewStep";
-import { performSolarCalculation, calculateLeadScore } from "@/lib/calculations/solar";
+import { performSolarCalculation, calculateLeadScore, BASE_ELECTRICITY_RATE } from "@/lib/calculations/solar";
+import type { GoogleSolarOverride } from "@/lib/calculations/solar";
 import { calculateIncentives } from "@/lib/incentives-service";
 import { calculateEnhancedLeadScore } from "@/lib/enhanced-lead-scoring";
 import type { LeadScoringFactors } from "@/lib/enhanced-lead-scoring";
@@ -443,7 +444,23 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
       }
 
       console.log('Form validation passed, performing calculation');
-      // Perform calculation
+      // Build Google Solar override from store data (single source of truth)
+      let googleSolar: GoogleSolarOverride | undefined;
+      if (
+        roofInsights?.panelCapacityWatts &&
+        roofInsights.panelCapacityWatts > 0 &&
+        roofInsights?.annualProduction &&
+        roofInsights.annualProduction > 0 &&
+        roofInsights?.googleSolarSource === 'real'
+      ) {
+        googleSolar = {
+          systemSizeKw: roofInsights.panelCapacityWatts / 1000,
+          annualProductionKwh: roofInsights.annualProduction,
+        };
+        console.log('Using Google Solar as single source of truth:', googleSolar);
+      }
+
+      // Perform calculation — Google Solar overrides mock when available
       const results = performSolarCalculation({
         monthlyKwh: formData.usage.monthlyKwh,
         billAmount: formData.usage.billAmount,
@@ -451,14 +468,14 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
         sunExposure: formData.roof.sunExposure,
         state: formData.address.state,
         wantsBattery: formData.preferences.wantsBattery
-      });
+      }, googleSolar);
 
       // Calculate incentives based on state and system size
       const incentiveBreakdown = calculateIncentives(
         formData.address.state || 'CO',
         results.systemSizeKw,
         results.estimatedAnnualProduction,
-        0.14 // default $/kWh average
+        BASE_ELECTRICITY_RATE // centralized constant
       );
 
       // Add incentive data to results

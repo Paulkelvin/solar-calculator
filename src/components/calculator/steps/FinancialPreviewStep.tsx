@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { performSolarCalculation, BASE_ELECTRICITY_RATE } from "@/lib/calculations/solar";
+import type { GoogleSolarOverride } from "@/lib/calculations/solar";
 import type { Address, Usage, Roof, Preferences } from "../../../../types/leads";
 import type { SolarData } from "../../../store/calculatorStore";
 import { useCalculatorStore } from "../../../store/calculatorStore";
@@ -28,13 +29,29 @@ export function FinancialPreviewStep({
   preferences,
   solarSnapshot,
 }: FinancialPreviewStepProps) {
-  const { productionData } = useCalculatorStore();
+  const { solarData: storeData } = useCalculatorStore();
   const hasInputs = Boolean(
     address?.state &&
     roof?.squareFeet &&
     roof?.sunExposure &&
     (usage?.billAmount || usage?.monthlyKwh)
   );
+
+  // Build Google Solar override from store (single source of truth)
+  const googleSolar: GoogleSolarOverride | undefined = useMemo(() => {
+    const sd = solarSnapshot || storeData;
+    if (
+      sd?.panelCapacityWatts && sd.panelCapacityWatts > 0 &&
+      sd?.annualProduction && sd.annualProduction > 0 &&
+      sd?.googleSolarSource === 'real'
+    ) {
+      return {
+        systemSizeKw: sd.panelCapacityWatts / 1000,
+        annualProductionKwh: sd.annualProduction,
+      };
+    }
+    return undefined;
+  }, [solarSnapshot, storeData]);
 
   const preview = useMemo(() => {
     if (!hasInputs || !roof || !address) {
@@ -48,20 +65,11 @@ export function FinancialPreviewStep({
       sunExposure: roof.sunExposure,
       state: address.state,
       wantsBattery: Boolean(preferences?.wantsBattery),
-    });
-  }, [hasInputs, roof, usage?.monthlyKwh, usage?.billAmount, address, preferences?.wantsBattery]);
+    }, googleSolar);
+  }, [hasInputs, roof, usage?.monthlyKwh, usage?.billAmount, address, preferences?.wantsBattery, googleSolar]);
 
   const savingsRange = useMemo(() => {
-    // Prefer NREL actual production data when available (most accurate)
-    if (productionData?.annualKwh && productionData.annualKwh > 0) {
-      const annualSavings = productionData.annualKwh * BASE_ELECTRICITY_RATE;
-      return {
-        min: Math.round(annualSavings * 0.9),
-        max: Math.round(annualSavings * 1.1),
-      };
-    }
-
-    // Fall back to mock calculation production
+    // Use preview production (which already incorporates Google Solar when available)
     if (preview) {
       const annualSavings = preview.estimatedAnnualProduction * BASE_ELECTRICITY_RATE;
       return {
@@ -70,13 +78,14 @@ export function FinancialPreviewStep({
       };
     }
 
-    // Fall back to solarSnapshot only when no preview exists
-    if (solarSnapshot?.estimatedSavingsRange) {
-      return solarSnapshot.estimatedSavingsRange;
+    // Fall back to solarSnapshot savings range (derived from Google Solar in AddressStep)
+    const sd = solarSnapshot || storeData;
+    if (sd?.estimatedSavingsRange) {
+      return sd.estimatedSavingsRange;
     }
 
     return null;
-  }, [preview, productionData?.annualKwh, solarSnapshot?.estimatedSavingsRange]);
+  }, [preview, solarSnapshot, storeData]);
 
   const financingCards = useMemo(() => {
     if (!preview) return [];
@@ -108,7 +117,10 @@ export function FinancialPreviewStep({
               <p className="text-3xl font-bold text-emerald-700">
                 {currencyFormatter.format(savingsRange.min)} – {currencyFormatter.format(savingsRange.max)}
               </p>
-              <p className="text-xs text-emerald-700">Based on your roof conditions and bill input. Phase 1 preview for planning.</p>
+              <p className="text-xs text-emerald-700">
+                Based on your roof conditions and bill input.
+                {googleSolar ? ' Powered by Google Solar satellite data.' : ' Phase 1 estimate — awaiting satellite data.'}
+              </p>
             </div>
           </div>
         </div>
@@ -146,7 +158,9 @@ export function FinancialPreviewStep({
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
-        Figures shown are preliminary and based on mocked Phase 1 calculations; actual incentives and payments will refresh on the final results screen.
+        {googleSolar
+          ? 'Figures based on Google Solar satellite analysis of your roof. Final results may vary based on system configuration.'
+          : 'Figures shown are preliminary estimates; actual results will refresh on the final results screen when satellite data is available.'}
       </div>
     </div>
   );
