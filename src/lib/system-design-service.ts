@@ -27,7 +27,8 @@ import {
   LOAN_TERM_YEARS,
   BASE_ELECTRICITY_RATE,
   RATE_ESCALATION,
-  PANEL_DEGRADATION
+  PANEL_DEGRADATION,
+  FIXED_INSTALL_OVERHEAD
 } from './calculations/solar';
 
 /**
@@ -45,8 +46,7 @@ function calculateMonthlyPayment(
     (Math.pow(1 + monthlyRate, numPayments) - 1);
 }
 
-// Fixed installation overhead: permits, engineering, monitoring, interconnection
-const FIXED_INSTALL_OVERHEAD = 5000;
+// FIXED_INSTALL_OVERHEAD is imported from solar.ts (single source of truth)
 
 /**
  * Generate 3 system design options based on annual consumption

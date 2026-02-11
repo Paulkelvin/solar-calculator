@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 import { SolarCalculationResult } from '../../types/calculations';
+import { SYSTEM_COST_PER_WATT, FIXED_INSTALL_OVERHEAD, AVG_PRODUCTION_PER_KW, BASE_ELECTRICITY_RATE } from './calculations/solar';
 
 interface FinancingCard {
   label: string;
@@ -61,9 +62,8 @@ export function generateProposalHTML(
   const safeStreet = leadData.address.street || '';
   const safeCityStateZip = `${leadData.address.city || ''}, ${leadData.address.state || ''} ${leadData.address.zip || ''}`.trim();
   const financingCards: FinancingCard[] = calculations.financing.map((opt, idx) => {
-    const costPerkW = 2.75; // $2.75 per watt average
-    const systemCost = calculations.systemSizeKw * 1000 * costPerkW;
-    const annualSavings = (calculations.systemSizeKw * 1200) * 0.14; // ~$1,680/kW/year
+    const systemCost = FIXED_INSTALL_OVERHEAD + calculations.systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
+    const annualSavings = (calculations.systemSizeKw * AVG_PRODUCTION_PER_KW) * BASE_ELECTRICITY_RATE;
     
     return {
       label: opt.type === 'cash' ? '💰 Cash Purchase' : '🏦 Solar Loan',

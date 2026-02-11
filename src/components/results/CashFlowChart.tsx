@@ -68,8 +68,8 @@ export function CashFlowChart({
       const cashAnnualSavings = escalatedAnnualSavings * degradation;
       cashCumulative += cashAnnualSavings;
       
-      // Loan: Savings minus loan payment (20 years), then full savings
-      const loanAnnualSavings = year <= 20 
+      // Loan: Savings minus loan payment (25 years, matching LOAN_TERM_YEARS)
+      const loanAnnualSavings = year <= 25 
         ? (escalatedAnnualSavings * degradation) - loanAnnualPayment
         : escalatedAnnualSavings * degradation;
       loanCumulative += loanAnnualSavings;

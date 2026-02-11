@@ -9,6 +9,7 @@ export const LOAN_TERM_YEARS = 25;
 export const BASE_ELECTRICITY_RATE = 0.14; // $/kWh US average
 export const RATE_ESCALATION = 0.025; // 2.5% annual electricity rate increase
 export const PANEL_DEGRADATION = 0.005; // 0.5% per year
+export const FIXED_INSTALL_OVERHEAD = 5000; // permits, engineering, monitoring, interconnection
 
 /**
  * Calculate system size based on usage and roof constraints.
@@ -58,7 +59,7 @@ export function calculateSystemSize(input: CalculationInput): number {
  * This matches the 25-Year Savings Trajectory chart exactly.
  */
 export function calculateFinancing(systemSizeKw: number, sunFactor: number = 1.0) {
-  const totalSystemCost = systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
+  const totalSystemCost = FIXED_INSTALL_OVERHEAD + systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
   const annualProduction = systemSizeKw * AVG_PRODUCTION_PER_KW * sunFactor;
   const monthlyProduction = annualProduction / 12;
   const monthlyElectricityCost = monthlyProduction * BASE_ELECTRICITY_RATE;

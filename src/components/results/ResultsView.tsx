@@ -7,7 +7,7 @@ import { fetchSolarData } from "@/lib/solar-service";
 import type { SolarDataResponse } from "@/lib/solar-service";
 import { generateSystemDesignOptions } from "@/lib/system-design-service";
 import type { SystemDesignOption } from "@/lib/system-design-service";
-import { calculateFinancing, calculateEnvironmental, BASE_ELECTRICITY_RATE, AVG_PRODUCTION_PER_KW } from "@/lib/calculations/solar";
+import { calculateFinancing, calculateEnvironmental, BASE_ELECTRICITY_RATE, AVG_PRODUCTION_PER_KW, SYSTEM_COST_PER_WATT, FIXED_INSTALL_OVERHEAD } from "@/lib/calculations/solar";
 import { SystemDesignComparison } from "./SystemDesignComparison";
 import { RoofImageryViewer } from "./RoofImageryViewer";
 import { CashFlowChart } from "./CashFlowChart";
@@ -586,7 +586,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
 
       {/* 25-Year Cash Flow Projections */}
       <CashFlowChart
-        systemCost={effectiveResults.systemSizeKw * 1000 * 2.75}
+        systemCost={FIXED_INSTALL_OVERHEAD + effectiveResults.systemSizeKw * 1000 * SYSTEM_COST_PER_WATT}
         annualSavings={effectiveResults.estimatedAnnualProduction * 0.14}
         loanMonthlyPayment={effectiveResults.financing.find(f => f.type === 'loan')?.monthlyPayment || 150}
         loanDownPayment={effectiveResults.financing.find(f => f.type === 'loan')?.downPayment || 0}
@@ -621,9 +621,9 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
 
       {/* What-If Analysis Sliders - Hidden for user simplicity */}
       {/* <WhatIfSliders
-        baseSystemCost={effectiveResults.systemSizeKw * 1000 * 2.75}
+        baseSystemCost={FIXED_INSTALL_OVERHEAD + effectiveResults.systemSizeKw * 1000 * SYSTEM_COST_PER_WATT}
         baseAnnualProduction={effectiveResults.estimatedAnnualProduction}
-        baseUtilityRate={0.14}
+        baseUtilityRate={BASE_ELECTRICITY_RATE}
       /> */}
 
       {/* Download PDF Report */}
