@@ -11,6 +11,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const justRegistered = searchParams.get('registered') === 'true';
+  const confirmationError = searchParams.get('error');
   const redirectTo = searchParams.get('redirect') || '/dashboard';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -60,6 +61,18 @@ function LoginForm() {
           {justRegistered && (
             <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-700">
               Account created successfully! Please sign in.
+            </div>
+          )}
+
+          {confirmationError === 'confirmation_failed' && (
+            <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+              Email confirmation failed. The link may have expired — please try signing up again.
+            </div>
+          )}
+
+          {confirmationError === 'verification_failed' && (
+            <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+              Email verification failed. Please try again or contact support.
             </div>
           )}
 

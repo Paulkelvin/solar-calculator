@@ -10,6 +10,7 @@ export const supabase = getSupabaseClient();
 export async function signUp(email: string, password: string, companyName: string) {
   try {
     // Create auth user - installer profile created automatically by trigger
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
@@ -17,6 +18,7 @@ export async function signUp(email: string, password: string, companyName: strin
         data: {
           company_name: companyName,
         },
+        emailRedirectTo: `${appUrl}/auth/callback`,
       },
     });
 
