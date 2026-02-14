@@ -155,11 +155,11 @@ export function QuickCalculator({ isOpen, onToggle }: QuickCalculatorProps) {
         type="button"
         aria-expanded={isOpen}
         onClick={() => onToggle(!isOpen)}
-        className={`pointer-events-auto group flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-3 py-2 text-emerald-700 shadow-lg transition-all hover:border-emerald-300 hover:shadow-xl ${
+        className={`pointer-events-auto group flex items-center gap-2 rounded-full border border-amber-200 bg-white px-3 py-2 text-amber-700 shadow-lg transition-all hover:border-amber-300 hover:shadow-xl ${
           isOpen ? "translate-x-0" : "translate-x-1"
         }`}
       >
-        <Calculator className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+        <Calculator className="h-4 w-4 text-amber-600" aria-hidden="true" />
         <span className="text-sm font-semibold">Calc</span>
       </button>
 
@@ -190,7 +190,7 @@ export function QuickCalculator({ isOpen, onToggle }: QuickCalculatorProps) {
         <div className="px-4 pt-4 pb-3">
           <div className="rounded-xl bg-gray-900 px-3 py-4 text-right text-white">
             {/* Expression line: shows e.g. "8 × 5 =" */}
-            <div className="text-xs text-emerald-300 min-h-[1.25rem] tabular-nums truncate">
+            <div className="text-xs text-amber-300 min-h-[1.25rem] tabular-nums truncate">
               {expression || "\u00A0"}
             </div>
             <div className="mt-1 text-3xl font-semibold tabular-nums" aria-live="polite">{display}</div>
@@ -205,9 +205,9 @@ export function QuickCalculator({ isOpen, onToggle }: QuickCalculatorProps) {
               onClick={btn.action}
               className={`h-12 rounded-xl text-sm font-semibold transition active:scale-[0.98] ${
                 btn.style === "eq"
-                  ? "bg-emerald-600 text-white shadow hover:bg-emerald-500 text-lg font-bold"
+                  ? "bg-amber-600 text-white shadow hover:bg-amber-500 text-lg font-bold"
                   : btn.style === "op"
-                    ? "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 text-lg font-bold"
+                    ? "bg-amber-100 text-amber-800 hover:bg-amber-200 text-lg font-bold"
                     : btn.style === "top"
                       ? "bg-gray-200 text-gray-900 hover:bg-gray-300"
                       : "bg-gray-50 text-gray-900 hover:bg-gray-100 border border-gray-200"

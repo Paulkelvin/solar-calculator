@@ -29,7 +29,7 @@ export default function HomePage() {
           {session.isAuthenticated && (
             <Link
               href="/dashboard"
-              className="absolute left-0 top-0 inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-all duration-200 shadow-sm"
+              className="absolute left-0 top-0 inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-lg transition-all duration-200 shadow-sm"
             >
               <LayoutDashboard className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Dashboard</span>

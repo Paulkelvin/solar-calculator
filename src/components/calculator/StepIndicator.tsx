@@ -13,6 +13,14 @@ export interface StepIndicatorProps {
   currentStep: number;
 }
 
+const COLORS = {
+  active: "#E67E22",
+  inactive: "#F1F1F1",
+  inactiveText: "#555555",
+  labelMuted: "#999999",
+  line: "#E0E0E0",
+};
+
 export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
   const segmentProgress = (segmentIdx: number) => {
     const value = currentStep - segmentIdx;
@@ -35,35 +43,48 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
             return (
               <div key={step.id} className="flex flex-col items-center text-center py-1">
                 <div className="relative flex w-full items-center justify-center py-1">
+                  {/* Left connecting line */}
                   {idx > 0 && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 h-[3px] w-1/2">
-                      <div className="relative h-full w-full overflow-hidden rounded-full bg-gray-200">
+                      <div
+                        className="relative h-full w-full overflow-hidden rounded-full"
+                        style={{ backgroundColor: COLORS.line }}
+                      >
                         <div
-                          className="absolute inset-y-0 left-0 bg-emerald-400 rounded-full transition-all duration-500"
-                          style={{ width: `${segmentProgress(idx - 1) * 100}%` }}
+                          className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                          style={{
+                            backgroundColor: COLORS.active,
+                            width: `${segmentProgress(idx - 1) * 100}%`,
+                          }}
                         />
                       </div>
                     </div>
                   )}
+                  {/* Right connecting line */}
                   {idx < steps.length - 1 && (
                     <div className="absolute right-0 top-1/2 -translate-y-1/2 h-[3px] w-1/2">
-                      <div className="relative h-full w-full overflow-hidden rounded-full bg-gray-200">
+                      <div
+                        className="relative h-full w-full overflow-hidden rounded-full"
+                        style={{ backgroundColor: COLORS.line }}
+                      >
                         <div
-                          className="absolute inset-y-0 left-0 bg-emerald-400 rounded-full transition-all duration-500"
-                          style={{ width: `${segmentProgress(idx) * 100}%` }}
+                          className="absolute inset-y-0 left-0 rounded-full transition-all duration-500"
+                          style={{
+                            backgroundColor: COLORS.active,
+                            width: `${segmentProgress(idx) * 100}%`,
+                          }}
                         />
                       </div>
                     </div>
                   )}
+                  {/* Step circle */}
                   <div
-                    className={`relative z-10 flex h-9 w-9 items-center justify-center rounded-xl text-sm font-bold transition-all duration-300
-                      ${isDone
-                        ? "text-white shadow-lg shadow-emerald-200 ring-4 ring-white"
-                        : isActive
-                          ? "text-white shadow-lg shadow-emerald-200 ring-4 ring-white"
-                          : "text-gray-900 border-2 border-emerald-400 shadow-lg shadow-emerald-100"}`
-                    }
-                    style={{ backgroundColor: "#10b981" }}
+                    className="relative z-10 flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold transition-all duration-300"
+                    style={{
+                      backgroundColor: isDone || isActive ? COLORS.active : COLORS.inactive,
+                      color: isDone || isActive ? "#FFFFFF" : COLORS.inactiveText,
+                      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.08)",
+                    }}
                   >
                     {isDone ? (
                       <Check className="h-5 w-5" strokeWidth={3} />
@@ -72,10 +93,16 @@ export function StepIndicator({ steps, currentStep }: StepIndicatorProps) {
                     )}
                   </div>
                 </div>
+                {/* Step label */}
                 <span
-                  className={`mt-2 text-[10px] font-semibold transition-colors duration-300 ${
-                    isActive ? "text-emerald-600" : isDone ? "text-gray-700" : "text-gray-400"
-                  }`}
+                  className="mt-2 text-[10px] font-semibold transition-colors duration-300"
+                  style={{
+                    color: isActive
+                      ? COLORS.active
+                      : isDone
+                        ? COLORS.inactiveText
+                        : COLORS.labelMuted,
+                  }}
                 >
                   {step.label}
                 </span>

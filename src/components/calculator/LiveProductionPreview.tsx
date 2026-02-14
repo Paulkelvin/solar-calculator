@@ -138,11 +138,11 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
     && solarData.googleSolarSource === 'real');
 
   return (
-    <Card className="border-2 border-green-300 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 shadow-lg">
+    <Card className="border-2 border-amber-300 bg-gradient-to-br from-amber-50 to-amber-50 dark:from-amber-950 dark:to-amber-950 shadow-lg">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-green-600" />
+            <Zap className="h-5 w-5 text-amber-600" />
             <CardTitle className="text-lg">
               {hasGoogleSolar ? 'Seasonal Production Pattern' : 'What Solar Will Produce For You'}
             </CardTitle>
@@ -154,7 +154,7 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
             </Badge>
           )}
           {estimate.source === 'nrel' && (
-            <Badge className="border border-emerald-700/40 bg-emerald-600 text-white text-xs shadow-sm uppercase tracking-wide">
+            <Badge className="border border-amber-700/40 bg-amber-600 text-white text-xs shadow-sm uppercase tracking-wide">
               NREL Data
             </Badge>
           )}
@@ -165,7 +165,7 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
           </p>
         )}
         {hasGoogleSolar && (
-          <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">
+          <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
             Monthly pattern from NREL weather data. Financial estimates use Google Solar satellite analysis.
           </p>
         )}
@@ -180,7 +180,7 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
               <Zap className="h-4 w-4 text-yellow-600" />
               <p className="text-xs text-muted-foreground">Solar Will Produce</p>
             </div>
-            <p className="text-xl font-bold text-green-700 dark:text-green-400">
+            <p className="text-xl font-bold text-amber-700 dark:text-amber-400">
               {estimate.production.annual.toLocaleString()}
             </p>
             <p className="text-xs text-muted-foreground">kWh/year</p>
@@ -201,10 +201,10 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
           {/* Annual Savings */}
           <div className="p-3 bg-white dark:bg-gray-800 rounded-lg">
             <div className="flex items-center gap-1 mb-1">
-              <DollarSign className="h-4 w-4 text-green-600" />
+              <DollarSign className="h-4 w-4 text-amber-600" />
               <p className="text-xs text-muted-foreground">You'll Save</p>
             </div>
-            <p className="text-xl font-bold text-green-700 dark:text-green-400">
+            <p className="text-xl font-bold text-amber-700 dark:text-amber-400">
               ${estimate.savings.annual.toLocaleString()}
             </p>
             <p className="text-xs text-muted-foreground">per year</p>
@@ -249,7 +249,7 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
                 />
                 <Bar 
                   dataKey="value" 
-                  fill="#10b981" 
+                  fill="#d97706" 
                   radius={[8, 8, 0, 0]}
                 />
               </BarChart>

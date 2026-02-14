@@ -38,15 +38,15 @@ const STEPS: Step[] = [
 
 function FinancialPreviewLoading() {
   return (
-    <div className="flex flex-col gap-3 rounded-3xl border border-emerald-100 bg-white/95 p-6 shadow-sm">
+    <div className="flex flex-col gap-3 rounded-3xl border border-amber-100 bg-white/95 p-6 shadow-sm">
       <div className="flex items-center gap-3 text-sm">
-        <Loader2 className="h-5 w-5 animate-spin text-emerald-500" />
+        <Loader2 className="h-5 w-5 animate-spin text-amber-500" />
         <div>
           <p className="font-semibold text-gray-900">Building a financing preview…</p>
           <p className="text-xs text-gray-600">Comparing cash vs. loan paths, incentives, and payoff timelines.</p>
         </div>
       </div>
-      <p className="text-xs text-emerald-700">
+      <p className="text-xs text-amber-700">
         This takes just a moment while we balance production, rates, and roof data from the previous step.
       </p>
     </div>
@@ -374,7 +374,7 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
     }
 
     try {
-      const installerId = session?.user?.id || DEFAULT_INSTALLER_ID;
+      const installerId = null; // All leads are shared across admins
       
       // Calculate preliminary score
       const preliminaryScore = calculateLeadScore(
@@ -527,9 +527,9 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
       // Use enhanced score (Phase 5.3+)
       const leadScore = enhancedLeadScore;
 
-      // Create lead in database (with new score and installer_id from auth context)
+      // Create lead in database
       console.log('Checking authentication, session:', session);
-      const installerId = session.user?.id || DEFAULT_INSTALLER_ID;
+      const installerId = null; // All leads are shared across admins
       console.log('Using installer ID:', installerId);
 
       // Fetch solar data from Google Solar API (async, non-blocking)
@@ -698,9 +698,9 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
       case "financial":
         if (!contactComplete) {
           return (
-            <div className="rounded-3xl border border-emerald-100 bg-emerald-50/70 p-6 text-sm text-emerald-900">
-              <p className="font-semibold text-emerald-900">Share your contact details to unlock projected savings.</p>
-              <p className="mt-2 text-xs text-emerald-700">Tap “Previous” and add your name, email, and phone so we can reserve the proposal slot.</p>
+            <div className="rounded-3xl border border-amber-100 bg-amber-50/70 p-6 text-sm text-amber-900">
+              <p className="font-semibold text-amber-900">Share your contact details to unlock projected savings.</p>
+              <p className="mt-2 text-xs text-amber-700">Tap "Previous" and add your name, email, and phone so we can reserve the proposal slot.</p>
             </div>
           );
         }
@@ -731,44 +731,44 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
                 onChange={handleContactChange}
               />
             </div>
-            <div className="relative rounded-3xl border border-emerald-100 bg-emerald-50/70 p-5 shadow-inner">
+            <div className="relative rounded-3xl border border-amber-100 bg-amber-50/70 p-5 shadow-inner">
               <div className="flex items-start gap-3">
-                <div className="mt-1 h-8 w-8 rounded-full bg-white text-emerald-600 shadow flex items-center justify-center font-semibold">💡</div>
-                <div className="space-y-2 text-sm text-emerald-900">
-                  <h3 className="text-base font-semibold text-emerald-800">What you’ll unlock next</h3>
+                <div className="mt-1 h-8 w-8 rounded-full bg-white text-amber-600 shadow flex items-center justify-center font-semibold">💡</div>
+                <div className="space-y-2 text-sm text-amber-900">
+                  <h3 className="text-base font-semibold text-amber-800">What you'll unlock next</h3>
                   <ul className="list-disc pl-4 space-y-1">
                     <li>Cash vs. loan comparison tailored to your roof + usage</li>
                     <li>Estimated monthly payment and savings timeline</li>
                     <li>Battery option guidance based on your sun exposure</li>
                   </ul>
                   {contactComplete && (
-                    <div className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-semibold text-emerald-700 shadow-sm">Great! Continue to see your financing options.</div>
+                    <div className="rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs font-semibold text-amber-700 shadow-sm">Great! Continue to see your financing options.</div>
                   )}
                 </div>
               </div>
-              <div className="relative mt-4 space-y-3 rounded-2xl border border-emerald-100 bg-white/90 p-4 shadow-sm overflow-hidden">
-                <div className="relative flex items-center justify-between text-sm font-semibold text-emerald-900">
+              <div className="relative mt-4 space-y-3 rounded-2xl border border-amber-100 bg-white/90 p-4 shadow-sm overflow-hidden">
+                <div className="relative flex items-center justify-between text-sm font-semibold text-amber-900">
                   <span>Financing preview</span>
-                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">Complete contact to unlock</span>
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">Complete contact to unlock</span>
                 </div>
-                <div className="relative grid gap-3 text-sm text-emerald-900 select-none" style={{ filter: 'blur(2px)' }}>
-                  <div className="rounded-xl border border-emerald-50 bg-emerald-50/70 p-3 shadow-inner">
+                <div className="relative grid gap-3 text-sm text-amber-900 select-none" style={{ filter: 'blur(2px)' }}>
+                  <div className="rounded-xl border border-amber-50 bg-amber-50/70 p-3 shadow-inner">
                     <div className="mb-2 flex items-center justify-between font-semibold">
                       <span>Cash path</span>
                       <span className="text-sm">~$18,500</span>
                     </div>
-                    <div className="space-y-1 text-xs text-emerald-800">
+                    <div className="space-y-1 text-xs text-amber-800">
                       <div>• Pay upfront, own immediately</div>
                       <div>• Estimated ~$1,600/yr savings</div>
                       <div>• Payback in ~12 years</div>
                     </div>
                   </div>
-                  <div className="rounded-xl border border-emerald-50 bg-emerald-50/70 p-3 shadow-inner">
+                  <div className="rounded-xl border border-amber-50 bg-amber-50/70 p-3 shadow-inner">
                     <div className="mb-2 flex items-center justify-between font-semibold">
                       <span>Loan path</span>
                       <span className="text-sm">$185/mo</span>
                     </div>
-                    <div className="space-y-1 text-xs text-emerald-800">
+                    <div className="space-y-1 text-xs text-amber-800">
                       <div>• Finance over 10 years</div>
                       <div>• Immediate net-positive cash flow</div>
                       <div>• Own after loan term</div>
@@ -777,7 +777,7 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center rounded-2xl pointer-events-none">
                   <div className="rounded-xl bg-white/80 px-4 py-2 shadow-lg backdrop-blur-sm">
-                    <p className="text-xs font-semibold text-emerald-800">🔒 Fill in your details to see numbers</p>
+                    <p className="text-xs font-semibold text-amber-800">🔒 Fill in your details to see numbers</p>
                   </div>
                 </div>
               </div>
@@ -824,7 +824,7 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
         <div className="mb-2 min-h-[520px]">
           {isLoading && currentStep === STEPS.length - 1 ? (
             <div className="flex min-h-[520px] flex-col items-center justify-center space-y-4">
-              <div className="h-16 w-16 animate-spin rounded-full border-4 border-emerald-500 border-t-transparent" />
+              <div className="h-16 w-16 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
               <div className="space-y-2 text-center">
                 <p className="text-lg font-semibold text-gray-900">Computing your solar savings...</p>
                 <p className="text-sm text-gray-600">Analyzing roof data, calculating incentives, and building financing options</p>
@@ -859,7 +859,7 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
               onClick={handleNext}
               disabled={isLoading}
               className="flex-1 px-5 py-2.5 text-sm h-11 font-semibold shadow-lg"
-              style={{ backgroundColor: '#10b981', color: 'white' }}
+              style={{ backgroundColor: '#d97706', color: 'white' }}
             >
               {isLoading
                 ? "Computing..."

@@ -20,19 +20,19 @@ export function BillOffsetChart({
   const gridCovered = Math.max(0, annualConsumption - annualProduction);
   
   const data = [
-    { name: "Solar Power", value: solarCovered, color: "#22c55e" },
+    { name: "Solar Power", value: solarCovered, color: "#f59e0b" },
     { name: "Grid Power", value: gridCovered, color: "#94a3b8" },
   ];
 
   return (
-    <Card className="border-2 border-green-300 overflow-visible">
+    <Card className="border-2 border-amber-300 overflow-visible">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5 text-green-600" />
+            <TrendingUp className="h-5 w-5 text-amber-600" />
             <CardTitle className="text-lg">Bill Offset Breakdown</CardTitle>
           </div>
-          <Badge className="bg-green-600 text-white">
+          <Badge className="bg-amber-600 text-white">
             {Math.round(offsetPercentage)}% Solar
           </Badge>
         </div>
@@ -83,9 +83,9 @@ export function BillOffsetChart({
         </ResponsiveContainer>
         
         <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-          <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+          <div className="p-3 bg-amber-50 dark:bg-amber-950 rounded-lg">
             <p className="text-xs text-muted-foreground mb-1">Solar Production</p>
-            <p className="font-bold text-green-700 dark:text-green-400">
+            <p className="font-bold text-amber-700 dark:text-amber-400">
               {annualProduction.toLocaleString()} kWh/yr
             </p>
           </div>
@@ -121,19 +121,19 @@ export function EnvironmentalImpactChart({
   const remainingGridCO2 = Math.max(0, totalHouseholdCO2 - solarSavedCO2);
 
   const data = [
-    { name: "CO\u2082 Saved (Solar)", value: Number(solarSavedCO2.toFixed(2)), color: "#22c55e" },
+    { name: "CO\u2082 Saved (Solar)", value: Number(solarSavedCO2.toFixed(2)), color: "#f59e0b" },
     { name: "Remaining Grid CO\u2082", value: Number(remainingGridCO2.toFixed(2)), color: "#ef4444" },
   ];
 
   return (
-    <Card className="border-2 border-emerald-300 overflow-hidden">
+    <Card className="border-2 border-amber-300 overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Leaf className="h-5 w-5 text-emerald-600" />
+            <Leaf className="h-5 w-5 text-amber-600" />
             <CardTitle className="text-lg">Environmental Impact</CardTitle>
           </div>
-          <Badge className="bg-emerald-600 text-white">
+          <Badge className="bg-amber-600 text-white">
             🌱 Clean Energy
           </Badge>
         </div>
@@ -170,16 +170,16 @@ export function EnvironmentalImpactChart({
         </ResponsiveContainer>
 
         <div className="mt-4 space-y-3">
-          <div className="p-3 bg-emerald-50 dark:bg-emerald-950 rounded-lg">
+          <div className="p-3 bg-amber-50 dark:bg-amber-950 rounded-lg">
             <div className="flex items-center justify-between mb-2">
-              <p className="text-sm font-semibold text-emerald-900 dark:text-emerald-100">
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-100">
                 🌍 CO₂ Offset
               </p>
-              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-400">
+              <p className="text-lg font-bold text-amber-700 dark:text-amber-400">
                 {co2OffsetTons.toFixed(1)} tons/yr
               </p>
             </div>
-            <p className="text-xs text-emerald-700 dark:text-emerald-300">
+            <p className="text-xs text-amber-700 dark:text-amber-300">
               Equivalent to planting <strong>{treesEquivalent}</strong> trees per year
             </p>
           </div>

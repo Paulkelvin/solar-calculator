@@ -371,7 +371,7 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
       <div className="relative">
         <label className="block text-sm font-medium text-gray-700 mb-1">Enter your address</label>
         <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 flex h-7 w-7 items-center justify-center rounded-full bg-amber-100 text-amber-600">
             <MapPin className="h-3.5 w-3.5" />
           </span>
           <input
@@ -380,7 +380,7 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
             value={inputValue}
             onChange={(e) => handleStreetInputChange(e.target.value)}
             onFocus={() => predictions.length > 0 && setShowPredictions(true)}
-            className="w-full rounded border border-gray-300 pl-12 pr-3 py-2 text-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 outline-none"
+            className="w-full rounded border border-gray-300 pl-12 pr-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none"
             placeholder="Start typing to find your address"
             autoComplete="off"
           />
@@ -414,11 +414,11 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
         )}
 
         {addressConfirmed && isLoadingSolarScore && (
-          <div className="mt-4 rounded-3xl border border-emerald-100 bg-gradient-to-b from-white via-white to-emerald-50/40 px-6 py-6 shadow-[0_25px_60px_rgba(16,185,129,0.18)] backdrop-blur">
+          <div className="mt-4 rounded-3xl border border-amber-100 bg-gradient-to-b from-white via-white to-amber-50/40 px-6 py-6 shadow-[0_25px_60px_rgba(217,119,6,0.18)] backdrop-blur">
             <div className="flex flex-col items-center text-center gap-4">
               <div className="relative h-16 w-16">
-                <div className="absolute inset-0 rounded-full border-4 border-emerald-100" />
-                <div className="absolute inset-2 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin" />
+                <div className="absolute inset-0 rounded-full border-4 border-amber-100" />
+                <div className="absolute inset-2 rounded-full border-4 border-amber-500 border-t-transparent animate-spin" />
               </div>
               <div>
                 <p className="text-base font-semibold text-gray-800">Analyzing solar potential…</p>

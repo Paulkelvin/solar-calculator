@@ -99,8 +99,8 @@ export default function UpdatePasswordPage() {
             </Link>
           </div>
         ) : success ? (
-          <div className="space-y-4 rounded-md bg-green-50 p-4">
-            <p className="text-sm text-green-700">
+          <div className="space-y-4 rounded-md bg-amber-50 p-4">
+            <p className="text-sm text-amber-700">
               Your password has been updated successfully! Redirecting to login...
             </p>
             <Link href="/auth/login" className="inline-block text-primary hover:underline text-sm">

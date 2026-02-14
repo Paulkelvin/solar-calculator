@@ -87,7 +87,7 @@ export function ContactStep({ value, onChange }: ContactStepProps) {
         )}
       </div>
 
-      <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700">
+      <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700">
         <p className="flex items-center gap-1.5">
           <svg className="h-3.5 w-3.5 flex-none" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />

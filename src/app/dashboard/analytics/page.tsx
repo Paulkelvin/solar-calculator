@@ -38,7 +38,7 @@ interface ActivityEntry {
 const STATUS_COLORS: Record<string, string> = {
   new: "#3b82f6",
   contacted: "#eab308",
-  converted: "#22c55e",
+  converted: "#f59e0b",
   lost: "#ef4444",
 };
 
@@ -58,12 +58,10 @@ export default function AnalyticsPage() {
         supabase
           .from("leads")
           .select("*")
-          .eq("installer_id", session.user.id)
           .order("created_at", { ascending: true }),
         supabase
           .from("activity_log")
           .select("id, event_type, created_at, lead_id")
-          .eq("installer_id", session.user.id)
           .order("created_at", { ascending: true })
           .limit(500),
       ]);
@@ -217,8 +215,8 @@ export default function AnalyticsPage() {
           label="Conversion Rate"
           value={`${conversionRate}%`}
           subtext={`${convertedLeads} converted`}
-          color="text-green-600"
-          bg="bg-green-50"
+          color="text-amber-600"
+          bg="bg-amber-50"
         />
         <KPICard
           icon={<TrendingUp className="h-5 w-5" />}

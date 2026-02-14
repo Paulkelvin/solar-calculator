@@ -39,14 +39,14 @@ This is an automated message. Please do not reply with sensitive information.`,
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
+    .header { background: linear-gradient(135deg, #d97706 0%, #d97706 100%); color: white; padding: 30px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
     .header h1 { margin: 0; font-size: 28px; }
-    .section { background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #10b981; }
-    .section h2 { color: #10b981; margin-top: 0; }
+    .section { background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #d97706; }
+    .section h2 { color: #d97706; margin-top: 0; }
     .metric { display: inline-block; width: 48%; margin: 10px 1%; padding: 15px; background: white; border-radius: 4px; text-align: center; }
     .metric-label { font-size: 12px; color: #6b7280; text-transform: uppercase; }
-    .metric-value { font-size: 24px; font-weight: bold; color: #059669; margin-top: 5px; }
-    .cta-button { display: inline-block; background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; margin: 10px 0; }
+    .metric-value { font-size: 24px; font-weight: bold; color: #d97706; margin-top: 5px; }
+    .cta-button { display: inline-block; background: #d97706; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; margin: 10px 0; }
     .footer { background: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #6b7280; border-radius: 4px; margin-top: 30px; }
   </style>
 </head>
@@ -141,15 +141,15 @@ Solar ROI Calculator Admin Team`,
   <style>
     body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 30px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
+    .header { background: linear-gradient(135deg, #d97706 0%, #d97706 100%); color: white; padding: 30px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
     .header h1 { margin: 0; font-size: 24px; }
-    .section { background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #10b981; }
-    .section h3 { color: #10b981; margin-top: 0; }
+    .section { background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #d97706; }
+    .section h3 { color: #d97706; margin-top: 0; }
     .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
     .info-row:last-child { border-bottom: none; }
     .info-label { font-weight: bold; color: #6b7280; }
-    .lead-score { display: inline-block; font-size: 32px; font-weight: bold; color: #10b981; margin: 10px 0; }
-    .cta-button { display: inline-block; background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; margin: 15px 0; }
+    .lead-score { display: inline-block; font-size: 32px; font-weight: bold; color: #d97706; margin: 10px 0; }
+    .cta-button { display: inline-block; background: #d97706; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; margin: 15px 0; }
     .footer { background: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #6b7280; border-radius: 4px; margin-top: 30px; }
   </style>
 </head>

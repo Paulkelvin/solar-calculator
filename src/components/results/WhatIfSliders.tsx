@@ -168,7 +168,7 @@ export function WhatIfSliders({
                 <span className="text-amber-700 dark:text-amber-300">
                   Estimated Cost: <strong>${batteryCost.toLocaleString()}</strong>
                 </span>
-                <span className="text-green-600 dark:text-green-400">
+                <span className="text-amber-600 dark:text-amber-400">
                   +17.5% Savings
                 </span>
               </div>
@@ -222,12 +222,12 @@ export function WhatIfSliders({
               </p>
             </div>
 
-            <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+            <div className="p-3 bg-amber-50 dark:bg-amber-950 rounded-lg">
               <div className="flex items-center gap-1 mb-1">
-                <TrendingUp className="h-4 w-4 text-green-600" />
+                <TrendingUp className="h-4 w-4 text-amber-600" />
                 <p className="text-xs text-muted-foreground">Net Gain</p>
               </div>
-              <p className="text-lg font-bold text-green-700 dark:text-green-400">
+              <p className="text-lg font-bold text-amber-700 dark:text-amber-400">
                 ${Math.round(netSavings / 1000)}k
               </p>
             </div>

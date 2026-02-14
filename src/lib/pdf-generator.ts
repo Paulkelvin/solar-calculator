@@ -112,13 +112,13 @@ export function generateProposalHTML(
             box-shadow: 0 0 10px rgba(0,0,0,0.1);
           }
           .header {
-            border-bottom: 3px solid #10b981;
+            border-bottom: 3px solid #d97706;
             margin-bottom: 1.5rem;
             padding-bottom: 1rem;
           }
           .header h1 {
             font-size: 2rem;
-            color: #10b981;
+            color: #d97706;
             margin-bottom: 0.25rem;
           }
           .header p {
@@ -131,7 +131,7 @@ export function generateProposalHTML(
           .section-title {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #10b981;
+            color: #d97706;
             border-bottom: 2px solid #e5e7eb;
             padding-bottom: 0.5rem;
             margin-bottom: 0.75rem;
@@ -146,7 +146,7 @@ export function generateProposalHTML(
             background: #f9fafb;
             padding: 0.75rem;
             border-radius: 0.5rem;
-            border-left: 3px solid #10b981;
+            border-left: 3px solid #d97706;
           }
           .info-label {
             font-size: 0.85rem;
@@ -188,17 +188,17 @@ export function generateProposalHTML(
             color: #111;
           }
           .highlight {
-            background: #d1fae5;
+            background: #fef3c7;
             padding: 0.25rem 0.5rem;
             border-radius: 0.25rem;
-            color: #047857;
+            color: #b45309;
             font-weight: 600;
           }
           .environmental {
-            background: #f0fdf4;
+            background: #fffbeb;
             padding: 1rem;
             border-radius: 0.5rem;
-            border: 1px solid #dcfce7;
+            border: 1px solid #fef3c7;
           }
           .environmental-grid {
             display: grid;
@@ -212,7 +212,7 @@ export function generateProposalHTML(
           .env-number {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #10b981;
+            color: #d97706;
           }
           .env-label {
             font-size: 0.85rem;

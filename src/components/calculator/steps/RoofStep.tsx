@@ -14,10 +14,10 @@ const RoofMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[320px] w-full items-center justify-center rounded-3xl border-2 border-emerald-100 bg-emerald-50">
+      <div className="flex h-[320px] w-full items-center justify-center rounded-3xl border-2 border-amber-100 bg-amber-50">
         <div className="space-y-2 text-center">
-          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-emerald-400 border-t-transparent" />
-          <p className="text-sm font-medium text-emerald-700">Loading satellite map…</p>
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
+          <p className="text-sm font-medium text-amber-700">Loading satellite map…</p>
         </div>
       </div>
     ),
@@ -278,7 +278,7 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
   const sunExposurePercent = solarData.sunExposurePercentage ?? exposurePercentLookup[formValue.sunExposure];
   const shadingPercent = solarData.shadingPercentage ?? Math.max(0, 100 - sunExposurePercent);
   const mapHeaderMessage = hasMapCoordinates ? (
-    <div className="flex w-full flex-wrap items-center justify-between gap-3 text-xs font-semibold text-emerald-900">
+    <div className="flex w-full flex-wrap items-center justify-between gap-3 text-xs font-semibold text-amber-900">
       <span>Marker slightly off? Tap change or drag the pin below to re-center.</span>
       {onEditAddress && (
         <Button
@@ -286,7 +286,7 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
           variant="outline"
           size="sm"
           onClick={onEditAddress}
-          className="ml-auto h-7 rounded-full border-emerald-200 px-3 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50"
+          className="ml-auto h-7 rounded-full border-amber-200 px-3 text-[11px] font-semibold text-amber-700 hover:bg-amber-50"
         >
           Change address?
         </Button>
@@ -300,11 +300,11 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
   return (
     <div className="space-y-6">
       {hasMapCoordinates && (
-        <div className="relative rounded-3xl border border-emerald-100 bg-white shadow-xl shadow-emerald-50/60">
+        <div className="relative rounded-3xl border border-amber-100 bg-white shadow-xl shadow-amber-50/60">
           {isRelocating && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/70 backdrop-blur-sm">
-              <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-5 py-3 shadow-lg">
-                <Loader2 className="h-5 w-5 animate-spin text-emerald-600" />
+              <div className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-white px-5 py-3 shadow-lg">
+                <Loader2 className="h-5 w-5 animate-spin text-amber-600" />
                 <span className="text-sm font-medium text-gray-800">Analyzing new roof…</span>
               </div>
             </div>
@@ -350,46 +350,46 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
           </div>
         </div>
 
-        <div className="rounded-3xl border border-emerald-100 bg-white/90 p-5 text-sm shadow-sm">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-emerald-600">Peak sunlight window</p>
-          <p className="mt-3 text-4xl font-black text-emerald-700">
+        <div className="rounded-3xl border border-amber-100 bg-white/90 p-5 text-sm shadow-sm">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-600">Peak sunlight window</p>
+          <p className="mt-3 text-4xl font-black text-amber-700">
             {peakSunHours.toFixed(1)} <span className="text-base font-semibold">hrs</span>
           </p>
-          <p className="mt-1 text-[12px] font-semibold uppercase tracking-[0.3em] text-emerald-500">{sunWindowDetails.windowLabel}</p>
-          <p className="mt-2 text-xs text-emerald-700">{sunWindowDetails.tip}</p>
+          <p className="mt-1 text-[12px] font-semibold uppercase tracking-[0.3em] text-amber-500">{sunWindowDetails.windowLabel}</p>
+          <p className="mt-2 text-xs text-amber-700">{sunWindowDetails.tip}</p>
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl border border-emerald-100 bg-gradient-to-br from-emerald-50 via-white to-emerald-100/60 p-5 shadow-sm">
+        <div className="rounded-3xl border border-amber-100 bg-gradient-to-br from-amber-50 via-white to-amber-100/60 p-5 shadow-sm">
           <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-gray-500">
             <p>Your roof area</p>
-            <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-emerald-600 shadow">roof massing</span>
+            <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold text-amber-600 shadow">roof massing</span>
           </div>
-          <p className="mt-3 text-4xl font-black text-emerald-700">
-            {areaDisplay.toLocaleString()} <span className="text-base font-semibold text-emerald-500">sq ft</span>
+          <p className="mt-3 text-4xl font-black text-amber-700">
+            {areaDisplay.toLocaleString()} <span className="text-base font-semibold text-amber-500">sq ft</span>
           </p>
           <div className="relative mt-4 h-28 w-full">
             <svg viewBox="0 0 220 120" className="absolute inset-0 h-full w-full">
               <defs>
                 <linearGradient id="roofGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stopColor="#6ee7b7" stopOpacity="0.9" />
-                  <stop offset="100%" stopColor="#34d399" stopOpacity="0.6" />
+                  <stop offset="100%" stopColor="#e9cb3f" stopOpacity="0.6" />
                 </linearGradient>
               </defs>
-              <polygon points="20,90 110,25 200,55 110,115" fill="url(#roofGradient)" stroke="#10b981" strokeWidth="1" opacity="0.35" />
+              <polygon points="20,90 110,25 200,55 110,115" fill="url(#roofGradient)" stroke="#d97706" strokeWidth="1" opacity="0.35" />
               {roofTilePolygons.map((tile, idx) => (
                 <polygon
                   key={`tile-${idx}`}
                   points={tile.points}
-                  fill={tile.filled ? "#10b981" : "#d1fae5"}
+                  fill={tile.filled ? "#d97706" : "#fef3c7"}
                   opacity={tile.filled ? 0.92 : 0.45}
                 />
               ))}
             </svg>
           </div>
           {solarData.roofAreaSqft && (
-            <p className="mt-2 text-[11px] text-emerald-700">Satellite pick-up: {Math.round(solarData.roofAreaSqft).toLocaleString()} sq ft</p>
+            <p className="mt-2 text-[11px] text-amber-700">Satellite pick-up: {Math.round(solarData.roofAreaSqft).toLocaleString()} sq ft</p>
           )}
           {errors.squareFeet && <p className="mt-2 text-xs text-red-600">{errors.squareFeet}</p>}
         </div>
@@ -406,7 +406,7 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
               <path
                 d="M20 110 A80 80 0 0 1 180 110"
                 fill="none"
-                stroke="#10b981"
+                stroke="#d97706"
                 strokeWidth="10"
                 strokeLinecap="round"
                 strokeDasharray={`${normalizedTilt * 4} 999`}
@@ -420,30 +420,30 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
                 className="relative h-24 w-1 origin-bottom"
                 style={{ transform: `rotate(${-normalizedTilt}deg)`, transition: "transform 0.6s ease" }}
               >
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-20 w-1 rounded-full bg-gradient-to-b from-emerald-300 to-emerald-600 shadow-lg" />
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 border-l-[6px] border-r-[6px] border-b-[10px] border-l-transparent border-r-transparent border-b-emerald-500" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-20 w-1 rounded-full bg-gradient-to-b from-amber-300 to-amber-600 shadow-lg" />
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-0 border-l-[6px] border-r-[6px] border-b-[10px] border-l-transparent border-r-transparent border-b-amber-500" />
               </div>
             </div>
           </div>
           {solarData.optimalTilt && (
-            <p className="mt-2 text-[11px] text-emerald-700">Optimal tilt nearby: {Math.round(solarData.optimalTilt)}°</p>
+            <p className="mt-2 text-[11px] text-amber-700">Optimal tilt nearby: {Math.round(solarData.optimalTilt)}°</p>
           )}
         </div>
 
-        <div className="rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm">
+        <div className="rounded-3xl border border-amber-100 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between text-[11px] uppercase tracking-wide text-gray-500">
             <p>Facing</p>
-            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-600">compass</span>
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-600">compass</span>
           </div>
           <div className="mt-3 text-4xl font-black text-slate-900">
             <span>{directionAbbreviation}</span>
-            <span className="ml-2 align-baseline text-base font-semibold uppercase tracking-[0.3em] text-emerald-600">
+            <span className="ml-2 align-baseline text-base font-semibold uppercase tracking-[0.3em] text-amber-600">
               {directionLabel}
             </span>
           </div>
           <div className="relative mx-auto mt-4 h-32 w-32">
-            <div className="absolute inset-0 rounded-full border-2 border-emerald-50 bg-gradient-to-br from-white to-emerald-50" />
-            <div className="absolute inset-3 rounded-full border border-emerald-100" />
+            <div className="absolute inset-0 rounded-full border-2 border-amber-50 bg-gradient-to-br from-white to-amber-50" />
+            <div className="absolute inset-3 rounded-full border border-amber-100" />
             {["N", "E", "S", "W"].map((label, idx) => {
               const positions: CSSProperties[] = [
                 { top: "-6px", left: "50%", transform: "translateX(-50%)" },
@@ -452,7 +452,7 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
                 { left: "-6px", top: "50%", transform: "translateY(-50%)" },
               ];
               return (
-                <span key={label} className="absolute text-[11px] font-semibold text-emerald-700" style={positions[idx]}>
+                <span key={label} className="absolute text-[11px] font-semibold text-amber-700" style={positions[idx]}>
                   {label}
                 </span>
               );
@@ -463,21 +463,21 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
                 style={{ transform: `rotate(${directionRotation}deg)`, transition: "transform 0.6s ease" }}
               >
                 {/* Needle pointing outward from center */}
-                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-14 w-1 rounded-full bg-gradient-to-t from-emerald-300 via-emerald-500 to-emerald-700 shadow" style={{ transformOrigin: 'bottom center' }} />
-                <div className="absolute -top-[3.6rem] left-1/2 -translate-x-1/2 w-0 border-l-[6px] border-r-[6px] border-b-[10px] border-l-transparent border-r-transparent border-b-emerald-600 drop-shadow" />
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-14 w-1 rounded-full bg-gradient-to-t from-amber-300 via-amber-500 to-amber-700 shadow" style={{ transformOrigin: 'bottom center' }} />
+                <div className="absolute -top-[3.6rem] left-1/2 -translate-x-1/2 w-0 border-l-[6px] border-r-[6px] border-b-[10px] border-l-transparent border-r-transparent border-b-amber-600 drop-shadow" />
                 {/* Small center dot */}
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-emerald-600 shadow" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-3 w-3 rounded-full bg-amber-600 shadow" />
               </div>
             </div>
           </div>
-          <p className="mt-2 text-[11px] text-emerald-700">Azimuth {azimuth.toFixed(1)}°</p>
+          <p className="mt-2 text-[11px] text-amber-700">Azimuth {azimuth.toFixed(1)}°</p>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-emerald-100 bg-white/90 p-5 shadow-sm">
-        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.35em] text-emerald-600">
+      <div className="rounded-3xl border border-amber-100 bg-white/90 p-5 shadow-sm">
+        <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.35em] text-amber-600">
           <p>What's your roof surface?</p>
-          <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold normal-case tracking-wide text-emerald-700">Helps installers plan mounts</span>
+          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold normal-case tracking-wide text-amber-700">Helps installers plan mounts</span>
         </div>
         <p className="mt-2 text-xs text-gray-500">Pre-filled from aerial cues — update it if your surface differs.</p>
         <div className="mt-3 grid gap-2 md:grid-cols-2">
@@ -490,8 +490,8 @@ export function RoofStep({ value, onChange, address, onEditAddress, onAddressCoo
                 onClick={() => handleChange("roofType", option.value)}
                 className={`rounded-2xl border px-3 py-3 text-left transition ${
                   isActive
-                    ? "border-emerald-400 bg-emerald-50 text-emerald-900 shadow"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-emerald-200"
+                    ? "border-amber-400 bg-amber-50 text-amber-900 shadow"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-amber-200"
                 }`}
               >
                 <p className="text-sm font-semibold">{option.label}</p>

@@ -106,7 +106,7 @@ export default function SettingsPage() {
     return (
       <div className="flex h-96 items-center justify-center">
         <div className="text-center space-y-3">
-          <Loader2 className="h-8 w-8 animate-spin text-emerald-500 mx-auto" />
+          <Loader2 className="h-8 w-8 animate-spin text-amber-500 mx-auto" />
           <p className="text-sm text-gray-500 font-medium">Loading settings...</p>
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function SettingsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Settings className="h-6 w-6 text-emerald-600" />
+          <Settings className="h-6 w-6 text-amber-600" />
           Settings
         </h1>
         <p className="text-sm text-gray-500 mt-1">
@@ -170,7 +170,7 @@ export default function SettingsPage() {
       {/* Profile Card */}
       <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden">
         {/* Card Header */}
-        <div className="bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-5">
+        <div className="bg-gradient-to-r from-amber-500 to-teal-500 px-6 py-5">
           <div className="flex items-center gap-4">
             <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30">
               <Building2 className="h-7 w-7 text-white" />
@@ -179,7 +179,7 @@ export default function SettingsPage() {
               <h2 className="text-lg font-semibold text-white">
                 {formData.company_name || 'Your Company'}
               </h2>
-              <p className="text-sm text-emerald-100">
+              <p className="text-sm text-amber-100">
                 {formData.state ? `Based in ${formData.state}` : 'Company profile'}
               </p>
             </div>
@@ -197,9 +197,9 @@ export default function SettingsPage() {
           )}
 
           {success && (
-            <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 animate-in fade-in slide-in-from-top-1 duration-200">
-              <CheckCircle2 className="h-5 w-5 text-emerald-500 flex-shrink-0" />
-              <p className="text-sm text-emerald-700 font-medium">Settings saved successfully!</p>
+            <div className="flex items-center gap-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3 animate-in fade-in slide-in-from-top-1 duration-200">
+              <CheckCircle2 className="h-5 w-5 text-amber-500 flex-shrink-0" />
+              <p className="text-sm text-amber-700 font-medium">Settings saved successfully!</p>
             </div>
           )}
 
@@ -207,7 +207,7 @@ export default function SettingsPage() {
           {fields.map(({ name, label, icon: Icon, type, placeholder, required, maxLength, hint }) => (
             <div key={name} className="group">
               <label htmlFor={name} className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                <Icon className="h-4 w-4 text-gray-400 group-focus-within:text-emerald-500 transition-colors" />
+                <Icon className="h-4 w-4 text-gray-400 group-focus-within:text-amber-500 transition-colors" />
                 {label}
                 {required && <span className="text-red-400 text-xs">*</span>}
               </label>
@@ -218,7 +218,7 @@ export default function SettingsPage() {
                 value={(formData as any)[name]}
                 onChange={handleChange}
                 maxLength={maxLength}
-                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-emerald-300 focus:ring-2 focus:ring-emerald-100 focus:outline-none transition-all duration-200"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 placeholder:text-gray-400 focus:bg-white focus:border-amber-300 focus:ring-2 focus:ring-amber-100 focus:outline-none transition-all duration-200"
                 placeholder={placeholder}
               />
               {hint && (
@@ -232,7 +232,7 @@ export default function SettingsPage() {
             <Button
               type="submit"
               disabled={isSaving}
-              className="w-full h-12 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50"
+              className="w-full h-12 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-medium text-sm transition-all duration-200 shadow-sm hover:shadow-md disabled:opacity-50"
             >
               {isSaving ? (
                 <span className="flex items-center gap-2">

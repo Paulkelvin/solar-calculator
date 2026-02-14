@@ -210,7 +210,7 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
             onClick={() => handleTabSelect("bill")}
             className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-all ${
               activeTab === "bill"
-                ? "bg-white text-emerald-600 shadow-md shadow-emerald-100"
+                ? "bg-white text-amber-600 shadow-md shadow-amber-100"
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -222,7 +222,7 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
             onClick={() => handleTabSelect("kwh")}
             className={`flex flex-1 items-center justify-center gap-2 rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-wide transition-all ${
               activeTab === "kwh"
-                ? "bg-white text-emerald-600 shadow-md shadow-emerald-100"
+                ? "bg-white text-amber-600 shadow-md shadow-amber-100"
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
@@ -245,7 +245,7 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
               value={billAmount}
               onChange={(e) => handleBillChange(e.target.value)}
               placeholder="120"
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 outline-none transition"
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none transition"
             />
             {errors.usage && <p className="mt-1 text-xs text-red-600">{errors.usage}</p>}
           </section>
@@ -265,7 +265,7 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
       </div>
 
       <div className="-mt-2 flex items-start gap-2 text-[11px] text-gray-500">
-        <span className="pt-0.5 text-emerald-500">💡</span>
+        <span className="pt-0.5 text-amber-500">💡</span>
         <span>
           {activeTab === "bill"
             ? "Grab your last 12 statements and average the total charges."
@@ -275,11 +275,11 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
 
       {/* Local utility rate indicator */}
       {rateSource === 'openei' && (
-        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs">
-          <span className="text-emerald-600">⚡</span>
-          <span className="text-emerald-700">
+        <div className="flex items-center gap-2 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2 text-xs">
+          <span className="text-amber-600">⚡</span>
+          <span className="text-amber-700">
             Using local rate: <strong>${averageRate.toFixed(2)}/kWh</strong>
-            {utilityName && <span className="text-emerald-600"> — {utilityName}</span>}
+            {utilityName && <span className="text-amber-600"> — {utilityName}</span>}
           </span>
         </div>
       )}
@@ -295,8 +295,8 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
           <h3 className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-1">
             What You Pay Now (Without Solar)
           </h3>
-          <div className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-white px-4 py-3 text-sm text-emerald-700 shadow-sm">
-            <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+          <div className="flex items-center gap-3 rounded-2xl border border-amber-100 bg-white px-4 py-3 text-sm text-amber-700 shadow-sm">
+            <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
             <span className="animate-pulse">Crunching usage trends &amp; fetching solar production data…</span>
           </div>
         </div>
@@ -316,10 +316,10 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
               <p className="text-xs text-blue-600">kWh you consume yearly</p>
             </div>
 
-            <div className="p-3 bg-green-50 rounded border border-green-200">
-              <p className="text-xs text-green-700 mb-1">Your Annual Cost</p>
-              <p className="text-lg font-bold text-green-900">${annualCost.toLocaleString()}</p>
-              <p className="text-xs text-green-600">what you pay now</p>
+            <div className="p-3 bg-amber-50 rounded border border-amber-200">
+              <p className="text-xs text-amber-700 mb-1">Your Annual Cost</p>
+              <p className="text-lg font-bold text-amber-900">${annualCost.toLocaleString()}</p>
+              <p className="text-xs text-amber-600">what you pay now</p>
             </div>
           </div>
 

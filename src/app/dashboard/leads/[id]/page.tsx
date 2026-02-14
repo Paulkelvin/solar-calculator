@@ -28,7 +28,6 @@ export default function LeadDetailPage() {
           .from("leads")
           .select("*")
           .eq("id", leadId)
-          .eq("installer_id", session.user.id)
           .maybeSingle();
 
         if (err) throw err;
@@ -181,7 +180,7 @@ export default function LeadDetailPage() {
 
       {/* Success/Error Messages */}
       {emailSuccess && (
-        <div className="rounded-md bg-green-50 p-3 text-sm text-green-700">
+        <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-700">
           ✓ Email sent to {lead.contact?.email || 'customer'}
         </div>
       )}
@@ -204,7 +203,7 @@ export default function LeadDetailPage() {
         <button
           onClick={handleSendEmail}
           disabled={isSendingEmail}
-          className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 active:scale-[0.97] disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+          className="px-4 py-2 rounded-lg bg-amber-600 text-white font-medium text-sm hover:bg-amber-700 active:scale-[0.97] disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
         >
           {isSendingEmail ? "Sending..." : "✉️ Send to Customer"}
         </button>

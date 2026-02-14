@@ -107,17 +107,17 @@ export function FinancialPreviewStep({
   return (
     <div className="space-y-5">
       {savingsRange && (
-        <div className="rounded-3xl border border-emerald-100 bg-gradient-to-r from-emerald-50 via-white to-amber-50 p-5 shadow-sm">
+        <div className="rounded-3xl border border-amber-100 bg-gradient-to-r from-amber-50 via-white to-amber-50 p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <span className="rounded-full bg-emerald-100 p-2 text-emerald-600">
+            <span className="rounded-full bg-amber-100 p-2 text-amber-600">
               <DollarSign className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Projected year-one savings</p>
-              <p className="text-3xl font-bold text-emerald-700">
+              <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Projected year-one savings</p>
+              <p className="text-3xl font-bold text-amber-700">
                 {currencyFormatter.format(savingsRange.min)} – {currencyFormatter.format(savingsRange.max)}
               </p>
-              <p className="text-xs text-emerald-700">
+              <p className="text-xs text-amber-700">
                 Based on your roof conditions and bill input.
                 {googleSolar ? ' Powered by Google Solar satellite data.' : ' Phase 1 estimate — awaiting satellite data.'}
               </p>
@@ -128,9 +128,9 @@ export function FinancialPreviewStep({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <MetricPill label="System Size" value={`${preview.systemSizeKw.toFixed(1)} kW`} icon={TrendingUp} accent="text-slate-600" />
-        <MetricPill label="Annual Production" value={`${preview.estimatedAnnualProduction.toLocaleString()} kWh`} icon={Leaf} accent="text-green-600" />
+        <MetricPill label="Annual Production" value={`${preview.estimatedAnnualProduction.toLocaleString()} kWh`} icon={Leaf} accent="text-amber-600" />
         <MetricPill label="Monthly Avg" value={`${preview.estimatedMonthlyProduction.toLocaleString()} kWh`} icon={PiggyBank} accent="text-amber-600" />
-        <MetricPill label="Carbon Offset" value={`${preview.environmental.annualCO2Offset.toLocaleString()} kg`} icon={Leaf} accent="text-emerald-600" />
+        <MetricPill label="Carbon Offset" value={`${preview.environmental.annualCO2Offset.toLocaleString()} kg`} icon={Leaf} accent="text-amber-600" />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -193,7 +193,7 @@ interface DetailRowProps {
 
 function DetailRow({ label, value, highlight = false }: DetailRowProps) {
   return (
-    <div className={`flex justify-between ${highlight ? "rounded-lg bg-emerald-50 px-3 py-2 font-semibold text-emerald-700" : "text-gray-700"}`}>
+    <div className={`flex justify-between ${highlight ? "rounded-lg bg-amber-50 px-3 py-2 font-semibold text-amber-700" : "text-gray-700"}`}>
       <span className="text-xs uppercase tracking-wide text-gray-500">{label}</span>
       <span>{value}</span>
     </div>

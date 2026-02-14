@@ -25,7 +25,6 @@ export function ActivityLog() {
         const { data, error } = await supabase
           .from("activity_log")
           .select("id, event_type, metadata, lead_id, created_at")
-          .eq("installer_id", session.user.id)
           .order("created_at", { ascending: false })
           .limit(50);
 
@@ -55,7 +54,7 @@ export function ActivityLog() {
   const getEventColor = (eventType: string) => {
     const colors: Record<string, string> = {
       form_submitted: "bg-blue-50 text-blue-700",
-      results_viewed: "bg-green-50 text-green-700",
+      results_viewed: "bg-amber-50 text-amber-700",
       lead_status_changed: "bg-yellow-50 text-yellow-700",
       lead_notes_updated: "bg-purple-50 text-purple-700",
       settings_updated: "bg-indigo-50 text-indigo-700",

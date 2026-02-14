@@ -51,8 +51,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="flex h-screen items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center space-y-3">
           <div className="relative">
-            <div className="h-10 w-10 animate-spin rounded-full border-4 border-emerald-200 border-t-emerald-500"></div>
-            <Sun className="absolute inset-0 m-auto h-4 w-4 text-emerald-500 animate-pulse" />
+            <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-200 border-t-amber-500"></div>
+            <Sun className="absolute inset-0 m-auto h-4 w-4 text-amber-500 animate-pulse" />
           </div>
           <p className="text-sm text-gray-500 font-medium">Loading dashboard...</p>
         </div>
@@ -76,14 +76,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-gray-50 via-gray-50 to-emerald-50/30 overflow-hidden">
+    <div className="fixed inset-0 flex flex-col bg-gradient-to-br from-gray-50 via-gray-50 to-amber-50/30 overflow-hidden">
       {/* Navigation Header */}
       <nav className="flex-none z-50 border-b border-gray-200/80 bg-white/95 backdrop-blur-md shadow-sm">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 w-full">
           <div className="flex h-16 items-center justify-between">
             {/* Brand */}
             <Link href="/dashboard" className="flex items-center gap-2.5 group">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 shadow-md shadow-emerald-200/50 group-hover:shadow-lg group-hover:shadow-emerald-300/50 transition-all duration-300 group-hover:scale-105">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 shadow-md shadow-amber-200/50 group-hover:shadow-lg group-hover:shadow-amber-300/50 transition-all duration-300 group-hover:scale-105">
                 <Sun className="h-5 w-5 text-white transition-transform duration-500 group-hover:rotate-90" />
               </div>
               <div className="hidden sm:block">
@@ -104,14 +104,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                     href={href}
                     className={`relative inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 ${
                       active
-                        ? 'text-emerald-700 bg-emerald-50'
+                        ? 'text-amber-700 bg-amber-50'
                         : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
                     }`}
                   >
-                    <Icon className={`h-4 w-4 transition-colors ${active ? 'text-emerald-600' : ''}`} />
+                    <Icon className={`h-4 w-4 transition-colors ${active ? 'text-amber-600' : ''}`} />
                     <span className="hidden sm:inline">{label}</span>
                     {active && (
-                      <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-emerald-500 rounded-full" />
+                      <span className="absolute bottom-0 left-3 right-3 h-0.5 bg-amber-500 rounded-full" />
                     )}
                   </Link>
                 );

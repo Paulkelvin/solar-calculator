@@ -133,8 +133,8 @@ export function CashFlowChart({
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 10, bottom: 25 }}>
             <defs>
               <linearGradient id="cashGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
-                <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
+                <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
               </linearGradient>
               <linearGradient id="loanGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
@@ -180,7 +180,7 @@ export function CashFlowChart({
             <Area
               type="monotone"
               dataKey="cashSavings"
-              stroke="#22c55e"
+              stroke="#f59e0b"
               strokeWidth={2}
               fill="url(#cashGradient)"
               name="Cash Purchase"
@@ -210,13 +210,13 @@ export function CashFlowChart({
 
         {/* Key Metrics */}
         <div className="mt-6 grid grid-cols-3 gap-3">
-          <div className="p-3 bg-green-50 dark:bg-green-950 rounded-lg">
+          <div className="p-3 bg-amber-50 dark:bg-amber-950 rounded-lg">
             <p className="text-xs text-muted-foreground mb-1">Cash (25yr)</p>
-            <p className="text-lg font-bold text-green-700 dark:text-green-400">
+            <p className="text-lg font-bold text-amber-700 dark:text-amber-400">
               ${(data[25].cashSavings / 1000).toFixed(0)}k
             </p>
             {cashPayback > 0 && (
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+              <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
                 ⏱ {cashPayback.toFixed(1)}yr payback
               </p>
             )}

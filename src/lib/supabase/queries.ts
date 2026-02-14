@@ -84,12 +84,10 @@ export async function logActivity(
 }
 
 /**
- * Fetch leads for the specified installer with pagination.
- * Phase 2: Real Supabase integration enabled.
- * Phase 6.1: Uses authenticated installer_id
+ * Fetch all leads with pagination.
+ * All admins see the same leads — no per-installer scoping.
  */
 export async function fetchLeads(
-  installerId: string,
   options?: { page?: number; pageSize?: number }
 ): Promise<{ data: Lead[]; total: number }> {
   const page = options?.page ?? 1;
@@ -101,7 +99,6 @@ export async function fetchLeads(
     const { data, error, count } = await supabase
       .from("leads")
       .select("*", { count: "exact" })
-      .eq("installer_id", installerId)
       .order("created_at", { ascending: false })
       .range(from, to);
 

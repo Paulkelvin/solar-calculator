@@ -23,7 +23,7 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadStats = async () => {
       if (!session.user?.id) return;
-      const result = await fetchLeads(session.user.id, { page: 1, pageSize: 1000 });
+      const result = await fetchLeads({ page: 1, pageSize: 1000 });
       const leads = result.data;
       const total = leads.length;
       const converted = leads.filter((l) => l.status === "converted").length;
@@ -42,7 +42,7 @@ export default function DashboardPage() {
       <header className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Sparkles className="h-6 w-6 text-emerald-500" />
+            <Sparkles className="h-6 w-6 text-amber-500" />
             Leads Dashboard
           </h1>
           <p className="text-sm text-gray-500 mt-1">
@@ -51,7 +51,7 @@ export default function DashboardPage() {
         </div>
         <Link
           href="/dashboard/analytics"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-2 rounded-lg transition-all duration-200"
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-lg transition-all duration-200"
         >
           View Analytics <ArrowUpRight className="h-3.5 w-3.5" />
         </Link>
@@ -123,7 +123,7 @@ function StatCard({
 }) {
   const colors = {
     blue: "bg-blue-50 text-blue-600",
-    green: "bg-emerald-50 text-emerald-600",
+    green: "bg-amber-50 text-amber-600",
     amber: "bg-amber-50 text-amber-600",
     purple: "bg-purple-50 text-purple-600",
   };

@@ -392,20 +392,20 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
                 key={idx}
                 className={`relative flex flex-col rounded-2xl border-2 p-6 transition-shadow hover:shadow-lg ${
                   isPopular
-                    ? "border-emerald-500 bg-white shadow-md"
+                    ? "border-amber-500 bg-white shadow-md"
                     : "border-gray-200 bg-white"
                 }`}
               >
                 {isPopular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="rounded-full bg-emerald-500 px-4 py-1 text-xs font-semibold text-white shadow-sm">
+                    <span className="rounded-full bg-amber-500 px-4 py-1 text-xs font-semibold text-white shadow-sm">
                       Most popular
                     </span>
                   </div>
                 )}
 
                 <div className="mb-5">
-                  <h4 className={`text-xl font-bold ${isPopular ? "text-emerald-700" : "text-gray-900"}`}>
+                  <h4 className={`text-xl font-bold ${isPopular ? "text-amber-700" : "text-gray-900"}`}>
                     {info.title}
                   </h4>
                   <p className="mt-1 text-sm text-muted-foreground leading-snug">
@@ -429,7 +429,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
                 <ul className="mb-6 flex-1 space-y-3">
                   {features.map((feature, fIdx) => (
                     <li key={fIdx} className="flex items-start gap-2 text-sm text-gray-700">
-                      <svg className="mt-0.5 h-4 w-4 flex-none text-emerald-500" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
+                      <svg className="mt-0.5 h-4 w-4 flex-none text-amber-500" fill="none" viewBox="0 0 24 24" strokeWidth="2.5" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                       </svg>
                       <span>{feature}</span>
@@ -440,8 +440,8 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
                 <button
                   className={`w-full rounded-xl py-3 text-sm font-semibold transition-colors ${
                     isPopular
-                      ? "bg-emerald-500 text-white hover:bg-emerald-600 shadow-md"
-                      : "border-2 border-gray-300 bg-white text-gray-700 hover:border-emerald-400 hover:text-emerald-700"
+                      ? "bg-amber-500 text-white hover:bg-amber-600 shadow-md"
+                      : "border-2 border-gray-300 bg-white text-gray-700 hover:border-amber-400 hover:text-amber-700"
                   }`}
                   onClick={() => {
                     // Scroll to download section

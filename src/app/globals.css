@@ -30,22 +30,22 @@ button:focus,
 
 .roof-scroll {
   scrollbar-width: thin;
-  scrollbar-color: #34d399 #ecfdf5;
+  scrollbar-color: #e9cb3f #fffbeb;
 }
 .roof-scroll::-webkit-scrollbar {
   width: 8px;
 }
 .roof-scroll::-webkit-scrollbar-track {
-  background: #ecfdf5;
+  background: #fffbeb;
   border-radius: 999px;
 }
 .roof-scroll::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #34d399, #10b981);
+  background: linear-gradient(180deg, #e9cb3f, #d97706);
   border-radius: 999px;
-  border: 2px solid #ecfdf5;
+  border: 2px solid #fffbeb;
 }
 .roof-scroll::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, #0f9f7a, #0c7a5c);
+  background: linear-gradient(180deg, #b45309, #92400e);
 }
 
 
@@ -58,7 +58,7 @@ button:focus,
     --card-foreground: 0 0% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
-    --primary: 160 84% 39%;
+    --primary: 45 93% 47%;
     --primary-foreground: 0 0% 100%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
@@ -70,7 +70,7 @@ button:focus,
     --destructive-foreground: 0 0% 98%;
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
-    --ring: 160 84% 39%;
+    --ring: 45 93% 47%;
     --chart-1: 12 76% 61%;
     --chart-2: 173 58% 39%;
     --chart-3: 197 37% 24%;

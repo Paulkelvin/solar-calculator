@@ -58,7 +58,7 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {justRegistered && (
-            <div className="rounded-md bg-green-50 p-3 text-sm text-green-700">
+            <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-700">
               Account created successfully! Please sign in.
             </div>
           )}

@@ -46,8 +46,8 @@ export default function ResetPasswordPage() {
         </p>
 
         {success ? (
-          <div className="space-y-4 rounded-md bg-green-50 p-4">
-            <p className="text-sm text-green-700">
+          <div className="space-y-4 rounded-md bg-amber-50 p-4">
+            <p className="text-sm text-amber-700">
               ✓ Check your email for a password reset link. It may take a few minutes to arrive.
             </p>
             <Link href="/auth/login" className="inline-block text-primary hover:underline">

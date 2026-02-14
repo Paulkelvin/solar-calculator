@@ -66,9 +66,9 @@ export default function SignUpPage() {
         </p>
 
         {emailConfirmationSent ? (
-          <div className="space-y-4 rounded-md bg-green-50 p-4">
-            <p className="text-sm font-medium text-green-800">Account created!</p>
-            <p className="text-sm text-green-700">
+          <div className="space-y-4 rounded-md bg-amber-50 p-4">
+            <p className="text-sm font-medium text-amber-800">Account created!</p>
+            <p className="text-sm text-amber-700">
               We&apos;ve sent a confirmation email to <strong>{formData.email}</strong>.
               Please check your inbox (and spam folder) and click the confirmation link before signing in.
             </p>
