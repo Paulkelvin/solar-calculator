@@ -214,10 +214,6 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
     <div className="space-y-8">
       {/* System Overview with Real Solar Data */}
       <div className="rounded-lg border border-border bg-background p-6">
-        <div className="mb-4 rounded-full bg-yellow-100 px-3 py-1 text-xs font-medium text-yellow-800 inline-block">
-          {solarData?.source === 'real' ? 'Real Solar Data' : 'Estimated — Phase 1'}
-        </div>
-
         <h2 className="text-2xl font-semibold">Your Solar ROI Estimate</h2>
 
         {/* Loading state */}

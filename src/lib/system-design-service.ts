@@ -106,13 +106,20 @@ export function generateSystemDesignOptions(
     'Long-term investors'
   ];
 
-  return coveragePercentages.map((coverage, idx) => {
-    // System size = consumption × target % / effective production rate
-    let systemSizeKw = (annualConsumptionKwh * coverage / 100) / effectiveProdRate;
+  // Pre-compute the unconstrained full-coverage size to decide tier strategy
+  const unconstrainedFullSize = annualConsumptionKwh / effectiveProdRate;
+  const isCapConstrained = effectiveMaxKw < Infinity && unconstrainedFullSize > effectiveMaxKw;
 
-    // Apply capacity constraint (tighter of roof area formula and Google Solar max)
-    if (effectiveMaxKw < Infinity) {
-      systemSizeKw = Math.min(systemSizeKw, effectiveMaxKw);
+  return coveragePercentages.map((coverage, idx) => {
+    let systemSizeKw: number;
+
+    if (isCapConstrained) {
+      // Roof/Google Solar cap limits the system — distribute tiers as
+      // fractions of the cap so they always produce distinct values
+      systemSizeKw = effectiveMaxKw * (coverage / 100);
+    } else {
+      // Unconstrained: size based on desired consumption coverage
+      systemSizeKw = (annualConsumptionKwh * coverage / 100) / effectiveProdRate;
     }
 
     const systemCost = FIXED_INSTALL_OVERHEAD + systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
