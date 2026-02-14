@@ -1,9 +1,9 @@
 /**
  * Tax Credits Calculation Engine
  * 
- * ⚠️ DEPRECATED: Federal ITC expired December 31, 2025
- * This file is maintained only for historical testing purposes.
- * DO NOT USE in production calculations for 2026+ installations.
+ * ⚠️ Federal 30% ITC is DISCONTINUED (expired Dec 31, 2025).
+ * Only state-level tax credits remain active.
+ * Federal ITC functions return 0 for all years.
  */
 
 import {
@@ -16,26 +16,15 @@ import {
 } from '../../../types/tax-credits';
 
 /**
- * @deprecated Federal ITC expired December 31, 2025
- * This function is for testing/historical purposes only
- * DO NOT USE for 2026+ installations
+ * Calculate Federal Investment Tax Credit.
+ * ⚠️ DISCONTINUED — always returns 0. Federal ITC expired Dec 31, 2025.
  */
 export function calculateFederalITC(
   systemCost: number,
   year: number = new Date().getFullYear()
 ): { rate: number; credit: number } {
-  // For 2026+, return zero credit
-  if (year >= 2026) {
-    return { rate: 0, credit: 0 };
-  }
-  
-  const rate = getFederalITCRate(year);
-  const credit = systemCost * rate;
-
-  return {
-    rate,
-    credit,
-  };
+  // Federal ITC discontinued — no credit available
+  return { rate: 0, credit: 0 };
 }
 
 /**
@@ -77,17 +66,16 @@ export function calculateStateTaxCredit(
 }
 
 /**
- * @deprecated Federal ITC expired December 31, 2025
- * Calculate total tax credits (state only for 2026+)
- * Returns detailed breakdown
+ * Calculate total tax credits (federal + state).
+ * Returns detailed breakdown for display.
  */
 export function calculateTotalTaxCredits(
   config: TaxCreditConfig
 ): TaxCreditResult {
   const { systemCostBeforeTax, state, year } = config;
 
-  // Step 1: Federal ITC is ZERO for 2026+ installations
-  const federal = year >= 2026 ? { rate: 0, credit: 0 } : calculateFederalITC(systemCostBeforeTax, year);
+  // Step 1: Federal ITC (uses year-based schedule)
+  const federal = calculateFederalITC(systemCostBeforeTax, year);
 
   // Step 2: Calculate state tax credit
   const stateTax = calculateStateTaxCredit(
@@ -151,10 +139,10 @@ export function formatTaxCreditDisplay(result: TaxCreditResult): string {
   }).format(result.totalTaxCredit);
 
   if (result.stateCredit === 0) {
-    return `Federal ITC: ${federal} | Total Benefit: ${total}`;
+    return `No federal or state tax credits available. Total Benefit: ${total}`;
   }
 
-  return `Federal ITC: ${federal} + State: ${state} | Total Benefit: ${total}`;
+  return `State Credit: ${state} | Total Benefit: ${total}`;
 }
 
 /**
@@ -169,10 +157,9 @@ export function getTaxCreditBreakdownText(
   const stateCredit = getStateTaxCredit(stateCode);
 
   if (!stateCredit || stateCredit.rate === 0) {
-    return `Federal ITC: ${(federal * 100).toFixed(0)}% of cost. No state tax credit available.`;
+    return `No federal or state tax credits currently available.`;
   }
 
-  const federalPercent = (federal * 100).toFixed(0);
   const statePercent = (stateCredit.rate * 100).toFixed(0);
   const maxCap = stateCredit.maxAmount
     ? ` (max ${new Intl.NumberFormat('en-US', {
@@ -182,7 +169,7 @@ export function getTaxCreditBreakdownText(
       }).format(stateCredit.maxAmount)})`
     : '';
 
-  return `Federal ITC: ${federalPercent}% + ${stateCredit.state} Tax Credit: ${statePercent}%${maxCap}. Total benefit up to ${((federal + stateCredit.rate) * 100).toFixed(0)}% of system cost.`;
+  return `${stateCredit.state} Tax Credit: ${statePercent}%${maxCap}. State-level benefit up to ${(stateCredit.rate * 100).toFixed(0)}% of system cost.`;
 }
 
 /**
@@ -284,7 +271,7 @@ export function getAllStateTaxCreditsSummary(): Record<string, {
 
     result[stateCode] = {
       state: stateCredit?.state ?? stateCode,
-      maxFederal: Math.round(sampleCost * 0.30),
+      maxFederal: 0, // Federal ITC discontinued
       maxState: Math.round(credits.stateCredit),
       maxTotal: Math.round(credits.totalTaxCredit),
       description: stateCredit?.description ?? 'No state tax credit',

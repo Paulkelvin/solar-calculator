@@ -30,8 +30,38 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
   const [isEnergyProfileLoading, setIsEnergyProfileLoading] = useState(false);
   const [showEnergyProfile, setShowEnergyProfile] = useState(false);
   const [nrelStatus, setNrelStatus] = useState<'idle' | 'loading' | 'ready'>('idle');
+  const [utilityName, setUtilityName] = useState<string | null>(null);
+  const [rateSource, setRateSource] = useState<'default' | 'openei'>('default');
 
   const { setUsage, solarData, shouldSuggestBattery, productionData } = useCalculatorStore();
+
+  // Fetch local utility rate from OpenEI when zip code is available
+  useEffect(() => {
+    const { address } = useCalculatorStore.getState();
+    const zip = address?.zip;
+    if (!zip || !/^\d{5}$/.test(zip)) return;
+
+    let cancelled = false;
+    const fetchRate = async () => {
+      try {
+        const res = await fetch(`/api/openei?zip=${zip}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (cancelled) return;
+        if (data.averageRate && data.averageRate > 0) {
+          setAverageRate(data.averageRate);
+          setRateSource(data.source === 'fallback' ? 'default' : 'openei');
+          if (data.utilityName && !data.utilityName.includes('National Average')) {
+            setUtilityName(data.utilityName);
+          }
+        }
+      } catch {
+        // Silently fall back to BASE_ELECTRICITY_RATE
+      }
+    };
+    fetchRate();
+    return () => { cancelled = true; };
+  }, []);
 
   // Debounced calculation + loading choreography
   useEffect(() => {
@@ -142,6 +172,10 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
     setActiveTab("bill");
     const num = parseFloat(val);
     if (!isNaN(num) && num > 0) {
+      // Warn on unreasonable residential bills but don't block
+      if (num > 2500) {
+        setErrors({ usage: "Bills over $2,500/mo are unusual for residential. Please verify." });
+      }
       // Pass both billAmount AND estimated monthlyKwh so downstream
       // consumers (ResultsView, PDF export) always have kWh data.
       // Keep monthlyKwh unrounded so annualKwh rounding matches UsageStep display.
@@ -157,6 +191,10 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
     setActiveTab("kwh");
     const num = parseFloat(val);
     if (!isNaN(num) && num > 0) {
+      // Warn on unreasonable residential usage
+      if (num > 18000) {
+        setErrors({ usage: "Usage over 18,000 kWh/mo is unusual for residential. Please verify." });
+      }
       validate({ monthlyKwh: num });
     } else if (val === "") {
       setErrors({});
@@ -234,6 +272,17 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
             : "Monthly kWh lives in the usage section of every utility bill."}
         </span>
       </div>
+
+      {/* Local utility rate indicator */}
+      {rateSource === 'openei' && (
+        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-xs">
+          <span className="text-emerald-600">⚡</span>
+          <span className="text-emerald-700">
+            Using local rate: <strong>${averageRate.toFixed(2)}/kWh</strong>
+            {utilityName && <span className="text-emerald-600"> — {utilityName}</span>}
+          </span>
+        </div>
+      )}
 
       {/* Hidden renderer — keeps NREL fetching in background, reports status */}
       <div className="hidden">

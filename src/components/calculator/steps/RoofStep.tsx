@@ -9,17 +9,20 @@ import { Button } from "@/components/ui/button";
 import { SolarScoreTeaser } from "../SolarScoreTeaser";
 
 // Leaflet needs window, so ensure CSR only
-const RoofMap = dynamic(() => import("../RoofMap").then((mod) => ({ default: mod.RoofMap })), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-[320px] w-full items-center justify-center rounded-3xl border-2 border-emerald-100 bg-emerald-50">
-      <div className="space-y-2 text-center">
-        <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-emerald-400 border-t-transparent" />
-        <p className="text-sm font-medium text-emerald-700">Loading satellite map…</p>
+const RoofMap = dynamic(
+  () => import("../RoofMap").then((mod) => mod.RoofMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[320px] w-full items-center justify-center rounded-3xl border-2 border-emerald-100 bg-emerald-50">
+        <div className="space-y-2 text-center">
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-emerald-400 border-t-transparent" />
+          <p className="text-sm font-medium text-emerald-700">Loading satellite map…</p>
+        </div>
       </div>
-    </div>
-  ),
-});
+    ),
+  }
+);
 
 const defaultRoof: Roof = {
   roofType: "asphalt",

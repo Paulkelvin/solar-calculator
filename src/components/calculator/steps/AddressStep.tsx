@@ -292,7 +292,7 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
           } else {
             console.error('Google Solar API error:', response.status);
             // Fall back to basic score calculation if API fails
-            const scoreData = await calculateSolarScore(details.latitude, details.longitude, 'US');
+            const scoreData = await calculateSolarScore(details.latitude, details.longitude);
             if (scoreData) {
               const fallbackCenter = {
                 latitude: details.latitude,
@@ -315,7 +315,7 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
         } catch (error) {
           console.error('Error fetching solar data:', error);
           // Fall back to basic score calculation
-          const scoreData = await calculateSolarScore(details.latitude, details.longitude, 'US');
+          const scoreData = await calculateSolarScore(details.latitude, details.longitude);
           if (scoreData) {
             const fallbackCenter = {
               latitude: details.latitude,

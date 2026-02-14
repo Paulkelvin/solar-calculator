@@ -17,6 +17,7 @@ export default function SignUpPage() {
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -30,15 +31,22 @@ export default function SignUpPage() {
 
     try {
       // Validate inputs
-      const result = SignUpSchema.safeParse(formData);
-      if (!result.success) {
-        setError(result.error.errors[0].message);
+      const validation = SignUpSchema.safeParse(formData);
+      if (!validation.success) {
+        setError(validation.error.errors[0].message);
         setIsLoading(false);
         return;
       }
 
       // Sign up
-      await signUp(formData.email, formData.password, formData.companyName);
+      const signUpResult = await signUp(formData.email, formData.password, formData.companyName);
+
+      // Check if email confirmation is required
+      // Supabase returns a user but confirmed_at is null when email confirmation is needed
+      if (signUpResult.user && !(signUpResult.user as any).confirmed_at) {
+        setEmailConfirmationSent(true);
+        return;
+      }
 
       // Redirect to login
       router.push('/auth/login?registered=true');
@@ -57,6 +65,18 @@ export default function SignUpPage() {
           Sign up to start managing solar leads
         </p>
 
+        {emailConfirmationSent ? (
+          <div className="space-y-4 rounded-md bg-green-50 p-4">
+            <p className="text-sm font-medium text-green-800">Account created!</p>
+            <p className="text-sm text-green-700">
+              We&apos;ve sent a confirmation email to <strong>{formData.email}</strong>.
+              Please check your inbox (and spam folder) and click the confirmation link before signing in.
+            </p>
+            <Link href="/auth/login" className="inline-block text-primary hover:underline text-sm font-medium">
+              Go to Login →
+            </Link>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
@@ -136,6 +156,7 @@ export default function SignUpPage() {
             {isLoading ? 'Creating account...' : 'Sign Up'}
           </Button>
         </form>
+        )}
 
         <p className="mt-6 border-t border-border pt-6 text-center text-sm">
           Already have an account?{' '}

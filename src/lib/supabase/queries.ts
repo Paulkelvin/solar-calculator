@@ -84,28 +84,40 @@ export async function logActivity(
 }
 
 /**
- * Fetch all leads for the specified installer.
+ * Fetch leads for the specified installer with pagination.
  * Phase 2: Real Supabase integration enabled.
  * Phase 6.1: Uses authenticated installer_id
  */
-export async function fetchLeads(installerId: string): Promise<Lead[]> {
+export async function fetchLeads(
+  installerId: string,
+  options?: { page?: number; pageSize?: number }
+): Promise<{ data: Lead[]; total: number }> {
+  const page = options?.page ?? 1;
+  const pageSize = options?.pageSize ?? 25;
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
   try {
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from("leads")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("installer_id", installerId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
     if (error) {
       console.error("Error fetching leads:", error);
-      return [];
+      return { data: [], total: 0 };
     }
 
-    console.log("[SUPABASE] Fetched leads:", data?.length || 0);
-    return (data as unknown as Lead[]) || [];
+    console.log("[SUPABASE] Fetched leads:", data?.length || 0, "of", count);
+    return {
+      data: (data as unknown as Lead[]) || [],
+      total: count ?? 0,
+    };
   } catch (err) {
     console.error("Error fetching leads:", err);
-    return [];
+    return { data: [], total: 0 };
   }
 }
 

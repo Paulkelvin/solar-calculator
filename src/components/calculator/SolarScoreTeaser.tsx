@@ -7,8 +7,6 @@ interface SolarScoreTeaserProps {
   peakSunHours?: number;
   percentileRanking?: number; // Top X%
   estimatedSavingsRange?: { min: number; max: number };
-  currency?: 'USD' | 'NGN';
-  country?: 'US' | 'Nigeria';
   showSavings?: boolean;
 }
 
@@ -17,8 +15,6 @@ export function SolarScoreTeaser({
   peakSunHours = 4.5,
   percentileRanking = 75,
   estimatedSavingsRange = { min: 800, max: 1500 },
-  currency = 'USD',
-  country = 'US',
   showSavings = true
 }: SolarScoreTeaserProps) {
   
@@ -49,7 +45,7 @@ export function SolarScoreTeaser({
   };
 
   const grade = getSolarGrade(solarScore);
-  const currencySymbol = currency === 'NGN' ? '₦' : '$';
+  const currencySymbol = '$';
   const formattedMin = estimatedSavingsRange.min.toLocaleString();
   const formattedMax = estimatedSavingsRange.max.toLocaleString();
   const monthlyMin = Math.round(estimatedSavingsRange.min / 12).toLocaleString();
@@ -114,7 +110,7 @@ export function SolarScoreTeaser({
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-3 text-right text-xs text-emerald-800">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-emerald-600">Top-tier ranking</p>
                 <p className="mt-2 text-2xl font-semibold text-emerald-900">Top {topPercent}%</p>
-                <p className="text-[11px] text-emerald-700">in {country === 'US' ? 'the United States' : country}</p>
+                <p className="text-[11px] text-emerald-700">in the United States</p>
                 <p className="mt-2 text-[11px] text-emerald-700/80">Based on sun exposure and roof size in your area.</p>
               </div>
             </div>

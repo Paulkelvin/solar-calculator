@@ -1,20 +1,22 @@
 /**
- * Phase 6.1: Protected Route Component
- * Wrapper to enforce authentication
+ * Protected Route Component
+ * Wrapper to enforce authentication on any route
  */
 
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth/use-auth';
+import { useAuth } from '@/contexts/auth';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { session } = useAuth();
+  const isAuthenticated = session.isAuthenticated;
+  const isLoading = session.isLoading;
   const router = useRouter();
   const [isMounted, setIsMounted] = useState(false);
 

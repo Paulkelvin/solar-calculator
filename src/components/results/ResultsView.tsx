@@ -114,16 +114,37 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
   }, [annualConsumption, solarData?.sunExposurePercentage, solarData?.roofAreaSqft, solarData?.panelCapacityWatts, solarData?.estimatedAnnualKwh, solarData?.source, leadData?.address?.state, leadData?.roof?.squareFeet]);
 
   // === UNIFIED RESULTS ===
-  // The `results` object from CalculatorWizard already has Google Solar baked in
-  // The `results` prop is already computed by performSolarCalculation(input, googleSolar)
-  // which uses the Zustand store's Google Solar data as single source of truth.
-  // We no longer re-derive financials from the secondary solarData fetch — that fetch
-  // is only used for the roof visualization panel (area, sun exposure, shading, confidence).
-  // This eliminates the 6 kWh / $13 discrepancy caused by two independent API calls
-  // producing slightly different intermediate values.
+  // When user selects a different system design option, override base results
+  // with that option's metrics so the overview cards and financing reflect the choice.
   const effectiveResults = useMemo(() => {
-    return results;
-  }, [results]);
+    if (!selectedDesignOption) return results;
+
+    // If the selected option matches the original calculation, keep original
+    const sizeDiff = Math.abs(selectedDesignOption.systemSizeKw - results.systemSizeKw);
+    if (sizeDiff < 0.2) return results;
+
+    // Override key metrics from the selected design option
+    const monthlyProd = Math.round(selectedDesignOption.estimatedAnnualProduction / 12);
+    return {
+      ...results,
+      systemSizeKw: selectedDesignOption.systemSizeKw,
+      estimatedAnnualProduction: selectedDesignOption.estimatedAnnualProduction,
+      estimatedMonthlyProduction: monthlyProd,
+      financing: results.financing.map(f => {
+        // Scale financing proportionally to new system cost
+        const costRatio = selectedDesignOption.systemCostUSD / 
+          (FIXED_INSTALL_OVERHEAD + results.systemSizeKw * 1000 * SYSTEM_COST_PER_WATT);
+        return {
+          ...f,
+          downPayment: Math.round(f.downPayment * costRatio),
+          monthlyPayment: Math.round(f.monthlyPayment * costRatio),
+          totalCost: Math.round(f.totalCost * costRatio),
+          totalInterest: Math.round(f.totalInterest * costRatio),
+          firstYearSavings: selectedDesignOption.firstYearSavings,
+        };
+      }),
+    };
+  }, [results, selectedDesignOption]);
 
   const handleDownloadPDF = async () => {
     if (!leadData) {
@@ -270,36 +291,48 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
                 {solarData.solarPotential === 'low' && '⭐'}
               </p>
               <p className="text-xs text-muted-foreground mt-1">
-                {solarData.solarPotential.charAt(0).toUpperCase() + solarData.solarPotential.slice(1)}
+                {solarData.solarPotential
+                  ? solarData.solarPotential.charAt(0).toUpperCase() + solarData.solarPotential.slice(1)
+                  : 'Unknown'}
               </p>
             </div>
 
             <div className="rounded-md bg-secondary p-4">
               <p className="text-xs text-muted-foreground">Roof Area</p>
-              <p className="mt-2 text-lg font-bold">{solarData.roofAreaSqft.toLocaleString()}</p>
+              <p className="mt-2 text-lg font-bold">{(solarData.roofAreaSqft ?? 0).toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">sq ft</p>
             </div>
 
             <div className="rounded-md bg-secondary p-4">
               <p className="text-xs text-muted-foreground">Sun Exposure</p>
-              <p className="mt-2 text-lg font-bold">{solarData.sunExposurePercentage}%</p>
+              <p className="mt-2 text-lg font-bold">{solarData.sunExposurePercentage ?? 0}%</p>
               <p className="text-xs text-muted-foreground">exposed to sun</p>
             </div>
 
             <div className="rounded-md bg-secondary p-4">
               <p className="text-xs text-muted-foreground">Shading</p>
-              <p className="mt-2 text-lg font-bold">{solarData.shadingPercentage}%</p>
+              <p className="mt-2 text-lg font-bold">{solarData.shadingPercentage ?? 0}%</p>
               <p className="text-xs text-muted-foreground">average</p>
             </div>
           </div>
 
           <div className="mt-4 flex items-center justify-between rounded-md bg-blue-50 px-4 py-3 text-sm">
             <span className="text-muted-foreground">Data Confidence:</span>
-            <span className="font-semibold text-blue-700">{solarData.confidence}%</span>
+            <span className="font-semibold text-blue-700">{solarData.confidence ?? 0}%</span>
           </div>
         </div>
       )}
 
+      {/* Step 1: System Design Comparison — choose size before pricing */}
+      {systemDesignOptions.length > 0 && (
+        <SystemDesignComparison 
+          options={systemDesignOptions}
+          selectedOption={selectedDesignOption}
+          onSelect={setSelectedDesignOption}
+        />
+      )}
+
+      {/* Step 2: Financing Path — based on selected system size */}
       <div className="space-y-6">
         <div className="text-center">
           <h3 className="text-2xl font-bold text-gray-900">Step 2: Choose Your Financing Path</h3>
@@ -415,7 +448,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
                     document.getElementById("download-report")?.scrollIntoView({ behavior: "smooth" });
                   }}
                 >
-                  Select {info.title.split(" ")[0]}
+                  {opt.type === "cash" ? "Select Solar" : opt.type === "loan" ? "Select Loan" : opt.type === "lease" ? "Select Lease" : `Select ${info.title.split(" ")[0]}`}
                 </button>
               </div>
             );
@@ -476,17 +509,6 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
               </ul>
             </div>
           )}
-        </div>
-      )}
-
-      {/* System Design Comparison */}
-      {systemDesignOptions.length > 0 && (
-        <div className="rounded-lg border border-border bg-background p-6">
-          <SystemDesignComparison 
-            options={systemDesignOptions}
-            selectedOption={selectedDesignOption}
-            onSelect={setSelectedDesignOption}
-          />
         </div>
       )}
 

@@ -20,8 +20,7 @@ interface SolarScoreResult {
  */
 export async function calculateSolarScore(
   latitude: number,
-  longitude: number,
-  country: 'US' | 'Nigeria' = 'US'
+  longitude: number
 ): Promise<SolarScoreResult | null> {
   try {
     // Call Solar API proxy
@@ -57,9 +56,7 @@ export async function calculateSolarScore(
     const solarScore = Math.round(potentialScore + roofQualityScore + panelScore);
 
     // Estimate peak sun hours (higher in southern latitudes)
-    const peakSunHours = country === 'Nigeria' 
-      ? 5.5 + Math.random() * 0.5 // 5.5-6 hours for Nigeria (equatorial)
-      : 4.0 + Math.random() * 1.5; // 4-5.5 hours for US (varies)
+    const peakSunHours = 4.0 + Math.random() * 1.5; // 4-5.5 hours for US (varies)
 
     // Calculate percentile ranking (top X%)
     // Based on solar score: 85+ = top 10%, 70+ = top 25%, 55+ = top 50%
@@ -69,10 +66,9 @@ export async function calculateSolarScore(
     else if (solarScore >= 55) percentileRanking = 50;
     else percentileRanking = 75;
 
-    // Estimate annual savings
-    // Nigeria: ₦50-80/kWh average, US: $0.12-0.18/kWh
-    const rateMin = country === 'Nigeria' ? 50 : 0.12;
-    const rateMax = country === 'Nigeria' ? 80 : 0.18;
+    // Estimate annual savings ($0.12-0.18/kWh US average)
+    const rateMin = 0.12;
+    const rateMax = 0.18;
     const estimatedSavingsMin = Math.round(annualKwh * 0.7 * rateMin);
     const estimatedSavingsMax = Math.round(annualKwh * 0.9 * rateMax);
 

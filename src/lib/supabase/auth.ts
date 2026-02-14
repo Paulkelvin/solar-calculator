@@ -75,7 +75,7 @@ export async function signOut() {
 export async function resetPassword(email: string) {
   try {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/reset-password`,
+      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/auth/update-password`,
     });
 
     if (error) throw error;
@@ -144,7 +144,7 @@ export async function updateInstallerProfile(
     const { data, error } = await supabase
       .from('installers')
       .update(updates)
-      .eq('user_id', userId)
+      .eq('id', userId)
       .select()
       .single();
 

@@ -77,7 +77,7 @@ export interface AddressData {
   zip: string;
   latitude?: number;
   longitude?: number;
-  country?: string; // 'US' or 'Nigeria'
+  country?: string; // 'US'
 }
 
 export interface RoofData {

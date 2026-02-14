@@ -84,7 +84,9 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
 
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [address.latitude, address.longitude, usage.annualKwh, roof.roofArea, solarData]);
+  }, [address.latitude, address.longitude, usage.annualKwh, roof.roofArea,
+      solarData.panelCapacityWatts, solarData.annualProduction, solarData.googleSolarSource,
+      solarData.roofAreaSqft, solarData.sunExposurePercentage, solarData.optimalTilt, solarData.optimalAzimuth]);
 
   if (!address.latitude || !usage.annualKwh) {
     return null; // Don't show until we have basic data
@@ -114,7 +116,16 @@ export function LiveProductionPreview({ onStatusChange }: LiveProductionPreviewP
   }
 
   if (!estimate) {
-    return null;
+    return (
+      <Card className="border border-gray-200 bg-gray-50 dark:bg-gray-900">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Info className="h-4 w-4" />
+            <span>Solar production data is not available for this location. Financial estimates use national averages.</span>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   const billOffset = calculateBillOffset(estimate.production.annual, usage.annualKwh || 0);

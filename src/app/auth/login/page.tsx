@@ -1,14 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { signIn } from '@/lib/supabase/auth';
 import { LoginSchema } from '../../../../types/auth';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const justRegistered = searchParams.get('registered') === 'true';
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -29,13 +32,18 @@ export default function LoginPage() {
       }
 
       // Sign in
-      await signIn(email, password);
+      const { session } = await signIn(email, password);
 
-      // Redirect to dashboard
-      router.push('/dashboard');
+      // Use replace instead of push to avoid back-button loop
+      // Small delay to allow auth state to propagate
+      if (session) {
+        setTimeout(() => router.replace(redirectTo), 100);
+      } else {
+        setError('Login succeeded but no session was returned. You may need to confirm your email first.');
+        setIsLoading(false);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
-    } finally {
       setIsLoading(false);
     }
   };
@@ -49,6 +57,12 @@ export default function LoginPage() {
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {justRegistered && (
+            <div className="rounded-md bg-green-50 p-3 text-sm text-green-700">
+              Account created successfully! Please sign in.
+            </div>
+          )}
+
           {error && (
             <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
               {error}
@@ -109,5 +123,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

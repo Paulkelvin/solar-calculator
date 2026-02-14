@@ -45,16 +45,21 @@ export interface GoogleSolarOverride {
  * Mock logic: estimate from monthly consumption or bill.
  */
 export function calculateSystemSize(input: CalculationInput): number {
+  // Use explicit null/undefined checks so $0 bill is treated as 0, not falsy
   let estimatedMonthlyKwh = input.monthlyKwh;
 
-  if (!estimatedMonthlyKwh && input.billAmount) {
+  if (estimatedMonthlyKwh == null && input.billAmount != null && input.billAmount > 0) {
     // Convert bill amount to kWh using our standard rate
     estimatedMonthlyKwh = input.billAmount / BASE_ELECTRICITY_RATE;
   }
 
-  if (!estimatedMonthlyKwh) {
+  if (estimatedMonthlyKwh == null || estimatedMonthlyKwh <= 0) {
     estimatedMonthlyKwh = 500; // fallback mock
   }
+
+  // Cap unreasonable residential bills ($2,500/mo ≈ 17,857 kWh/mo ≈ 214,286 kWh/yr)
+  const MAX_RESIDENTIAL_MONTHLY_KWH = 18000;
+  estimatedMonthlyKwh = Math.min(estimatedMonthlyKwh, MAX_RESIDENTIAL_MONTHLY_KWH);
 
   // Assume 80% offset of consumption (Phase 1 mock)
   const targetAnnualProduction = estimatedMonthlyKwh * 12 * 0.8;
@@ -68,9 +73,13 @@ export function calculateSystemSize(input: CalculationInput): number {
   const systemSize = adjustedProduction / AVG_PRODUCTION_PER_KW;
 
   // Constrain by roof size (~54 sq ft per kW of panels, ~60% usable roof area)
+  // Guard against 0 or negative roof area
+  if (!input.roofSquareFeet || input.roofSquareFeet <= 0) {
+    return Math.max(0, systemSize);
+  }
   const roofConstraint = (input.roofSquareFeet * 0.6) / 54;
 
-  return Math.min(systemSize, roofConstraint);
+  return Math.max(0, Math.min(systemSize, roofConstraint));
 }
 
 /**
@@ -83,6 +92,19 @@ export function calculateSystemSize(input: CalculationInput): number {
  * This matches the 25-Year Savings Trajectory chart exactly.
  */
 export function calculateFinancing(systemSizeKw: number, sunFactor: number = 1.0) {
+  // Guard: if system size is 0 or negative, return zeroed-out financing to avoid
+  // charging $5,000 overhead with -100% ROI
+  if (systemSizeKw <= 0) {
+    const zeroed = { upfront: 0, monthly: 0, yearsToBreakEven: 0, roi25Years: 0 };
+    return {
+      totalSystemCost: 0,
+      cash: { ...zeroed },
+      loan: { downPayment: 0, monthlyPayment: 0, totalInterest: 0, yearsToBreakEven: 0, roi25Years: 0 },
+      lease: { downPayment: 0, monthlyPayment: 0, termYears: 20, totalCost: 0, yearsToBreakEven: 0, roi20Years: 0 },
+      ppa: { downPayment: 0, monthlyPayment: 0, ratePerKwh: 0, escalator: 0, totalCost: 0, savings25Year: 0, roi25Years: 0 },
+    };
+  }
+
   const totalSystemCost = FIXED_INSTALL_OVERHEAD + systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
   const annualProduction = systemSizeKw * AVG_PRODUCTION_PER_KW * sunFactor;
   const monthlyProduction = annualProduction / 12;
@@ -271,11 +293,14 @@ export function performSolarCalculation(
     const googleProdPerKw = googleSolar.annualProductionKwh / googleSolar.systemSizeKw;
 
     // Derive annual consumption from the same inputs as calculateSystemSize
+    // Use explicit null/undefined checks so $0 bill is treated as 0, not falsy
     let estimatedMonthlyKwh = input.monthlyKwh;
-    if (!estimatedMonthlyKwh && input.billAmount) {
+    if (estimatedMonthlyKwh == null && input.billAmount != null && input.billAmount > 0) {
       estimatedMonthlyKwh = input.billAmount / BASE_ELECTRICITY_RATE;
     }
-    if (!estimatedMonthlyKwh) estimatedMonthlyKwh = 500;
+    if (estimatedMonthlyKwh == null || estimatedMonthlyKwh <= 0) estimatedMonthlyKwh = 500;
+    // Cap unreasonable residential values
+    estimatedMonthlyKwh = Math.min(estimatedMonthlyKwh, 18000);
     const annualConsumption = estimatedMonthlyKwh * 12;
 
     // Size for 80% offset using Google Solar's REAL production per kW

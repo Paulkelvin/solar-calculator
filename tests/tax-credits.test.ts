@@ -15,29 +15,29 @@ import {
   type TaxCreditConfig,
 } from '../types/tax-credits';
 
-describe('Tax Credits - Federal ITC', () => {
-  it('should calculate 30% federal ITC for 2024', () => {
+describe('Tax Credits - Federal ITC (Discontinued)', () => {
+  it('should return 0% federal ITC for 2024 (discontinued)', () => {
     const result = calculateFederalITC(22000, 2024);
-    expect(result.rate).toBe(0.30);
-    expect(result.credit).toBe(6600);
+    expect(result.rate).toBe(0);
+    expect(result.credit).toBe(0);
   });
 
-  it('should calculate 26% federal ITC for 2027', () => {
+  it('should return 0% federal ITC for 2027 (discontinued)', () => {
     const result = calculateFederalITC(22000, 2027);
-    expect(result.rate).toBe(0.26);
-    expect(result.credit).toBe(5720);
+    expect(result.rate).toBe(0);
+    expect(result.credit).toBe(0);
   });
 
-  it('should calculate 22% federal ITC for 2029+', () => {
+  it('should return 0% federal ITC for 2029+ (discontinued)', () => {
     const result = calculateFederalITC(22000, 2029);
-    expect(result.rate).toBe(0.22);
-    expect(result.credit).toBe(4840);
+    expect(result.rate).toBe(0);
+    expect(result.credit).toBe(0);
   });
 
-  it('should default to 30% for unknown years', () => {
+  it('should return 0% for all years (discontinued)', () => {
     const result = calculateFederalITC(22000, 2050);
-    expect(result.rate).toBe(0.30);
-    expect(result.credit).toBe(6600);
+    expect(result.rate).toBe(0);
+    expect(result.credit).toBe(0);
   });
 
   it('should handle zero system cost', () => {
@@ -45,9 +45,9 @@ describe('Tax Credits - Federal ITC', () => {
     expect(result.credit).toBe(0);
   });
 
-  it('should handle large system costs', () => {
+  it('should return 0 for large system costs (discontinued)', () => {
     const result = calculateFederalITC(100000, 2024);
-    expect(result.credit).toBe(30000);
+    expect(result.credit).toBe(0);
   });
 });
 
@@ -170,8 +170,8 @@ describe('Tax Credits - All 50 States', () => {
   });
 });
 
-describe('Tax Credits - Total Calculation', () => {
-  it('should calculate federal + state for high-credit state (IL)', () => {
+describe('Tax Credits - Total Calculation (No Federal ITC)', () => {
+  it('should calculate state-only credit for high-credit state (IL)', () => {
     const config: TaxCreditConfig = {
       systemCostBeforeTax: 22000,
       state: 'IL',
@@ -179,13 +179,13 @@ describe('Tax Credits - Total Calculation', () => {
     };
 
     const result = calculateTotalTaxCredits(config);
-    expect(result.federalCredit).toBe(6600); // 30% of $22,000
+    expect(result.federalCredit).toBe(0); // Federal ITC discontinued
     expect(result.stateCredit).toBe(6600); // 30% of $22,000
-    expect(result.totalTaxCredit).toBe(13200);
-    expect(result.netSystemCost).toBe(8800);
+    expect(result.totalTaxCredit).toBe(6600);
+    expect(result.netSystemCost).toBe(15400);
   });
 
-  it('should calculate federal only for no-credit state (TX)', () => {
+  it('should calculate zero credits for no-credit state (TX)', () => {
     const config: TaxCreditConfig = {
       systemCostBeforeTax: 22000,
       state: 'TX',
@@ -193,13 +193,13 @@ describe('Tax Credits - Total Calculation', () => {
     };
 
     const result = calculateTotalTaxCredits(config);
-    expect(result.federalCredit).toBe(6600);
+    expect(result.federalCredit).toBe(0);
     expect(result.stateCredit).toBe(0);
-    expect(result.totalTaxCredit).toBe(6600);
-    expect(result.netSystemCost).toBe(15400);
+    expect(result.totalTaxCredit).toBe(0);
+    expect(result.netSystemCost).toBe(22000);
   });
 
-  it('should reduce net cost properly', () => {
+  it('should reduce net cost by state credit only', () => {
     const config: TaxCreditConfig = {
       systemCostBeforeTax: 30000,
       state: 'NY',
@@ -207,11 +207,12 @@ describe('Tax Credits - Total Calculation', () => {
     };
 
     const result = calculateTotalTaxCredits(config);
-    expect(result.netSystemCost).toBe(30000 - result.totalTaxCredit);
+    expect(result.federalCredit).toBe(0);
+    expect(result.netSystemCost).toBe(30000 - result.stateCredit);
     expect(result.netSystemCost).toBeGreaterThan(0);
   });
 
-  it('should calculate payoff reduction', () => {
+  it('should calculate payoff reduction from state credits', () => {
     const config: TaxCreditConfig = {
       systemCostBeforeTax: 22000,
       state: 'IL',
@@ -219,11 +220,11 @@ describe('Tax Credits - Total Calculation', () => {
     };
 
     const result = calculateTotalTaxCredits(config);
-    expect(result.payoffReduction).toBeGreaterThan(5); // Should reduce by ~7 years
-    expect(result.payoffReduction).toBeLessThan(10);
+    expect(result.payoffReduction).toBeGreaterThan(2); // State credit only
+    expect(result.payoffReduction).toBeLessThan(6);
   });
 
-  it('should improve ROI with credits', () => {
+  it('should improve ROI with state credits vs no credits', () => {
     const configNO = { systemCostBeforeTax: 22000, state: 'TX', year: 2024 };
     const resultNO = calculateTotalTaxCredits(configNO);
 
@@ -257,8 +258,7 @@ describe('Tax Credits - Display & Formatting', () => {
     const result = calculateTotalTaxCredits(config);
     const display = formatTaxCreditDisplay(result);
 
-    expect(display).toContain('Federal ITC');
-    expect(display).toContain('State');
+    expect(display).toContain('State Credit');
     expect(display).toContain('Total Benefit');
     expect(display).toContain('$');
   });
@@ -273,19 +273,17 @@ describe('Tax Credits - Display & Formatting', () => {
     const result = calculateTotalTaxCredits(config);
     const display = formatTaxCreditDisplay(result);
 
-    expect(display).toContain('Federal ITC');
+    expect(display).toContain('No federal or state');
     expect(display).toContain('Total Benefit');
-    expect(display).not.toContain('State');
   });
 
   it('should provide breakdown text for states', () => {
     const textIL = getTaxCreditBreakdownText('IL', 2024);
-    expect(textIL).toContain('Federal ITC');
     expect(textIL).toContain('Illinois');
     expect(textIL).toContain('30');
 
     const textTX = getTaxCreditBreakdownText('TX', 2024);
-    expect(textTX).toContain('No state tax credit');
+    expect(textTX).toContain('No federal or state');
   });
 });
 
@@ -333,7 +331,7 @@ describe('Tax Credits - Payoff Analysis', () => {
     const payoff1 = calculatePayoffWithCredits(22000, 1500, result);
     const payoff2 = calculatePayoffWithCredits(22000, 3000, result);
 
-    expect(payoff1.withCredits).toBeGreaterThan(payoff2.withCredits); // More years with lower savings
+    expect(payoff1.withCredits).toBeGreaterThan(payoff2.withCredits);
   });
 });
 
@@ -365,7 +363,7 @@ describe('Tax Credits - Savings Estimation', () => {
     const result = calculateTotalTaxCredits(config);
     const savings = estimateTotalSavings(22000, 2000, 25, result);
 
-    expect(savings.breakEvenYear).toBe(8); // 15400 / 2000 ≈ 8 years
+    expect(savings.breakEvenYear).toBe(11); // 22000 / 2000 = 11 years (no credits)
   });
 
   it('should provide summary for all states', () => {
@@ -381,9 +379,9 @@ describe('Tax Credits - Savings Estimation', () => {
 
     for (const state of states) {
       expect(summary[state]).toBeDefined();
-      expect(summary[state].maxFederal).toBe(6600); // 30% of $22,000
+      expect(summary[state].maxFederal).toBe(0); // Federal ITC discontinued
       expect(summary[state].maxState).toBeGreaterThanOrEqual(0);
-      expect(summary[state].maxTotal).toBeGreaterThanOrEqual(summary[state].maxFederal);
+      expect(summary[state].maxTotal).toBeGreaterThanOrEqual(0);
     }
   });
 });
@@ -397,9 +395,9 @@ describe('Tax Credits - Edge Cases', () => {
     };
 
     const result = calculateTotalTaxCredits(config);
-    expect(result.federalCredit).toBe(150000); // 30% of 500000
+    expect(result.federalCredit).toBe(0); // Federal ITC discontinued
     expect(result.stateCredit).toBe(3000); // Capped
-    expect(result.totalTaxCredit).toBe(153000);
+    expect(result.totalTaxCredit).toBe(3000);
   });
 
   it('should handle very small system costs', () => {
@@ -410,20 +408,21 @@ describe('Tax Credits - Edge Cases', () => {
     };
 
     const result = calculateTotalTaxCredits(config);
-    expect(result.federalCredit).toBeGreaterThan(0);
+    expect(result.federalCredit).toBe(0); // Federal ITC discontinued
     expect(result.stateCredit).toBeGreaterThan(0);
     expect(result.netSystemCost).toBeGreaterThanOrEqual(0);
   });
 
-  it('should handle future year transitions', () => {
+  it('should return 0 federal for all years (discontinued)', () => {
     const config2026 = { systemCostBeforeTax: 22000, state: 'IL', year: 2026 };
     const config2027 = { systemCostBeforeTax: 22000, state: 'IL', year: 2027 };
 
     const result2026 = calculateTotalTaxCredits(config2026);
     const result2027 = calculateTotalTaxCredits(config2027);
 
-    expect(result2026.federalRate).toBe(0.30);
-    expect(result2027.federalRate).toBe(0.26);
-    expect(result2026.federalCredit).toBeGreaterThan(result2027.federalCredit);
+    expect(result2026.federalRate).toBe(0);
+    expect(result2027.federalRate).toBe(0);
+    expect(result2026.federalCredit).toBe(0);
+    expect(result2027.federalCredit).toBe(0);
   });
 });

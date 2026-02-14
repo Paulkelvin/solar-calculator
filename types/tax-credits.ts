@@ -1,16 +1,17 @@
 /**
  * Tax Credits Type Definitions
- * Federal ITC + State-specific solar tax credits
+ * State-specific solar tax credits only.
+ * ⚠️ Federal 30% ITC is DISCONTINUED (expired Dec 31, 2025).
  */
 
 /**
  * Federal Investment Tax Credit (ITC)
- * 30% through 2032, then phases down
+ * ⚠️ DISCONTINUED — expired Dec 31, 2025. Rate is always 0.
  */
 export interface FederalITC {
   year: number;
-  rate: number; // 0.30 (2024-2026), 0.26 (2027-2028), 0.22 (2029+)
-  maxAmount?: number; // No cap for residential
+  rate: number; // Always 0 — Federal ITC discontinued
+  maxAmount?: number;
 }
 
 /**
@@ -115,24 +116,27 @@ export const STATE_TAX_CREDITS: Record<string, StateTaxCredit> = {
 
 /**
  * Federal ITC rates by year
+ * ⚠️ DISCONTINUED: Federal 30% ITC expired Dec 31, 2025.
+ * All rates are 0 — no federal tax credit is available for residential solar.
  */
 export const FEDERAL_ITC_SCHEDULE: Record<number, number> = {
-  2024: 0.30,
-  2025: 0.30,
-  2026: 0.30,
-  2027: 0.26,
-  2028: 0.26,
-  2029: 0.22,
-  2030: 0.22,
-  2031: 0.22,
-  2032: 0.22,
+  2024: 0,
+  2025: 0,
+  2026: 0,
+  2027: 0,
+  2028: 0,
+  2029: 0,
+  2030: 0,
+  2031: 0,
+  2032: 0,
 };
 
 /**
  * Get federal ITC rate for given year
+ * ⚠️ Always returns 0 — Federal ITC is discontinued.
  */
 export function getFederalITCRate(year: number): number {
-  return FEDERAL_ITC_SCHEDULE[year] ?? 0.30; // Default to 30% if year not found
+  return 0; // Federal ITC discontinued
 }
 
 /**

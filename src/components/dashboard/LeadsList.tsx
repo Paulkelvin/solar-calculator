@@ -6,9 +6,12 @@ import { useAuth } from "@/contexts/auth";
 import { fetchLeads } from "@/lib/supabase/queries";
 import { supabase } from "@/lib/supabase/client";
 import type { Lead } from "../../../types/leads";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 type SortBy = "date" | "score";
 type StatusFilter = "all" | "new" | "contacted" | "converted" | "lost";
+
+const PAGE_SIZE = 15;
 
 const STATUS_LABELS: Record<string, string> = {
   new: "New",
@@ -27,40 +30,46 @@ const STATUS_COLORS: Record<string, string> = {
 export function LeadsList() {
   const { session } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [totalLeads, setTotalLeads] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState<SortBy>("date");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [noteContent, setNoteContent] = useState("");
+
+  const totalPages = Math.max(1, Math.ceil(totalLeads / PAGE_SIZE));
 
   useEffect(() => {
     const load = async () => {
       if (!session.user?.id) return;
       
       setIsLoading(true);
-      const data = await fetchLeads(session.user.id);
-      setLeads(data);
+      const result = await fetchLeads(session.user.id, { page: currentPage, pageSize: PAGE_SIZE });
+      setLeads(result.data);
+      setTotalLeads(result.total);
       setIsLoading(false);
     };
 
     load();
-  }, [session.user?.id]);
+  }, [session.user?.id, currentPage]);
 
   const filteredLeads = leads.filter(lead => {
     // Status filter
     if (statusFilter !== "all" && lead.status !== statusFilter) return false;
     
-    // Search filter
+    // Search filter — null-safe access for JSONB fields
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
-        lead.contact.name.toLowerCase().includes(query) ||
-        lead.contact.email.toLowerCase().includes(query) ||
-        lead.contact.phone.includes(query) ||
-        lead.address.street.toLowerCase().includes(query) ||
-        lead.address.city.toLowerCase().includes(query)
+        (lead.contact?.name || '').toLowerCase().includes(query) ||
+        (lead.contact?.email || '').toLowerCase().includes(query) ||
+        (lead.contact?.phone || '').includes(query) ||
+        (lead.address?.street || '').toLowerCase().includes(query) ||
+        (lead.address?.city || '').toLowerCase().includes(query)
       );
     }
     
@@ -70,10 +79,10 @@ export function LeadsList() {
   const sortedLeads = [...filteredLeads].sort((a, b) => {
     if (sortBy === "date") {
       return (
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
       );
     } else {
-      return b.lead_score - a.lead_score;
+      return (b.lead_score ?? 0) - (a.lead_score ?? 0);
     }
   });
 
@@ -81,6 +90,7 @@ export function LeadsList() {
     if (!session.user?.id) return;
 
     setUpdatingId(leadId);
+    setStatusError(null);
     try {
       const { error } = await supabase
         .from("leads")
@@ -96,6 +106,8 @@ export function LeadsList() {
       ));
     } catch (err) {
       console.error("Failed to update lead status:", err);
+      setStatusError(`Failed to update status for this lead. Please try again.`);
+      setTimeout(() => setStatusError(null), 5000);
     } finally {
       setUpdatingId(null);
     }
@@ -142,16 +154,16 @@ export function LeadsList() {
     ];
 
     const rows = filteredLeads.map(lead => [
-      lead.contact.name,
-      lead.contact.email,
-      lead.contact.phone,
-      lead.address.street,
-      lead.address.city,
-      lead.address.state,
-      lead.address.zip,
-      lead.status,
-      lead.lead_score,
-      new Date(lead.created_at).toLocaleDateString(),
+      lead.contact?.name || '',
+      lead.contact?.email || '',
+      lead.contact?.phone || '',
+      lead.address?.street || '',
+      lead.address?.city || '',
+      lead.address?.state || '',
+      lead.address?.zip || '',
+      lead.status || '',
+      lead.lead_score ?? 0,
+      new Date(lead.created_at || 0).toLocaleDateString(),
     ]);
 
     const csv = [
@@ -246,9 +258,18 @@ export function LeadsList() {
 
         {/* Results count */}
         <p className="text-xs text-muted-foreground">
-          Showing {filteredLeads.length} of {leads.length} leads
+          Showing {filteredLeads.length} of {totalLeads} leads
+          {totalPages > 1 && ` — Page ${currentPage} of ${totalPages}`}
         </p>
       </div>
+
+      {/* Status error banner */}
+      {statusError && (
+        <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 flex items-center justify-between">
+          <span>{statusError}</span>
+          <button onClick={() => setStatusError(null)} className="text-red-500 hover:text-red-700 font-bold ml-2">×</button>
+        </div>
+      )}
 
       <div className="divide-y divide-border rounded-lg border border-border">
         {sortedLeads.map((lead) => (
@@ -259,7 +280,7 @@ export function LeadsList() {
             <div className="flex items-start justify-between mb-2">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <p className="font-medium">{lead.contact.name}</p>
+                <p className="font-medium">{lead.contact?.name || 'Unknown'}</p>
                   <select
                     value={lead.status}
                     onChange={(e) => handleStatusChange(lead.id, e.target.value)}
@@ -277,15 +298,15 @@ export function LeadsList() {
                   View →
                 </Link>                </div>
                 <p className="text-xs text-muted-foreground">
-                  {lead.address.street}, {lead.address.city}, {lead.address.state}
+                  {lead.address?.street || ''}, {lead.address?.city || ''}, {lead.address?.state || ''}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  {lead.contact.email} • {lead.contact.phone}
+                  {lead.contact?.email || ''} • {lead.contact?.phone || ''}
                 </p>
 
                 {/* Notes section */}
                 <div className="mt-2 text-xs">
-                  {lead.notes && !selectedNoteId?.includes(lead.id) && (
+                  {lead.notes && selectedNoteId !== lead.id && (
                     <div className="bg-blue-50 p-2 rounded border border-blue-200 mb-2">
                       <p className="text-blue-900">{lead.notes}</p>
                       <button
@@ -341,7 +362,7 @@ export function LeadsList() {
                 <div className="text-right">
                   <p className="text-xs text-muted-foreground">Lead Score</p>
                   <p className="text-lg font-bold text-primary">
-                    {lead.lead_score}/100
+                    {lead.lead_score ?? 0}/100
                   </p>
                 </div>
 
@@ -356,6 +377,53 @@ export function LeadsList() {
           </div>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium bg-secondary text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" /> Previous
+          </button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              let page: number;
+              if (totalPages <= 5) {
+                page = i + 1;
+              } else if (currentPage <= 3) {
+                page = i + 1;
+              } else if (currentPage >= totalPages - 2) {
+                page = totalPages - 4 + i;
+              } else {
+                page = currentPage - 2 + i;
+              }
+              return (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`h-8 w-8 rounded-md text-sm font-medium transition-colors ${
+                    page === currentPage
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary text-foreground hover:bg-muted"
+                  }`}
+                >
+                  {page}
+                </button>
+              );
+            })}
+          </div>
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="inline-flex items-center gap-1 rounded-md px-3 py-2 text-sm font-medium bg-secondary text-foreground hover:bg-muted disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            Next <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

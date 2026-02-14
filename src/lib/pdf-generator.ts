@@ -61,23 +61,27 @@ export function generateProposalHTML(
   const safePhone = leadData.phone || 'Not provided';
   const safeStreet = leadData.address.street || '';
   const safeCityStateZip = `${leadData.address.city || ''}, ${leadData.address.state || ''} ${leadData.address.zip || ''}`.trim();
-  const financingCards: FinancingCard[] = calculations.financing.map((opt, idx) => {
-    const systemCost = FIXED_INSTALL_OVERHEAD + calculations.systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
-    // Use the actual production from the calculation result (Google Solar when available)
-    const annualSavings = calculations.estimatedAnnualProduction * BASE_ELECTRICITY_RATE;
+  const financingCards: FinancingCard[] = calculations.financing
+    .filter(opt => opt.type !== 'ppa')
+    .map((opt) => {
+      const systemCost = FIXED_INSTALL_OVERHEAD + calculations.systemSizeKw * 1000 * SYSTEM_COST_PER_WATT;
+      const annualSavings = calculations.estimatedAnnualProduction * BASE_ELECTRICITY_RATE;
     
-    return {
-      label: opt.type === 'cash' ? '💰 Cash Purchase' : '🏦 Solar Loan',
-      totalCost: systemCost,
-      yearOneSavings: annualSavings,
-      yearTwoSavings: annualSavings,
-      monthlyPayment: opt.monthlyPayment,
-      roi: opt.roi
-    };
-  });
+      const typeLabels: Record<string, string> = {
+        cash: '\u{1F4B0} Cash Purchase',
+        loan: '\u{1F3E6} Solar Loan',
+        lease: '\u{1F4CB} Solar Lease',
+      };
 
-  const cashCard = financingCards[0];
-  const loanCard = financingCards[1];
+      return {
+        label: typeLabels[opt.type] || opt.type,
+        totalCost: systemCost,
+        yearOneSavings: annualSavings,
+        yearTwoSavings: annualSavings,
+        monthlyPayment: opt.monthlyPayment,
+        roi: opt.roi
+      };
+    });
 
   // Convert environmental metrics from kg to metric tons
   const envMetrics: EnvironmentalMetrics = {
@@ -241,8 +245,7 @@ export function generateProposalHTML(
           <!-- Header -->
           <div class="header">
             <h1>☀️ Solar Proposal Report</h1>
-            <p>Preliminary Estimate - Phase 1 Mock Data</p>
-            <div class="badge">MOCKED CALCULATIONS</div>
+            <p>Personalized Solar Estimate</p>
           </div>
 
           <!-- Property Information -->
@@ -300,59 +303,31 @@ export function generateProposalHTML(
 
           <!-- Financing Options -->
           <div class="section">
-            <div class="section-title">Financing Scenarios (2 Years)</div>
+            <div class="section-title">Financing Options</div>
             
-            ${
-              cashCard
-                ? `
+            ${financingCards.map((card) => `
               <div class="financing-card">
-                <div class="financing-card-title">${cashCard.label}</div>
+                <div class="financing-card-title">${card.label}</div>
                 <div class="card-row">
-                  <span class="card-label">Total System Cost:</span>
-                  <span class="card-value">${formatCurrency(cashCard.totalCost)}</span>
+                  <span class="card-label">System Cost:</span>
+                  <span class="card-value">${formatCurrency(card.totalCost)}</span>
                 </div>
-                <div class="card-row">
-                  <span class="card-label">Annual Savings:</span>
-                  <span class="card-value highlight">${formatCurrency(cashCard.yearOneSavings)}</span>
-                </div>
-                <div class="card-row">
-                  <span class="card-label">Year 2 Savings:</span>
-                  <span class="card-value">${formatCurrency(cashCard.yearTwoSavings)}</span>
-                </div>
-                <div class="card-row">
-                  <span class="card-label">2-Year ROI:</span>
-                  <span class="card-value">${cashCard.roi.toFixed(1)}%</span>
-                </div>
-              </div>
-            `
-                : ''
-            }
-
-            ${
-              loanCard
-                ? `
-              <div class="financing-card">
-                <div class="financing-card-title">${loanCard.label}</div>
-                <div class="card-row">
-                  <span class="card-label">Loan Amount:</span>
-                  <span class="card-value">${formatCurrency(loanCard.totalCost)}</span>
-                </div>
+                ${card.monthlyPayment && card.monthlyPayment > 0 ? `
                 <div class="card-row">
                   <span class="card-label">Monthly Payment:</span>
-                  <span class="card-value">${formatCurrency(loanCard.monthlyPayment || 0)}</span>
+                  <span class="card-value">${formatCurrency(card.monthlyPayment)}</span>
+                </div>
+                ` : ''}
+                <div class="card-row">
+                  <span class="card-label">Annual Savings:</span>
+                  <span class="card-value highlight">${formatCurrency(card.yearOneSavings)}</span>
                 </div>
                 <div class="card-row">
-                  <span class="card-label">Year 1 Savings:</span>
-                  <span class="card-value highlight">${formatCurrency(loanCard.yearOneSavings)}</span>
-                </div>
-                <div class="card-row">
-                  <span class="card-label">Year 2 Savings:</span>
-                  <span class="card-value">${formatCurrency(loanCard.yearTwoSavings)}</span>
+                  <span class="card-label">ROI:</span>
+                  <span class="card-value">${card.roi.toFixed(1)}%</span>
                 </div>
               </div>
-            `
-                : ''
-            }
+            `).join('')}
           </div>
 
           <!-- Environmental Impact -->
@@ -407,9 +382,11 @@ export function generateProposalHTML(
             }
           </div>
 
+          ${generateSolarAnalysisSection(calculations)}
+
           <!-- Footer -->
           <div class="footer">
-            <p>This is a preliminary estimate based on mock calculations. Final system design requires on-site assessment.</p>
+            <p>This estimate is based on available solar data for your property. Final system design requires on-site assessment.</p>
             <p>Generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
           </div>
         </div>
@@ -494,21 +471,9 @@ export async function generatePDFBlob(htmlContent: string): Promise<Buffer> {
     
     pdf.setFontSize(9);
     pdf.setFont('helvetica', 'normal');
-    pdf.text('Preliminary Estimate - Professional Analysis', margin, 18);
+    pdf.text('Personalized Solar Estimate', margin, 18);
     
     y = 35;
-
-    // Badge
-    pdf.setFillColor(254, 243, 199);
-    pdf.setDrawColor(146, 64, 14);
-    pdf.setLineWidth(0.3);
-    pdf.roundedRect(margin, y, 55, 6, 1, 1, 'FD');
-    pdf.setFontSize(7);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(146, 64, 14);
-    pdf.text('ESTIMATED CALCULATIONS', margin + 2, y + 4);
-    
-    y += 12;
 
     // Extract data from HTML (regex pattern matching)
     const extractValue = (pattern: RegExp): string => {
@@ -552,55 +517,47 @@ export async function generatePDFBlob(htmlContent: string): Promise<Buffer> {
     y += 20;
 
     // ===== FINANCING =====
-    addSectionTitle('Financing Scenarios');
+    addSectionTitle('Financing Options');
     
-    // Cash option
-    checkPageBreak(35);
-    pdf.setFillColor(243, 244, 246);
-    pdf.roundedRect(margin, y, textWidth, 30, 2, 2, 'F');
-    
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(17, 17, 17);
-    pdf.text('Cash Purchase', margin + 3, y + 6);
-    
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(107, 114, 128);
-    
-    const cashCost = extractValue(/Cash Purchase[\s\S]*?Total System Cost:[\s\S]*?<span class="card-value">([^<]+)/);
-    const cashSavings = extractValue(/Cash Purchase[\s\S]*?Annual Savings:[\s\S]*?<span class="card-value[^>]*>([^<]+)/);
-    const cashROI = extractValue(/Cash Purchase[\s\S]*?ROI:[\s\S]*?<span class="card-value">([^<]+)/);
-    
-    pdf.text(`Total Cost: ${cashCost}`, margin + 3, y + 12);
-    pdf.text(`Annual Savings: ${cashSavings}`, margin + 3, y + 18);
-    pdf.text(`2-Year ROI: ${cashROI}`, margin + 3, y + 24);
-    
-    y += 35;
+    // Extract all financing cards from HTML dynamically
+    const cardTitles = ['Cash Purchase', 'Solar Loan', 'Solar Lease'];
+    for (const title of cardTitles) {
+      // Check if this card exists in HTML
+      const titleRegex = new RegExp(`${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
+      if (!titleRegex.test(htmlContent)) continue;
 
-    // Loan option
-    checkPageBreak(35);
-    pdf.setFillColor(243, 244, 246);
-    pdf.roundedRect(margin, y, textWidth, 30, 2, 2, 'F');
-    
-    pdf.setFontSize(11);
-    pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(17, 17, 17);
-    pdf.text('Solar Loan', margin + 3, y + 6);
-    
-    pdf.setFontSize(9);
-    pdf.setFont('helvetica', 'normal');
-    pdf.setTextColor(107, 114, 128);
-    
-    const loanAmount = extractValue(/Solar Loan[\s\S]*?Loan Amount:[\s\S]*?<span class="card-value">([^<]+)/);
-    const monthlyPay = extractValue(/Solar Loan[\s\S]*?Monthly Payment:[\s\S]*?<span class="card-value">([^<]+)/);
-    const loanSavings = extractValue(/Solar Loan[\s\S]*?Year 1 Savings:[\s\S]*?<span class="card-value[^>]*>([^<]+)/);
-    
-    pdf.text(`Loan Amount: ${loanAmount}`, margin + 3, y + 12);
-    pdf.text(`Monthly Payment: ${monthlyPay}`, margin + 3, y + 18);
-    pdf.text(`Year 1 Savings: ${loanSavings}`, margin + 3, y + 24);
-    
-    y += 35;
+      checkPageBreak(35);
+      pdf.setFillColor(243, 244, 246);
+      pdf.roundedRect(margin, y, textWidth, 30, 2, 2, 'F');
+      
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(17, 17, 17);
+      pdf.text(title, margin + 3, y + 6);
+      
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(107, 114, 128);
+      
+      const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const cost = extractValue(new RegExp(`${escapedTitle}[\\s\\S]*?System Cost:[\\s\\S]*?<span class="card-value">([^<]+)`));
+      const savings = extractValue(new RegExp(`${escapedTitle}[\\s\\S]*?Annual Savings:[\\s\\S]*?<span class="card-value[^>]*>([^<]+)`));
+      const roi = extractValue(new RegExp(`${escapedTitle}[\\s\\S]*?ROI:[\\s\\S]*?<span class="card-value">([^<]+)`));
+      const monthly = extractValue(new RegExp(`${escapedTitle}[\\s\\S]*?Monthly Payment:[\\s\\S]*?<span class="card-value">([^<]+)`));
+      
+      let lineY = y + 12;
+      pdf.text(`System Cost: ${cost}`, margin + 3, lineY);
+      lineY += 6;
+      if (monthly && monthly !== 'N/A') {
+        pdf.text(`Monthly Payment: ${monthly}`, margin + 3, lineY);
+        lineY += 6;
+      }
+      pdf.text(`Annual Savings: ${savings}`, margin + 3, lineY);
+      lineY += 6;
+      pdf.text(`ROI: ${roi}`, margin + 3, lineY);
+      
+      y += 35;
+    }
 
     // ===== ENVIRONMENTAL =====
     addSectionTitle('Environmental Impact (Annual)');
@@ -632,7 +589,7 @@ export async function generatePDFBlob(htmlContent: string): Promise<Buffer> {
     pdf.setFontSize(8);
     pdf.setFont('helvetica', 'normal');
     pdf.setTextColor(107, 114, 128);
-    const footerText = 'This is a preliminary estimate based on estimated calculations. Final system design requires on-site assessment.';
+    const footerText = 'This estimate is based on available solar data for your property. Final system design requires on-site assessment.';
     const wrappedFooter = pdf.splitTextToSize(footerText, textWidth);
     pdf.text(wrappedFooter, pageWidth / 2, y, { align: 'center' });
     

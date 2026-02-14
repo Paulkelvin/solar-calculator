@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-// Removed Card imports, using divs instead
 import { AlertCircle, Loader2 } from 'lucide-react';
 
 interface RoofImageryViewerProps {
@@ -35,8 +34,8 @@ export function RoofImageryViewer({
       return;
     }
 
-    // Generate Google Static Maps URL with satellite view
-    const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=600x400&maptype=satellite&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`;
+    // Generate Google Static Maps URL with satellite view + marker
+    const mapUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${coordinates.lat},${coordinates.lng}&zoom=20&size=600x400&maptype=satellite&markers=color:red%7C${coordinates.lat},${coordinates.lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`;
     setImageUrl(mapUrl);
     setLoading(false);
   }, [coordinates, roofImageryUrl]);
@@ -73,39 +72,29 @@ export function RoofImageryViewer({
               className="object-cover"
               priority
             />
-            {/* Solar potential heat map overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-400 via-orange-400 to-red-500 opacity-20 pointer-events-none" />
+            {/* Solar potential heat map overlay — more vivid */}
+            <div className="absolute inset-0 pointer-events-none" style={{
+              background: 'radial-gradient(ellipse 60% 50% at 50% 45%, rgba(255,200,0,0.35) 0%, rgba(255,140,0,0.25) 30%, rgba(255,60,0,0.15) 60%, transparent 100%)'
+            }} />
 
             {/* Annual production badge */}
             {solarPotentialKwhAnnual && (
-              <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-2 rounded-lg font-semibold">
+              <div className="absolute top-4 right-4 bg-green-500 text-white px-3 py-2 rounded-lg font-semibold shadow-lg">
                 {Math.round(solarPotentialKwhAnnual).toLocaleString()} kWh/year
               </div>
             )}
-          </div>
-        )}
 
-        {/* Solar potential details */}
-        {solarPotentialKwhAnnual && (
-          <div className="grid grid-cols-2 gap-4 mt-4">
-            <div className="bg-blue-50 p-3 rounded-lg">
-              <p className="text-xs text-gray-600">Annual Production</p>
-              <p className="text-lg font-bold text-blue-600">
-                {Math.round(solarPotentialKwhAnnual).toLocaleString()} kWh
-              </p>
-            </div>
-            <div className="bg-green-50 p-3 rounded-lg">
-              <p className="text-xs text-gray-600">Monthly Average</p>
-              <p className="text-lg font-bold text-green-600">
-                {Math.round(solarPotentialKwhAnnual / 12).toLocaleString()} kWh
-              </p>
+            {/* Heat map legend */}
+            <div className="absolute bottom-4 left-4 flex items-center gap-2 bg-black/60 backdrop-blur-sm rounded-lg px-3 py-2">
+              <div className="flex h-3 w-24 rounded-full overflow-hidden">
+                <div className="flex-1 bg-red-500" />
+                <div className="flex-1 bg-orange-400" />
+                <div className="flex-1 bg-yellow-300" />
+              </div>
+              <span className="text-[10px] text-white font-medium">Solar Potential</span>
             </div>
           </div>
         )}
-
-        <p className="text-xs text-gray-500 mt-4 italic">
-          Satellite imagery and solar potential data from Google Solar API. Heat map shows relative solar production potential across the roof.
-        </p>
       </div>
     </div>
   );

@@ -67,6 +67,11 @@ export function generateSystemDesignOptions(
   maxCapacityKw?: number,
   productionPerKw?: number
 ): SystemDesignOption[] {
+  // Guard: if consumption is 0 or negative, return empty array to avoid division by zero
+  if (!annualConsumptionKwh || annualConsumptionKwh <= 0) {
+    return [];
+  }
+
   // Effective production rate (kWh per kW installed per year)
   // Google Solar: actual satellite-measured value (already accounts for local sun)
   // Mock: national average adjusted by sun factor
@@ -114,7 +119,9 @@ export function generateSystemDesignOptions(
 
     // Production uses same rate as sizing, so offset = exactly coverage %
     const annualProduction = systemSizeKw * effectiveProdRate;
-    const actualCoverage = (annualProduction / annualConsumptionKwh) * 100;
+    const actualCoverage = annualConsumptionKwh > 0
+      ? (annualProduction / annualConsumptionKwh) * 100
+      : 0;
 
     // Financial metrics
     const firstYearSavings = annualProduction * BASE_ELECTRICITY_RATE;

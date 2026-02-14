@@ -4,40 +4,39 @@ import { isFinancingOptionAvailable, getCreditScoreIntegration } from "../src/li
 import { calculateFederalITC } from "../src/lib/calculations/tax-credits";
 
 describe("Phase 4.6: Comprehensive Edge Case Testing", () => {
-  describe("Tax Credits: Federal ITC Phase-Out Schedule", () => {
-    it("should apply 30% ITC for 2026", () => {
+  describe("Tax Credits: Federal ITC (Discontinued)", () => {
+    it("should return 0% ITC for 2026 (discontinued)", () => {
       const result2026 = calculateFederalITC(30000, 2026);
-      expect(result2026.rate).toBe(0.30);
-      expect(result2026.credit).toBe(9000);
+      expect(result2026.rate).toBe(0);
+      expect(result2026.credit).toBe(0);
     });
 
-    it("should apply 26% ITC for 2027-2029", () => {
+    it("should return 0% ITC for 2027-2029 (discontinued)", () => {
       const result = calculateFederalITC(30000, 2028);
-      expect(result.rate).toBe(0.26);
-      expect(result.credit).toBeCloseTo(7800, 0);
+      expect(result.rate).toBe(0);
+      expect(result.credit).toBe(0);
     });
 
-    it("should apply 22% ITC for 2030-2032", () => {
+    it("should return 0% ITC for 2030-2032 (discontinued)", () => {
       const result = calculateFederalITC(30000, 2030);
-      expect(result.rate).toBe(0.22);
-      expect(result.credit).toBeCloseTo(6600, 0);
+      expect(result.rate).toBe(0);
+      expect(result.credit).toBe(0);
     });
 
-    it("should apply 0% ITC after 2032 (defaults to 30% for years not in schedule)", () => {
+    it("should return 0% ITC after 2032 (discontinued)", () => {
       const result = calculateFederalITC(30000, 2033);
-      // Years after 2032 are not in schedule, so they default to 30%
-      expect(result.rate).toBe(0.30);
-      expect(result.credit).toBe(9000);
+      expect(result.rate).toBe(0);
+      expect(result.credit).toBe(0);
     });
 
-    it("edge case: very small system", () => {
+    it("edge case: very small system (no ITC)", () => {
       const itc = calculateFederalITC(5000, 2026);
-      expect(itc.credit).toBe(1500);
+      expect(itc.credit).toBe(0);
     });
 
-    it("edge case: very large system", () => {
+    it("edge case: very large system (no ITC)", () => {
       const itc = calculateFederalITC(500000, 2026);
-      expect(itc.credit).toBe(150000);
+      expect(itc.credit).toBe(0);
     });
   });
 
@@ -388,15 +387,15 @@ describe("Phase 4.6: Comprehensive Edge Case Testing", () => {
   });
 
   describe("System Integration: Multiple Phases Together", () => {
-    it("should combine tax credits + financing for complete offer", () => {
+    it("should combine tax credits + financing for complete offer (no federal ITC)", () => {
       const systemCost = 25000;
       const federalITC = calculateFederalITC(systemCost, 2026);
       const creditScore = 750;
       const state = "CA";
 
-      // Calculate net cost after ITC
+      // No Federal ITC — net cost equals system cost
       const netCost = systemCost - federalITC.credit;
-      expect(netCost).toBe(17500); // $25k - $7.5k (30% ITC)
+      expect(netCost).toBe(25000); // No ITC discount
 
       // Check financing options available
       const financing = getCreditScoreIntegration(state, creditScore, 7.5, systemCost);
