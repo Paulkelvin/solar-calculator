@@ -9,7 +9,6 @@ import {
   Calculator,
   LayoutDashboard,
   BarChart3,
-  Settings,
   LogOut,
   Sun,
 } from 'lucide-react';
@@ -69,7 +68,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     { href: '/', label: 'Calculator', icon: Calculator },
     { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, exact: true },
     { href: '/dashboard/analytics', label: 'Analytics', icon: BarChart3 },
-    { href: '/dashboard/settings', label: 'Settings', icon: Settings },
   ];
 
   const isActive = (href: string, exact?: boolean) => {
@@ -134,11 +132,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </nav>
 
       {/* Page Content — scrollable area */}
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto scroll-smooth">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 w-full">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200/60 p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
             {children}
           </div>
+          <div className="h-8" />
         </div>
       </main>
     </div>

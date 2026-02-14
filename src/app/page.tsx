@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { CalculatorWizard } from "@/components/calculator/CalculatorWizard";
 import { ResultsView } from "@/components/results/ResultsView";
+import { useAuth } from "@/contexts/auth";
+import Link from "next/link";
+import { LayoutDashboard } from "lucide-react";
 import type { SolarCalculationResult } from "@/../types/calculations";
 import type { CalculatorForm } from "@/../types/leads";
 
@@ -13,6 +16,7 @@ interface ResultsState {
 
 export default function HomePage() {
   const [resultsState, setResultsState] = useState<ResultsState | null>(null);
+  const { session } = useAuth();
 
   const handleResults = (results: SolarCalculationResult, leadData: Partial<CalculatorForm>) => {
     setResultsState({ results, leadData });
@@ -21,7 +25,16 @@ export default function HomePage() {
   return (
     <main className="h-full flex flex-col">
       <div className="w-full flex-none">
-        <header className="text-center mb-2 md:mb-4">
+        <header className="text-center mb-2 md:mb-4 relative">
+          {session.isAuthenticated && (
+            <Link
+              href="/dashboard"
+              className="absolute left-0 top-0 inline-flex items-center gap-1.5 text-sm font-medium text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-lg transition-all duration-200 shadow-sm"
+            >
+              <LayoutDashboard className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </Link>
+          )}
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-1">
             Solar ROI Calculator
           </h1>

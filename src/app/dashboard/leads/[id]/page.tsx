@@ -190,29 +190,29 @@ export default function LeadDetailPage() {
       <div className="flex gap-2">
         <button
           onClick={() => router.back()}
-          className="px-4 py-2 rounded-md bg-secondary text-foreground hover:bg-muted transition-colors"
+          className="px-4 py-2 rounded-lg bg-white border border-gray-200 text-gray-600 font-medium text-sm hover:bg-gray-50 hover:border-gray-300 active:scale-[0.97] transition-all duration-200 shadow-sm"
         >
           ← Back
         </button>
         <button
           onClick={handleGeneratePDF}
           disabled={isGeneratingPDF}
-          className="px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
+          className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium text-sm hover:bg-blue-700 active:scale-[0.97] disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
         >
           {isGeneratingPDF ? "Generating..." : "📄 Generate PDF"}
         </button>
         <button
           onClick={handleSendEmail}
           disabled={isSendingEmail}
-          className="px-4 py-2 rounded-md bg-green-600 text-white hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+          className="px-4 py-2 rounded-lg bg-emerald-600 text-white font-medium text-sm hover:bg-emerald-700 active:scale-[0.97] disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
         >
           {isSendingEmail ? "Sending..." : "✉️ Send to Customer"}
         </button>
       </div>
 
       {/* Contact Information */}
-      <div className="rounded-lg border border-border p-6 space-y-4">
-        <h2 className="text-xl font-semibold">Contact Information</h2>
+      <div className="rounded-xl border border-gray-200 p-6 space-y-4 hover:shadow-sm transition-shadow duration-200">
+        <h2 className="text-xl font-semibold text-gray-900">Contact Information</h2>
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-xs text-muted-foreground">Name</p>
