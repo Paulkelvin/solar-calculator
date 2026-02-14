@@ -22,7 +22,17 @@ export async function signUp(email: string, password: string, companyName: strin
       },
     });
 
-    if (authError) throw authError;
+    if (authError) {
+      // Handle Supabase email sending failures gracefully
+      if (authError.message?.includes('sending confirmation email') || 
+          authError.message?.includes('email rate limit')) {
+        throw new Error(
+          'Account may have been created, but the confirmation email could not be sent. ' +
+          'Please try logging in, or wait a few minutes and try signing up again.'
+        );
+      }
+      throw authError;
+    }
     if (!authData.user) throw new Error('Failed to create user');
 
     return { success: true, user: authData.user };

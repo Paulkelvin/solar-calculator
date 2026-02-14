@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     }
     
     const useRealAPI = process.env.NEXT_PUBLIC_USE_REAL_SOLAR_API === 'true';
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY;
+    const apiKey = process.env.GOOGLE_SOLAR_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY;
     
     const fallbackBounds = createBoundsFromRadius(latitude, longitude);
 

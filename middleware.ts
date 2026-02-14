@@ -66,8 +66,8 @@ export async function middleware(request: NextRequest) {
     } catch {
       isValidSession = false;
     }
-  } else if (token) {
-    // In dev/mock mode, treat token existence as valid
+  } else if (token && process.env.NODE_ENV === 'development') {
+    // Only in local dev: treat token existence as valid
     isValidSession = true;
   }
 

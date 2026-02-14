@@ -90,12 +90,11 @@ export async function POST(request: Request) {
     
     // Check if real API is enabled
     const useRealAPI = process.env.NEXT_PUBLIC_USE_REAL_SOLAR_API === 'true';
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY;
+    const apiKey = process.env.GOOGLE_SOLAR_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY;
     
     console.log('[Google Solar API] Config check:', { 
       useRealAPI, 
-      hasApiKey: !!apiKey,
-      apiKeyPrefix: apiKey ? apiKey.substring(0, 10) + '...' : 'none'
+      hasApiKey: !!apiKey
     });
     
     if (!useRealAPI || !apiKey) {

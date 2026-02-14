@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     }
 
     // Use the Google Places API key from environment
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+    const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
     if (!apiKey) {
       return Response.json({ error: 'Google Places API key not set', predictions: [] }, { status: 500 });
     }

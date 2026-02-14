@@ -71,7 +71,7 @@ export async function getGoogleSolarData(
     }
 
     // Check if real API is configured
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY;
+    const apiKey = process.env.GOOGLE_SOLAR_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY;
     
     if (apiKey) {
       // Real Google Solar API call (Phase 5.2)
@@ -148,7 +148,7 @@ export async function getAddressAutocomplete(
     }
 
     const trimmedInput = input.trim();
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+    const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
 
     if (apiKey) {
       // Real Google Places API call (Phase 5.2)
@@ -225,8 +225,8 @@ export async function getPlaceDetails(
  * Phase 5.1: Check environment variables
  */
 export function validateGoogleSolarAPICredentials(): boolean {
-  const hasKey = !!process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY;
-  const hasPlacesKey = !!process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+  const hasKey = !!(process.env.GOOGLE_SOLAR_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY);
+  const hasPlacesKey = !!(process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY);
   
   if (!hasKey || !hasPlacesKey) {
     console.warn(
@@ -242,8 +242,8 @@ export function validateGoogleSolarAPICredentials(): boolean {
  */
 export function isGoogleAPIsConfigured(): boolean {
   return (
-    !!process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY &&
-    !!process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY
+    !!(process.env.GOOGLE_SOLAR_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY) &&
+    !!(process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY)
   );
 }
 /**

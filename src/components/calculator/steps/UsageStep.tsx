@@ -17,7 +17,7 @@ interface UsageStepProps {
 
 export function UsageStep({ value, onChange }: UsageStepProps) {
   const [activeTab, setActiveTab] = useState<"bill" | "kwh">(
-    value?.billAmount ? "bill" : "kwh"
+    value?.monthlyKwh ? "kwh" : "bill"
   );
   const [billAmount, setBillAmount] = useState(value?.billAmount?.toString() || "");
   const [monthlyKwh, setMonthlyKwh] = useState(value?.monthlyKwh?.toString() || "");

@@ -12,7 +12,7 @@ export async function GET(request: Request) {
       return Response.json({ error: 'Missing place_id' }, { status: 400 });
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
+    const apiKey = process.env.GOOGLE_PLACES_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_PLACES_API_KEY;
     if (!apiKey) {
       console.warn('Google Places API key not configured');
       return Response.json({ error: 'API key not configured' }, { status: 500 });

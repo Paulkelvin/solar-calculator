@@ -30,7 +30,7 @@ export interface InstallerProfile {
  */
 export const LoginSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
 });
 
 export type LoginInput = z.infer<typeof LoginSchema>;
@@ -40,8 +40,12 @@ export type LoginInput = z.infer<typeof LoginSchema>;
  */
 export const SignUpSchema = z.object({
   email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string().min(6, 'Password must be at least 6 characters'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Z]/, 'Must contain an uppercase letter')
+    .regex(/[0-9]/, 'Must contain a number')
+    .regex(/[^A-Za-z0-9]/, 'Must contain a special character (!@#$...)'),
+  confirmPassword: z.string().min(8, 'Password must be at least 8 characters'),
   companyName: z.string().min(2, 'Company name required'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",

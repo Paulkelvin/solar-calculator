@@ -20,8 +20,15 @@ export async function GET(request: Request) {
 
     // Decode and ensure API key is attached (Google returns 403 without it)
     const decodedUrl = decodeURIComponent(rawUrl);
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY;
+    const apiKey = process.env.GOOGLE_SOLAR_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_SOLAR_API_KEY;
     const target = new URL(decodedUrl);
+
+    // SECURITY: Only allow Google API domains to prevent SSRF
+    const allowedHosts = ['solar.googleapis.com', 'maps.googleapis.com', 'storage.googleapis.com'];
+    if (!allowedHosts.includes(target.hostname)) {
+      return new Response('Forbidden: URL must be a Google API endpoint', { status: 403 });
+    }
+
     if (apiKey && !target.searchParams.has('key')) {
       target.searchParams.set('key', apiKey);
     }
