@@ -369,7 +369,6 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
 
     // Don't save again if we already have a saved lead
     if (savedLeadId) {
-      console.log('[PRODUCTION] Contact already saved, lead ID:', savedLeadId);
       return;
     }
 
@@ -403,7 +402,6 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
 
       if (lead?.id) {
         setSavedLeadId(lead.id);
-        console.log('[PRODUCTION] Contact data saved to database, lead ID:', lead.id);
       }
     } catch (err) {
       console.error('Failed to save contact lead:', err);
@@ -424,12 +422,10 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
   };
 
   const handleSubmit = async () => {
-    console.log('handleSubmit called');
     setIsLoading(true);
     setError(null);
 
     try {
-      console.log('Checking form data:', formData);
       if (
         !formData.address ||
         !formData.usage ||
@@ -437,13 +433,11 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
         !formData.preferences ||
         !formData.contact
       ) {
-        console.log('Missing required fields');
         setError("All fields required");
         setIsLoading(false);
         return;
       }
 
-      console.log('Form validation passed, performing calculation');
       // Build Google Solar override from store data (single source of truth)
       let googleSolar: GoogleSolarOverride | undefined;
       if (
@@ -457,7 +451,6 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
           systemSizeKw: roofInsights.panelCapacityWatts / 1000,
           annualProductionKwh: roofInsights.annualProduction,
         };
-        console.log('Using Google Solar as single source of truth:', googleSolar);
       }
 
       // Perform calculation — Google Solar overrides mock when available
@@ -530,15 +523,12 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
       const leadScore = enhancedLeadScore;
 
       // Create lead in database
-      console.log('Checking authentication, session:', session);
       const installerId = null; // All leads are shared across admins
-      console.log('Using installer ID:', installerId);
 
       // Fetch solar data from Google Solar API (async, non-blocking)
       let apiSolarData: { solarPotentialKwhAnnual?: number; roofImageUrl?: string } | undefined;
       try {
         if (formData.address.latitude && formData.address.longitude) {
-          console.log('Fetching solar data from API...');
           const solarResponse = await fetch('/api/google-solar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -551,20 +541,16 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
           });
           if (solarResponse.ok) {
             apiSolarData = await solarResponse.json();
-            console.log('Solar data fetched:', apiSolarData);
           }
         }
       } catch (err) {
-        console.warn('Failed to fetch solar data:', err);
         // Continue without solar data
       }
 
-      console.log('Creating lead...');
       let lead;
       
       if (savedLeadId) {
         // Update existing lead with full calculation results
-        console.log('Updating existing lead:', savedLeadId);
         lead = await updateLead(
           savedLeadId,
           {
@@ -579,7 +565,6 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
         );
       } else {
         // Create new lead (fallback if contact wasn't saved)
-        console.log('Creating new lead...');
         lead = await createLead(
           {
             address: formData.address,
@@ -594,11 +579,9 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
           apiSolarData
         );
       }
-      console.log('Lead saved:', lead);
 
       // Log activity
       if (lead) {
-        console.log('Lead created successfully, calling onResults');
         // TODO: Implement activity logging
         // await logActivity(
         //   lead.id,
@@ -613,16 +596,12 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
         // );
 
         // Send emails asynchronously (don't wait for completion)
-        sendLeadEmails(formData, results, leadScore).catch((err) =>
-          console.error('Email sending failed:', err)
-        );
+        sendLeadEmails(formData, results, leadScore).catch(() => {});
       }
 
-      console.log('Calling onResults with results and formData');
       // Return results to parent
       onResults(results, formData as CalculatorForm);
     } catch (err) {
-      console.error('handleSubmit error:', err);
       setError(err instanceof Error ? err.message : "Calculation failed");
     } finally {
       setIsLoading(false);

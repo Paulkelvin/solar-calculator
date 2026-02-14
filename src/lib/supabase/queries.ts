@@ -39,7 +39,6 @@ export async function createLead(
       return null;
     }
 
-    console.log("[SUPABASE] Lead created:", data.id);
     return data as unknown as Lead;
   } catch (err) {
     console.error("Error creating lead:", err);
@@ -75,7 +74,6 @@ export async function logActivity(
       return false;
     }
 
-    console.log("[SUPABASE] Logged activity:", eventType);
     return true;
   } catch (err) {
     console.error("Error logging activity:", err);
@@ -107,7 +105,6 @@ export async function fetchLeads(
       return { data: [], total: 0 };
     }
 
-    console.log("[SUPABASE] Fetched leads:", data?.length || 0, "of", count);
     return {
       data: (data as unknown as Lead[]) || [],
       total: count ?? 0,
@@ -149,7 +146,6 @@ export async function updateLead(
       return null;
     }
 
-    console.log("[SUPABASE] Lead updated:", data.id);
     return data as unknown as Lead;
   } catch (err) {
     console.error("Error updating lead:", err);
@@ -174,7 +170,6 @@ export async function fetchLead(id: string): Promise<Lead | null> {
       return null;
     }
 
-    console.log("[SUPABASE] Fetched lead:", data?.id);
     return (data as unknown as Lead) || null;
   } catch (err) {
     console.error("Error fetching lead:", err);

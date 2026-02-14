@@ -52,7 +52,6 @@ export async function sendCustomerSubmissionEmail(
       return { success: false, error: result.error };
     }
 
-    console.log('Customer email sent:', result.data?.id);
     return { success: true, messageId: result.data?.id };
   } catch (error) {
     console.error('Customer email send error:', error);
@@ -102,7 +101,6 @@ export async function sendInstallerLeadEmail(
       return { success: false, error: result.error };
     }
 
-    console.log('Installer email sent:', result.data?.id);
     return { success: true, messageId: result.data?.id };
   } catch (error) {
     console.error('Installer email send error:', error);

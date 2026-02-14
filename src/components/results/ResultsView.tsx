@@ -36,7 +36,6 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
       const longitude = leadData?.address?.longitude;
 
       if (!latitude || !longitude) {
-        console.log('No coordinates available for solar data');
         return;
       }
 
@@ -73,7 +72,6 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
   useEffect(() => {
     const generateDesignOptions = () => {
       if (annualConsumption === 0) {
-        console.log('No consumption data available for system design');
         return;
       }
 
