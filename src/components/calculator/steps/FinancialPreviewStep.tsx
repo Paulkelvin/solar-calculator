@@ -141,14 +141,16 @@ export function FinancialPreviewStep({
                 <p className="text-xs uppercase tracking-wide text-gray-500">{option.type === "cash" ? "Cash Purchase" : "Solar Loan"}</p>
                 <p className="text-xl font-semibold text-gray-900 capitalize">{option.type}</p>
               </div>
-              <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-semibold text-gray-600">{googleSolar ? 'Google Solar data' : 'Phase 1 preview'}</span>
             </div>
             <div className="mt-4 space-y-2 text-sm">
               {option.downPayment > 0 && (
                 <DetailRow label="Upfront" value={currencyFormatter.format(option.downPayment)} />
               )}
               {option.monthlyPayment > 0 && (
-                <DetailRow label="Monthly" value={currencyFormatter.format(Math.round(option.monthlyPayment))} />
+                <>
+                  <DetailRow label="Monthly" value={currencyFormatter.format(Math.round(option.monthlyPayment))} />
+                  <DetailRow label="Loan Term" value="25 years" />
+                </>
               )}
               <DetailRow label="Break-even" value={`${option.payoffYears.toFixed(1)} yrs`} />
               <DetailRow label="25-yr ROI" value={`${option.roi.toFixed(0)}%`} highlight />
@@ -158,9 +160,7 @@ export function FinancialPreviewStep({
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
-        {googleSolar
-          ? 'Figures based on Google Solar satellite analysis of your roof. Final results may vary based on system configuration.'
-          : 'Figures shown are preliminary estimates; actual results will refresh on the final results screen when satellite data is available.'}
+        Figures shown are preliminary estimates. Final results may vary based on system configuration.
       </div>
     </div>
   );

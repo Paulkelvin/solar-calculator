@@ -167,6 +167,7 @@ export function generateProposalHTML(
             border-radius: 0.5rem;
             margin-bottom: 1rem;
             border: 1px solid #e5e7eb;
+            overflow: hidden;
           }
           .financing-card-title {
             font-size: 1rem;
@@ -178,14 +179,18 @@ export function generateProposalHTML(
             display: flex;
             justify-content: space-between;
             padding: 0.4rem 0;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            word-break: break-word;
           }
           .card-label {
             color: #6b7280;
+            flex-shrink: 0;
+            margin-right: 0.5rem;
           }
           .card-value {
             font-weight: 600;
             color: #111;
+            text-align: right;
           }
           .highlight {
             background: #fef3c7;
@@ -317,6 +322,10 @@ export function generateProposalHTML(
                   <span class="card-label">Monthly Payment:</span>
                   <span class="card-value">${formatCurrency(card.monthlyPayment)}</span>
                 </div>
+                <div class="card-row">
+                  <span class="card-label">Loan Term:</span>
+                  <span class="card-value">25 years</span>
+                </div>
                 ` : ''}
                 <div class="card-row">
                   <span class="card-label">Annual Savings:</span>
@@ -434,7 +443,7 @@ export async function generatePDFBlob(htmlContent: string): Promise<Buffer> {
       checkPageBreak(15);
       pdf.setFontSize(12);
       pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(16, 185, 129); // Green color
+      pdf.setTextColor(217, 119, 6); // Amber color
       pdf.text(title, margin, y);
       y += 5;
       pdf.setLineWidth(0.5);
@@ -461,7 +470,7 @@ export async function generatePDFBlob(htmlContent: string): Promise<Buffer> {
     };
 
     // ===== HEADER =====
-    pdf.setFillColor(16, 185, 129);
+    pdf.setFillColor(217, 119, 6);
     pdf.rect(0, 0, pageWidth, 25, 'F');
     
     pdf.setFontSize(18);
@@ -526,10 +535,22 @@ export async function generatePDFBlob(htmlContent: string): Promise<Buffer> {
       const titleRegex = new RegExp(`${title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`);
       if (!titleRegex.test(htmlContent)) continue;
 
-      checkPageBreak(35);
+      // Compute card height dynamically based on content
+      const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const cost = extractValue(new RegExp(`${escapedTitle}[\\s\\S]*?System Cost:[\\s\\S]*?<span class="card-value">([^<]+)`));
+      const savings = extractValue(new RegExp(`${escapedTitle}[\\s\\S]*?Annual Savings:[\\s\\S]*?<span class="card-value[^>]*>([^<]+)`));
+      const roi = extractValue(new RegExp(`${escapedTitle}[\\s\\S]*?ROI:[\\s\\S]*?<span class="card-value">([^<]+)`));
+      const monthly = extractValue(new RegExp(`${escapedTitle}[\\s\\S]*?Monthly Payment:[\\s\\S]*?<span class="card-value">([^<]+)`));
+
+      const hasMonthly = monthly && monthly !== 'N/A';
+      const isLoan = /loan/i.test(title);
+      const lineCount = 3 + (hasMonthly ? 1 : 0) + (isLoan ? 1 : 0); // cost + savings + roi + monthly? + term?
+      const cardH = 10 + lineCount * 6;
+
+      checkPageBreak(cardH + 5);
       pdf.setFillColor(243, 244, 246);
-      pdf.roundedRect(margin, y, textWidth, 30, 2, 2, 'F');
-      
+      pdf.roundedRect(margin, y, textWidth, cardH, 2, 2, 'F');
+
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(17, 17, 17);
@@ -539,31 +560,29 @@ export async function generatePDFBlob(htmlContent: string): Promise<Buffer> {
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(107, 114, 128);
       
-      const escapedTitle = title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const cost = extractValue(new RegExp(`${escapedTitle}[\\s\\S]*?System Cost:[\\s\\S]*?<span class="card-value">([^<]+)`));
-      const savings = extractValue(new RegExp(`${escapedTitle}[\\s\\S]*?Annual Savings:[\\s\\S]*?<span class="card-value[^>]*>([^<]+)`));
-      const roi = extractValue(new RegExp(`${escapedTitle}[\\s\\S]*?ROI:[\\s\\S]*?<span class="card-value">([^<]+)`));
-      const monthly = extractValue(new RegExp(`${escapedTitle}[\\s\\S]*?Monthly Payment:[\\s\\S]*?<span class="card-value">([^<]+)`));
-      
       let lineY = y + 12;
       pdf.text(`System Cost: ${cost}`, margin + 3, lineY);
       lineY += 6;
-      if (monthly && monthly !== 'N/A') {
+      if (hasMonthly) {
         pdf.text(`Monthly Payment: ${monthly}`, margin + 3, lineY);
+        lineY += 6;
+      }
+      if (isLoan) {
+        pdf.text('Loan Term: 25 years', margin + 3, lineY);
         lineY += 6;
       }
       pdf.text(`Annual Savings: ${savings}`, margin + 3, lineY);
       lineY += 6;
       pdf.text(`ROI: ${roi}`, margin + 3, lineY);
       
-      y += 35;
+      y += cardH + 5;
     }
 
     // ===== ENVIRONMENTAL =====
     addSectionTitle('Environmental Impact (Annual)');
     
     checkPageBreak(25);
-    pdf.setFillColor(240, 253, 244);
+    pdf.setFillColor(255, 251, 235);
     pdf.roundedRect(margin, y, textWidth, 20, 2, 2, 'F');
     
     const co2 = extractValue(/Metric Tons CO[₂2]<\/div>\s*<\/div>\s*<div class="env-item">\s*<div class="env-number">([^<]+)/);
@@ -571,7 +590,7 @@ export async function generatePDFBlob(htmlContent: string): Promise<Buffer> {
     
     pdf.setFontSize(16);
     pdf.setFont('helvetica', 'bold');
-    pdf.setTextColor(16, 185, 129);
+    pdf.setTextColor(217, 119, 6);
     const centerX = pageWidth / 2;
     pdf.text(`${co2} Metric Tons CO2`, centerX, y + 8, { align: 'center' });
     pdf.setFontSize(14);

@@ -360,6 +360,7 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
             } else if (opt.type === "loan") {
               features.push(
                 `${opt.downPayment > 0 ? `Down: $${Math.round(opt.downPayment).toLocaleString()}` : "$0 down"}`,
+                "25-year loan term",
                 `Interest: $${Math.round(opt.totalInterest).toLocaleString()}`,
                 "Full ownership after term",
                 `Break-even: ${opt.payoffYears.toFixed(1)} years`,

@@ -83,8 +83,8 @@ export function PreferencesStep({ value, onChange }: PreferencesStepProps) {
                 onClick={() => handleChange("financingType", opt.id)}
                 className={`w-full rounded-md border-2 px-3 py-2 text-left text-sm transition-colors ${
                   formValue.financingType === opt.id
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border hover:border-primary"
+                    ? "border-amber-500 bg-amber-500 text-white"
+                    : "border-border hover:border-amber-400"
                 }`}
               >
                 {opt.label}
@@ -108,8 +108,8 @@ export function PreferencesStep({ value, onChange }: PreferencesStepProps) {
                 onClick={() => handleChange("timeline", opt.id)}
                 className={`w-full rounded-md border-2 px-3 py-2 text-left text-sm transition-colors ${
                   formValue.timeline === opt.id
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border hover:border-primary"
+                    ? "border-amber-500 bg-amber-500 text-white"
+                    : "border-border hover:border-amber-400"
                 }`}
               >
                 {opt.label}
