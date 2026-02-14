@@ -46,7 +46,7 @@ export const SignUpSchema = z.object({
     .regex(/[0-9]/, 'Must contain a number')
     .regex(/[^A-Za-z0-9]/, 'Must contain a special character (!@#$...)'),
   confirmPassword: z.string().min(8, 'Password must be at least 8 characters'),
-  companyName: z.string().min(2, 'Company name required'),
+  companyName: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],

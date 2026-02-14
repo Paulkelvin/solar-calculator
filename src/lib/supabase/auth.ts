@@ -7,7 +7,7 @@ export const supabase = getSupabaseClient();
  * Sign up with email/password
  * Installer profile is created automatically by database trigger
  */
-export async function signUp(email: string, password: string, companyName: string) {
+export async function signUp(email: string, password: string) {
   try {
     // Create auth user - installer profile created automatically by trigger
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
@@ -15,9 +15,6 @@ export async function signUp(email: string, password: string, companyName: strin
       email,
       password,
       options: {
-        data: {
-          company_name: companyName,
-        },
         emailRedirectTo: `${appUrl}/auth/callback`,
       },
     });

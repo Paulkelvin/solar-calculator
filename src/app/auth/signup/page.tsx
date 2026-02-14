@@ -13,7 +13,6 @@ export default function SignUpPage() {
     email: '',
     password: '',
     confirmPassword: '',
-    companyName: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -39,7 +38,7 @@ export default function SignUpPage() {
       }
 
       // Sign up
-      const signUpResult = await signUp(formData.email, formData.password, formData.companyName);
+      const signUpResult = await signUp(formData.email, formData.password);
 
       // Check if email confirmation is required
       // Supabase returns a user but confirmed_at is null when email confirmation is needed
@@ -83,22 +82,6 @@ export default function SignUpPage() {
               {error}
             </div>
           )}
-
-          <div>
-            <label htmlFor="companyName" className="block text-sm font-medium">
-              Company Name
-            </label>
-            <input
-              id="companyName"
-              name="companyName"
-              type="text"
-              value={formData.companyName}
-              onChange={handleChange}
-              className="mt-1 w-full rounded-md border border-border px-3 py-2 focus:border-primary focus:outline-none"
-              placeholder="Your Solar Company"
-              disabled={isLoading}
-            />
-          </div>
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium">
