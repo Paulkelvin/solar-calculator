@@ -8,16 +8,31 @@ interface ContactStepProps {
   onChange: (contact: Contact) => void;
 }
 
+/**
+ * Format a string of digits into US phone format: (XXX) XXX-XXXX
+ */
+function formatUSPhone(value: string): string {
+  const digits = value.replace(/\D/g, "");
+  // Strip leading "1" country code for display
+  const d = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
+  if (d.length === 0) return "";
+  if (d.length <= 3) return `(${d}`;
+  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6, 10)}`;
+}
+
 export function ContactStep({ value, onChange }: ContactStepProps) {
   const [formValue, setFormValue] = useState<Contact>(
-    value || { name: "", email: "", phone: "" }
+    value
+      ? { ...value, phone: formatUSPhone(value.phone) }
+      : { name: "", email: "", phone: "" }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const normalizeContact = (contact: Contact): Contact => ({
     ...contact,
     name: contact.name.trim(),
-    email: contact.email.trim(),
+    email: contact.email.trim().toLowerCase(),
     phone: contact.phone.replace(/\D/g, ""),
   });
 
@@ -39,6 +54,15 @@ export function ContactStep({ value, onChange }: ContactStepProps) {
 
   const handleChange = (field: keyof Contact, val: string) => {
     const updated = { ...formValue, [field]: val };
+    setFormValue(updated);
+    validate(updated);
+  };
+
+  const handlePhoneChange = (raw: string) => {
+    // Only allow digits (strip everything else for the source value)
+    const digits = raw.replace(/\D/g, "").slice(0, 10);
+    const display = formatUSPhone(digits);
+    const updated = { ...formValue, phone: display };
     setFormValue(updated);
     validate(updated);
   };
@@ -78,8 +102,8 @@ export function ContactStep({ value, onChange }: ContactStepProps) {
         <input
           type="tel"
           value={formValue.phone}
-          onChange={(e) => handleChange("phone", e.target.value)}
-          placeholder="3035551234"
+          onChange={(e) => handlePhoneChange(e.target.value)}
+          placeholder="(303) 555-1234"
           className="mt-2 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
         />
         {errors.phone && (

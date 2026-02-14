@@ -34,11 +34,22 @@ export const preferencesSchema = z.object({
 });
 
 export const contactSchema = z.object({
-  name: z.string().min(1, "Name required"),
-  email: z.string().email("Valid email required"),
+  name: z.string().min(2, "Full name required (at least 2 characters)"),
+  email: z.string()
+    .email("Valid email required")
+    .refine(
+      (val) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(val),
+      "Please enter a valid email address"
+    ),
   phone: z
     .string()
-    .refine((val) => normalizePhone(val).length >= 10, "Valid phone required")
+    .refine(
+      (val) => {
+        const digits = val.replace(/\D/g, "");
+        return digits.length === 10 || (digits.length === 11 && digits.startsWith("1"));
+      },
+      "Please enter a valid 10-digit US phone number"
+    )
 });
 
 export const calculatorFormSchema = z.object({

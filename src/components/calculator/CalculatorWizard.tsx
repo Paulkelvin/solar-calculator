@@ -499,15 +499,17 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
       };
 
       // Calculate enhanced lead score with real solar data
+      const cashFinancing = results.financing.find(f => f.type === 'cash');
+      const annualSavingsCalc = results.estimatedAnnualProduction * BASE_ELECTRICITY_RATE;
       const scoringFactors: LeadScoringFactors = {
         solarPotential: (results.confidence === 'validated' || results.confidence === 'preliminary') ? 'high' : 'medium',
-        sunExposure: 85, // Will be from real solar data in Phase 5.3
+        sunExposure: roofInsights?.sunExposurePercentage ?? 85,
         roofAreaSqft: formData.roof?.squareFeet || 2500,
         systemSizeKw: results.systemSizeKw,
-        annualSavings: results.incentives?.netMeteringAnnualValue || 1000,
-        paybackYears: 7, // From financing calcs
+        annualSavings: annualSavingsCalc,
+        paybackYears: cashFinancing?.payoffYears ?? 10,
         firstYearIncentives: results.incentives?.totalFirstYearIncentives || 0,
-        roi25Year: results.financing[0]?.roi || 100,
+        roi25Year: cashFinancing?.roi || 100,
         financingType: (formData.preferences?.financingType as any) || 'cash',
         timeline: (formData.preferences?.timeline as any) || 'flexible',
         hasCoordinates: !!formData.address?.latitude && !!formData.address?.longitude,
