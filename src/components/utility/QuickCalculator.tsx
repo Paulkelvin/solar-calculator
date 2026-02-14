@@ -149,7 +149,7 @@ export function QuickCalculator({ isOpen, onToggle }: QuickCalculatorProps) {
   ];
 
   return (
-    <div className="pointer-events-none z-50 flex flex-col items-end gap-3 fixed bottom-4 right-4 md:absolute md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:-right-3">
+    <div className="pointer-events-none z-50 hidden md:flex flex-col items-end gap-3 md:absolute md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:-right-3">
       {/* Protrusion tab */}
       <button
         type="button"
