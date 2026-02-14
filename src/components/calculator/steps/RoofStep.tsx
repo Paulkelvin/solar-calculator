@@ -14,7 +14,7 @@ const RoofMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[320px] w-full items-center justify-center rounded-3xl border-2 border-amber-100 bg-amber-50">
+      <div className="flex h-[220px] sm:h-[320px] w-full items-center justify-center rounded-3xl border-2 border-amber-100 bg-amber-50">
         <div className="space-y-2 text-center">
           <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-amber-400 border-t-transparent" />
           <p className="text-sm font-medium text-amber-700">Loading satellite map…</p>

@@ -15,7 +15,7 @@ export function ClientLayout({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
       <div
-        className="relative h-full w-full flex flex-col mx-auto px-4 py-4 md:py-6 transition-all duration-300"
+        className="relative h-full w-full flex flex-col mx-auto px-3 sm:px-4 py-3 sm:py-4 md:py-6 transition-all duration-300"
         style={{
           maxWidth: calcOpen ? "calc(64rem - 180px)" : "64rem",
           marginLeft: "auto",

@@ -380,7 +380,7 @@ export function AddressStep({ value, onChange }: AddressStepProps) {
             value={inputValue}
             onChange={(e) => handleStreetInputChange(e.target.value)}
             onFocus={() => predictions.length > 0 && setShowPredictions(true)}
-            className="w-full rounded border border-gray-300 pl-12 pr-3 py-2 text-sm focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none"
+            className="w-full rounded border border-gray-300 pl-12 pr-3 py-2.5 text-base focus:border-amber-500 focus:ring-1 focus:ring-amber-500 outline-none"
             placeholder="Start typing to find your address"
             autoComplete="off"
           />

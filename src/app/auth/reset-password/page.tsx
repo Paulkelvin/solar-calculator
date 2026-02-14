@@ -38,9 +38,9 @@ export default function ResetPasswordPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md rounded-lg border border-border bg-white p-8 shadow-sm">
-        <h1 className="mb-2 text-2xl font-bold">Reset Password</h1>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-6">
+      <div className="w-full max-w-md rounded-lg border border-border bg-white p-6 sm:p-8 shadow-sm">
+        <h1 className="mb-2 text-xl sm:text-2xl font-bold">Reset Password</h1>
         <p className="mb-6 text-sm text-muted-foreground">
           Enter your email and we'll send a reset link
         </p>
@@ -71,7 +71,7 @@ export default function ResetPasswordPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 w-full rounded-md border border-border px-3 py-2 focus:border-primary focus:outline-none"
+                className="mt-1 w-full rounded-md border border-border px-3 py-2.5 text-base focus:border-primary focus:outline-none"
                 placeholder="you@company.com"
                 disabled={isLoading}
               />

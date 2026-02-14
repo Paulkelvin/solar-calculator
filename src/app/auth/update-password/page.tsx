@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase/auth';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function UpdatePasswordPage() {
   const router = useRouter();
@@ -15,6 +16,8 @@ export default function UpdatePasswordPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSession, setHasSession] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Check if we have a valid session from the reset link
   useEffect(() => {
@@ -82,9 +85,9 @@ export default function UpdatePasswordPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-md rounded-lg border border-border bg-background p-8 shadow-sm">
-        <h1 className="mb-2 text-2xl font-bold">Set New Password</h1>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-6">
+      <div className="w-full max-w-md rounded-lg border border-border bg-background p-6 sm:p-8 shadow-sm">
+        <h1 className="mb-2 text-xl sm:text-2xl font-bold">Set New Password</h1>
         <p className="mb-6 text-sm text-muted-foreground">
           Enter your new password below
         </p>
@@ -119,31 +122,51 @@ export default function UpdatePasswordPage() {
               <label htmlFor="password" className="block text-sm font-medium">
                 New Password
               </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full rounded-md border border-border px-3 py-2 focus:border-primary focus:outline-none"
-                placeholder="At least 6 characters"
-                disabled={isLoading}
-                minLength={6}
-              />
+              <div className="relative mt-1">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-md border border-border px-3 py-2.5 pr-10 text-base focus:border-primary focus:outline-none"
+                  placeholder="At least 8 characters"
+                  disabled={isLoading}
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium">
                 Confirm New Password
               </label>
-              <input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 w-full rounded-md border border-border px-3 py-2 focus:border-primary focus:outline-none"
-                placeholder="Confirm your password"
-                disabled={isLoading}
-              />
+              <div className="relative mt-1">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full rounded-md border border-border px-3 py-2.5 pr-10 text-base focus:border-primary focus:outline-none"
+                  placeholder="Confirm your password"
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             <Button

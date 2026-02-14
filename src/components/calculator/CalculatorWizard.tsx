@@ -773,7 +773,7 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
   return (
     <div className="bg-white rounded-lg shadow border border-gray-200 flex flex-col h-full max-h-full overflow-hidden">
       {/* Progress Bar */}
-      <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 mb-6 flex-none">
+      <div className="bg-gray-50 border-b border-gray-200 px-3 py-2 mb-3 sm:mb-6 flex-none">
         <StepIndicator steps={STEPS} currentStep={safeStepIndex} />
       </div>
 
@@ -802,9 +802,9 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
           </h2>
         )}
 
-        <div className="mb-2 min-h-[520px]">
+        <div className="mb-2 min-h-[320px] sm:min-h-[520px]">
           {isLoading && currentStep === STEPS.length - 1 ? (
-            <div className="flex min-h-[520px] flex-col items-center justify-center space-y-4">
+            <div className="flex min-h-[320px] sm:min-h-[520px] flex-col items-center justify-center space-y-4">
               <div className="h-16 w-16 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
               <div className="space-y-2 text-center">
                 <p className="text-lg font-semibold text-gray-900">Computing your solar savings...</p>
@@ -824,12 +824,12 @@ export function CalculatorWizard({ onResults }: CalculatorWizardProps) {
 
       {/* Navigation Buttons */}
       <div className="bg-white border-t border-gray-200 p-3 flex-none">
-        <div className="flex gap-3">
+        <div className="flex gap-2 sm:gap-3">
           <Button
             variant="outline"
             onClick={handlePrev}
             disabled={currentStep === 0 || isLoading}
-            className="px-5 py-2.5 text-sm h-11 bg-gray-100 border-2 border-gray-300 text-gray-700 hover:bg-gray-200 font-medium disabled:opacity-50"
+            className="px-3 sm:px-5 py-2.5 text-sm h-11 bg-gray-100 border-2 border-gray-300 text-gray-700 hover:bg-gray-200 font-medium disabled:opacity-50"
             style={{ backgroundColor: currentStep === 0 ? '#e5e7eb' : '#f3f4f6' }}
           >
             ← Previous

@@ -76,7 +76,7 @@ export function ContactStep({ value, onChange }: ContactStepProps) {
           value={formValue.name}
           onChange={(e) => handleChange("name", e.target.value)}
           placeholder="John Doe"
-          className="mt-2 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+          className="mt-2 w-full rounded-md border border-border px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-primary"
         />
         {errors.name && (
           <p className="mt-1 text-xs text-red-600">{errors.name}</p>
@@ -90,7 +90,7 @@ export function ContactStep({ value, onChange }: ContactStepProps) {
           value={formValue.email}
           onChange={(e) => handleChange("email", e.target.value)}
           placeholder="john@example.com"
-          className="mt-2 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+          className="mt-2 w-full rounded-md border border-border px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-primary"
         />
         {errors.email && (
           <p className="mt-1 text-xs text-red-600">{errors.email}</p>
@@ -104,7 +104,7 @@ export function ContactStep({ value, onChange }: ContactStepProps) {
           value={formValue.phone}
           onChange={(e) => handlePhoneChange(e.target.value)}
           placeholder="(303) 555-1234"
-          className="mt-2 w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+          className="mt-2 w-full rounded-md border border-border px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-primary"
         />
         {errors.phone && (
           <p className="mt-1 text-xs text-red-600">{errors.phone}</p>

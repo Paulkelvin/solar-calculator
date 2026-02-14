@@ -245,7 +245,7 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
               value={billAmount}
               onChange={(e) => handleBillChange(e.target.value)}
               placeholder="120"
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none transition"
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-base focus:border-amber-500 focus:ring-2 focus:ring-amber-200 outline-none transition"
             />
             {errors.usage && <p className="mt-1 text-xs text-red-600">{errors.usage}</p>}
           </section>
@@ -257,7 +257,7 @@ export function UsageStep({ value, onChange }: UsageStepProps) {
               value={monthlyKwh}
               onChange={(e) => handleKwhChange(e.target.value)}
               placeholder="900"
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 text-base focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 outline-none transition"
             />
             {errors.usage && <p className="mt-1 text-xs text-red-600">{errors.usage}</p>}
           </section>
