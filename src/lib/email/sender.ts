@@ -21,26 +21,34 @@ function getResendClient() {
  * Format email sender with proper validation
  * Resend requires: "email@example.com" or "Name <email@example.com>"
  */
-function formatFromEmail(email: string, name?: string): string {
-  // Remove any surrounding quotes or whitespace
-  const cleanEmail = email.trim().replace(/^["']|["']$/g, '');
-  
-  if (!name || name.trim() === '') {
-    return cleanEmail;
+function formatFromEmail(emailRaw: string, nameRaw?: string): string {
+  // Strip surrounding quotes/whitespace
+  const trimmed = emailRaw.trim().replace(/^[\"']|[\"']$/g, '');
+
+  // If env already contains `Name <email@...>`, extract the email
+  const bracketMatch = trimmed.match(/<([^>]+)>/);
+  const extractedEmail = bracketMatch?.[1]?.trim();
+
+  // Derive name: prefer explicit nameRaw, otherwise take text before the bracket
+  const derivedName = nameRaw
+    ?.trim()
+    .replace(/^[\"']|[\"']$/g, '')
+    .replace(/[<>]/g, '') || (bracketMatch ? trimmed.split('<')[0].trim().replace(/^[\"']|[\"']$/g, '') : '');
+
+  const email = extractedEmail || trimmed;
+
+  // Basic email validation; if invalid, return raw to let Resend surface a clear error
+  const isValidEmail = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+  if (!isValidEmail) {
+    return email;
   }
-  
-  // Clean name: remove quotes, trim, sanitize special chars
-  const cleanName = name
-    .trim()
-    .replace(/^["']|["']$/g, '') // Remove surrounding quotes
-    .replace(/[<>]/g, ''); // Remove angle brackets
-  
-  // If name is empty after cleaning, just use email
+
+  const cleanName = derivedName?.trim();
   if (!cleanName) {
-    return cleanEmail;
+    return email;
   }
-  
-  return `${cleanName} <${cleanEmail}>`;
+
+  return `${cleanName} <${email}>`;
 }
 
 /**
@@ -59,7 +67,7 @@ export async function sendWelcomeEmail(installerEmail: string) {
     const result = await resend.emails.send({
       from: formatFromEmail(FROM_EMAIL, FROM_NAME),
       to: installerEmail,
-      replyTo: REPLY_TO_EMAIL,
+      replyTo: formatFromEmail(REPLY_TO_EMAIL, FROM_NAME),
       subject: template.subject,
       html: template.html,
       text: template.text,
@@ -108,7 +116,7 @@ export async function sendCustomerSubmissionEmail(
     const emailPayload = {
       from: formatFromEmail(FROM_EMAIL, FROM_NAME),
       to: customerEmail,
-      replyTo: REPLY_TO_EMAIL,
+      replyTo: formatFromEmail(REPLY_TO_EMAIL, FROM_NAME),
       subject: template.subject,
       html: template.html,
       text: template.text,
@@ -205,7 +213,7 @@ export async function sendTestEmail(toEmail: string) {
     }
 
     const result = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: formatFromEmail(FROM_EMAIL, FROM_NAME),
       to: toEmail,
       subject: 'Test Email from Solar Calculator',
       html: '<h1>Test Email</h1><p>This is a test email from Solar Calculator.</p>',
