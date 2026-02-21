@@ -37,6 +37,39 @@ export async function GET(request: NextRequest) {
         );
       }
       
+      // Check if this is an OAuth user and create installer profile if needed
+      if (data?.user) {
+        const userId = data.user.id;
+        const email = data.user.email || '';
+        const fullName = data.user.user_metadata?.full_name || data.user.user_metadata?.name || '';
+        const provider = data.user.app_metadata?.provider || 'email';
+        
+        // Check if installer profile exists
+        const { data: existingProfile } = await supabase
+          .from('installers')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
+        
+        // Create installer profile if it doesn't exist (for OAuth users)
+        if (!existingProfile && provider !== 'email') {
+          const { error: profileError } = await supabase
+            .from('installers')
+            .insert({
+              id: userId,
+              email: email,
+              company_name: fullName + ' Solar Co.' || 'My Solar Co.', // Default company name
+              contact_name: fullName || email.split('@')[0],
+              state: 'CA', // Default state
+            });
+          
+          if (profileError) {
+            console.error('Failed to create installer profile for OAuth user:', profileError);
+            // Don't block the login, profile can be completed later
+          }
+        }
+      }
+      
       // Successfully confirmed — trigger welcome email in background (non-blocking)
       if (data?.user?.email) {
         const origin = new URL(request.url).origin;

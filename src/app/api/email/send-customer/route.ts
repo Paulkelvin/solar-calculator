@@ -24,8 +24,8 @@ export async function POST(request: NextRequest) {
       const emailResult = await sendCustomerSubmissionEmail(
         to,
         leadData.contact.name,
-        0, // systemSize placeholder
-        0, // annualProduction placeholder
+        leadData.system_size_kw || 0,
+        leadData.estimated_annual_production || 0,
         `${leadData.address.street}, ${leadData.address.city}, ${leadData.address.state} ${leadData.address.zip}`
       );
 

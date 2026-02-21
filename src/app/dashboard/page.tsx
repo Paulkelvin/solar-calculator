@@ -3,9 +3,11 @@
 import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from "@/contexts/auth";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import { fetchLeads } from "@/lib/supabase/queries";
 import { LeadsList } from "@/components/dashboard/LeadsList";
 import { ActivityLog } from "@/components/dashboard/ActivityLog";
+import { UserProfile } from "@/components/dashboard/UserProfile";
 import {
   Users,
   Activity,
@@ -20,6 +22,7 @@ import { toast } from 'sonner';
 
 export default function DashboardPage() {
   const { session } = useAuth();
+  const userProfile = useUserProfile();
   const searchParams = useSearchParams();
   const [stats, setStats] = useState({ total: 0, converted: 0, contacted: 0, avgScore: 0 });
 
@@ -50,26 +53,33 @@ export default function DashboardPage() {
   }, [session.user?.id]);
 
   const conversionRate = stats.total > 0 ? ((stats.converted / stats.total) * 100).toFixed(1) : "0";
+  
+  const greeting = userProfile?.name 
+    ? `Welcome back, ${userProfile.name.split(' ')[0]}!` 
+    : 'Leads Dashboard';
 
   return (
     <div className="space-y-8">
       {/* Welcome Header */}
-      <header className="flex items-start justify-between">
-        <div>
+      <header className="flex items-start justify-between gap-4">
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <Sparkles className="h-6 w-6 text-amber-500" />
-            Leads Dashboard
+            {greeting}
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             Overview of your leads, conversions, and recent activity.
           </p>
         </div>
-        <Link
-          href="/dashboard/analytics"
-          className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-lg transition-all duration-200"
-        >
-          View Analytics <ArrowUpRight className="h-3.5 w-3.5" />
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/analytics"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-3 py-2 rounded-lg transition-all duration-200"
+          >
+            View Analytics <ArrowUpRight className="h-3.5 w-3.5" />
+          </Link>
+          <UserProfile />
+        </div>
       </header>
 
       {/* Stats Strip */}

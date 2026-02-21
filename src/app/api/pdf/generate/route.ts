@@ -11,11 +11,41 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const { leadData, calculations } = body;
+    const { leadData, calculations, lead } = body;
 
+    // Handle new format from dashboard (lead object)
+    if (lead) {
+      // Transform lead into expected format
+      const transformedLeadData = {
+        address: lead.address,
+        usage: lead.usage,
+        roof: lead.roof,
+        preferences: lead.preferences,
+        contact: lead.contact,
+      };
+
+      const transformedCalculations = {
+        systemSizeKw: lead.system_size_kw || 0,
+        estimatedAnnualProduction: lead.estimated_annual_production || 0,
+        financing: [], // Could be expanded later
+      };
+
+      const html = generateProposalHTML(transformedLeadData, transformedCalculations);
+      const pdfBuffer = await generatePDFBlob(html);
+
+      return new NextResponse(pdfBuffer, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': 'attachment; filename="solar-proposal.pdf"',
+          'Content-Length': pdfBuffer.length.toString(),
+        },
+      });
+    }
+
+    // Handle old format (leadData + calculations)
     if (!leadData || !calculations) {
       return NextResponse.json(
-        { error: 'leadData and calculations are required' },
+        { error: 'leadData and calculations (or lead) are required' },
         { status: 400 }
       );
     }

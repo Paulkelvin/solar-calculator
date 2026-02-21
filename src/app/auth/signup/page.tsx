@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { signUp } from '@/lib/supabase/auth';
 import { SignUpSchema } from '../../../../types/auth';
 import { Eye, EyeOff } from 'lucide-react';
@@ -12,6 +13,7 @@ import { toast } from 'sonner';
 export default function SignUpPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -44,7 +46,11 @@ export default function SignUpPage() {
       }
 
       // Sign up
-      const signUpResult = await signUp(formData.email, formData.password);
+      const signUpResult = await signUp(
+        formData.email, 
+        formData.password,
+        formData.name
+      );
 
       // Check if email confirmation is required
       // Supabase returns a user but confirmed_at is null when email confirmation is needed
@@ -101,12 +107,43 @@ export default function SignUpPage() {
             </div>
           </div>
         ) : (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <>
+          {/* Google Sign Up */}
+          <div className="space-y-3 mb-6">
+            <GoogleSignInButton mode="signup" />
+            
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500">Or sign up with email</span>
+              </div>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
             <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
               {error}
             </div>
           )}
+
+          <div>
+            <label htmlFor="name" className="block text-sm font-medium">
+              Your Name
+            </label>
+            <input
+              id="name"
+              name="name"
+              type="text"
+              value={formData.name}
+              onChange={handleChange}
+              className="mt-1 w-full rounded-md border border-border px-3 py-2.5 text-base focus:border-primary focus:outline-none"
+              placeholder="John Doe"
+              disabled={isLoading}
+            />
+          </div>
 
           <div>
             <label htmlFor="email" className="block text-sm font-medium">
@@ -184,6 +221,7 @@ export default function SignUpPage() {
             {isLoading ? 'Creating account...' : 'Sign Up'}
           </Button>
         </form>
+        </>
         )}
 
         <p className="mt-6 border-t border-border pt-6 text-center text-sm">

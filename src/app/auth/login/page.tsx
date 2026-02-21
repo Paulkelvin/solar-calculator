@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { signIn } from '@/lib/supabase/auth';
 import { LoginSchema } from '../../../../types/auth';
 import { Eye, EyeOff } from 'lucide-react';
@@ -89,7 +90,21 @@ function LoginForm() {
           Sign in to manage your solar leads
         </p>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Google Sign In */}
+        <div className="space-y-3">
+          <GoogleSignInButton mode="signin" />
+          
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-gray-500">Or continue with email</span>
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4 mt-6">
           {justRegistered && (
             <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-700">
               Account created successfully! Please sign in.

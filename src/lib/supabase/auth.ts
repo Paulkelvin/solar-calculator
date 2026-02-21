@@ -5,17 +5,24 @@ export const supabase = getSupabaseClient();
 
 /**
  * Sign up with email/password
- * Installer profile is created automatically by database trigger
+ * Creates auth user and installer profile
  */
-export async function signUp(email: string, password: string) {
+export async function signUp(
+  email: string, 
+  password: string,
+  name: string
+) {
   try {
-    // Create auth user - installer profile created automatically by trigger
+    // Create auth user
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email,
       password,
       options: {
         emailRedirectTo: `${appUrl}/auth/callback`,
+        data: {
+          name,
+        },
       },
     });
 
@@ -31,6 +38,22 @@ export async function signUp(email: string, password: string) {
       throw authError;
     }
     if (!authData.user) throw new Error('Failed to create user');
+
+    // Create installer profile
+    const { error: profileError } = await supabase
+      .from('installers')
+      .insert({
+        id: authData.user.id,
+        email: email,
+        company_name: name + ' Solar Co.', // Default company name
+        contact_name: name,
+        state: 'CA', // Default state, can be made configurable later
+      });
+
+    if (profileError) {
+      console.error('Failed to create installer profile:', profileError);
+      // Don't throw here - the user account is created, profile can be completed later
+    }
 
     return { success: true, user: authData.user };
   } catch (error) {
@@ -74,6 +97,31 @@ export async function signOut() {
     return { success: true };
   } catch (error) {
     console.error('Sign out error:', error);
+    throw error;
+  }
+}
+
+/**
+ * Sign in with Google OAuth
+ */
+export async function signInWithGoogle() {
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${appUrl}/auth/callback`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        },
+      },
+    });
+
+    if (error) throw error;
+    return { success: true, data };
+  } catch (error) {
+    console.error('Google sign in error:', error);
     throw error;
   }
 }

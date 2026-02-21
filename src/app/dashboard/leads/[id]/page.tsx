@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth";
 import { supabase } from "@/lib/supabase/client";
 import { useRouter, useParams } from "next/navigation";
+import { toast } from "sonner";
 import type { Lead } from "@/../types/leads";
 
 export default function LeadDetailPage() {
@@ -14,10 +15,8 @@ export default function LeadDetailPage() {
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
-  const [emailSuccess, setEmailSuccess] = useState(false);
 
   useEffect(() => {
     const fetchLead = async () => {
@@ -32,26 +31,30 @@ export default function LeadDetailPage() {
 
         if (err) throw err;
         if (!data) {
-          setError("Lead not found");
+          toast.error("Lead not found");
+          router.push("/dashboard");
           return;
         }
 
         setLead(data as unknown as Lead);
       } catch (err) {
         console.error("Failed to fetch lead:", err);
-        setError(err instanceof Error ? err.message : "Failed to load lead");
+        toast.error(err instanceof Error ? err.message : "Failed to load lead");
+        router.push("/dashboard");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchLead();
-  }, [session.user?.id, leadId]);
+  }, [session.user?.id, leadId, router]);
 
   const handleGeneratePDF = async () => {
     if (!lead) return;
 
     setIsGeneratingPDF(true);
+    const loadingToast = toast.loading("Generating PDF...");
+    
     try {
       const response = await fetch("/api/pdf/generate", {
         method: "POST",
@@ -70,9 +73,11 @@ export default function LeadDetailPage() {
       a.click();
       document.body.removeChild(a);
       window.URL.revokeObjectURL(url);
+      
+      toast.success("PDF generated successfully!", { id: loadingToast });
     } catch (err) {
       console.error("Failed to generate PDF:", err);
-      setError(err instanceof Error ? err.message : "Failed to generate PDF");
+      toast.error(err instanceof Error ? err.message : "Failed to generate PDF", { id: loadingToast });
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -82,6 +87,8 @@ export default function LeadDetailPage() {
     if (!lead) return;
 
     setIsSendingEmail(true);
+    const loadingToast = toast.loading("Sending email to customer...");
+    
     try {
       const response = await fetch("/api/email/send-customer", {
         method: "POST",
@@ -95,12 +102,10 @@ export default function LeadDetailPage() {
 
       if (!response.ok) throw new Error("Failed to send email");
 
-      setError(null);
-      setEmailSuccess(true);
-      setTimeout(() => setEmailSuccess(false), 5000);
+      toast.success(`Email sent successfully to ${lead.contact?.email}!`, { id: loadingToast });
     } catch (err) {
       console.error("Failed to send email:", err);
-      setError(err instanceof Error ? err.message : "Failed to send email");
+      toast.error(err instanceof Error ? err.message : "Failed to send email", { id: loadingToast });
     } finally {
       setIsSendingEmail(false);
     }
@@ -148,18 +153,8 @@ export default function LeadDetailPage() {
     );
   }
 
-  if (error || !lead) {
-    return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-        <p className="text-sm text-red-700">{error || "Lead not found"}</p>
-        <button
-          onClick={() => router.back()}
-          className="mt-2 text-sm text-red-600 hover:underline"
-        >
-          Go back
-        </button>
-      </div>
-    );
+  if (!lead) {
+    return null; // Will redirect from useEffect
   }
 
   return (
@@ -177,13 +172,6 @@ export default function LeadDetailPage() {
           <p className="text-4xl font-bold text-primary">{lead.lead_score ?? 0}/100</p>
         </div>
       </div>
-
-      {/* Success/Error Messages */}
-      {emailSuccess && (
-        <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-700">
-          ✓ Email sent to {lead.contact?.email || 'customer'}
-        </div>
-      )}
 
       {/* Action Buttons */}
       <div className="flex gap-2">

@@ -75,6 +75,8 @@ export interface Lead {
   roof: Roof;
   preferences: Preferences;
   contact: Contact;
+  system_size_kw?: number;
+  estimated_annual_production?: number;
   lead_score: number;
   status: 'new' | 'contacted' | 'converted' | 'lost';
   notes?: string;
