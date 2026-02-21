@@ -53,6 +53,15 @@ export default function HomePage() {
           <CalculatorWizard onResults={handleResults} />
         )}
       </div>
+
+      {/* Footer with Privacy Policy link */}
+      <footer className="flex-none border-t border-gray-200 bg-white/80 backdrop-blur-sm py-3 px-4">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-gray-500">
+          <span>© 2026 Solar ROI Calculator</span>
+          <Link href="/privacy" className="hover:text-amber-600 underline">Privacy Policy</Link>
+          <Link href="/terms" className="hover:text-amber-600 underline">Terms of Service</Link>
+        </div>
+      </footer>
     </main>
   );
 }
