@@ -84,7 +84,8 @@ This is an automated welcome message.`,
     <p><strong>The Solar ROI Calculator Team</strong></p>
 
     <div class="footer">
-      <p>This is an automated welcome message sent to ${installerEmail}</p>
+      <p>This is an automated welcome message sent to ${installerEmail}.</p>
+      <p>If you didn't request this, please reply and we'll investigate.</p>
       <p>&copy; ${new Date().getFullYear()} Solar ROI Calculator. All rights reserved.</p>
     </div>
   </div>
@@ -97,7 +98,7 @@ This is an automated welcome message.`,
    * Customer email after lead submission
    */
   customerSubmissionEmail: (customerName: string, systemSize: string, annualProduction: string, address: string) => ({
-    subject: `Your Solar Estimate for ${address}`,
+    subject: `Your solar estimate is ready`,
     text: `Hi ${customerName},
 
 Thank you for requesting a solar estimate. We've analyzed your property and prepared a customized solar system proposal.
@@ -117,10 +118,10 @@ View your full estimate: ${process.env.NEXT_PUBLIC_APP_URL || 'https://testinggr
 Our solar consultants will reach out to you within 1-2 business days to discuss your estimate and answer any questions.
 
 Best regards,
-Solar Installation Team
+Solar Estimate Team
 
 ---
-This is an automated confirmation email. If you have questions, please reply to this email.`,
+You received this email because you requested a solar estimate at ${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}. If this wasn't you, reply and we'll investigate.`,
     html: `
 <html>
 <head>
@@ -148,7 +149,7 @@ This is an automated confirmation email. If you have questions, please reply to 
   <div class="container">
     <div class="header">
       <h1>Your Solar Estimate</h1>
-      <p>Personalized Analysis for ${address}</p>
+      <p>Estimate for ${address}</p>
     </div>
 
     <div class="content">
@@ -189,13 +190,13 @@ This is an automated confirmation email. If you have questions, please reply to 
 
       <p>Our solar consultants will reach out to you within 1-2 business days to discuss your estimate and answer any questions.</p>
 
-      <p style="margin-top: 20px;">Best regards,<br><strong>Solar Installation Team</strong></p>
+      <p style="margin-top: 20px;">Best regards,<br><strong>Solar Estimate Team</strong></p>
     </div>
 
     <div class="footer">
-      <p>This is an automated confirmation email.</p>
-      <p>If you have questions, please reply to this email.</p>
-      <p>&copy; ${new Date().getFullYear()} Solar ROI Calculator. All rights reserved.</p>
+      <p>You received this email because you requested a solar estimate at ${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}.</p>
+      <p>If this wasn't you, please reply and we'll investigate.</p>
+      <p>&copy; ${new Date().getFullYear()} Solar Estimate Team. All rights reserved.</p>
     </div>
   </div>
 </body>

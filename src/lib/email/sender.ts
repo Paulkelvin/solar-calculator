@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 import { EmailTemplates } from './templates';
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@testingground.sbs';
-const FROM_NAME = process.env.EMAIL_FROM_NAME || 'Solar ROI Calculator';
+const FROM_NAME = process.env.EMAIL_FROM_NAME || 'Solar Estimate Team';
 const REPLY_TO_EMAIL = process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM || 'support@testingground.sbs';
 const INSTALLER_EMAIL = process.env.INSTALLER_EMAIL || 'installer@testingground.sbs';
 
