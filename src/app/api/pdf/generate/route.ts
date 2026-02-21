@@ -16,19 +16,36 @@ export async function POST(request: NextRequest) {
     // Handle new format from dashboard (lead object)
     if (lead) {
       // Transform lead into expected format
+      // Normalize usage for PDF generator expectations
+      const monthlyKwh = lead.usage?.monthlyKwh
+        ?? (lead.usage?.billAmount ? lead.usage.billAmount / 0.14 : undefined);
+      const annualKwh = monthlyKwh ? Math.round(monthlyKwh * 12) : 0;
+
       const transformedLeadData = {
         name: lead.contact?.name || 'Customer',
         email: lead.contact?.email || '',
         phone: lead.contact?.phone || '',
         address: lead.address,
-        usage: lead.usage,
-        roof: lead.roof,
-        preferences: lead.preferences,
+        usage: {
+          monthlyBill: lead.usage?.billAmount || undefined,
+          annualKwh,
+        },
+        roof: {
+          size: lead.roof?.squareFeet || 0,
+          sunExposure: lead.roof?.sunExposure || 'good',
+        },
+        preferences: {
+          battery: lead.preferences?.wantsBattery ?? false,
+          financing: lead.preferences?.financingType || 'cash',
+          timeline: lead.preferences?.timeline || '3-months',
+          notes: lead.preferences?.notes || '',
+        },
       };
 
-      const annualProduction = lead.estimated_annual_production || 0;
+      const annualProduction = lead.estimated_annual_production
+        || (lead.system_size_kw ? Math.round(lead.system_size_kw * 1300) : 0);
       const transformedCalculations = {
-        systemSizeKw: lead.system_size_kw || 0,
+        systemSizeKw: lead.system_size_kw || (annualProduction ? Math.round((annualProduction / 1300) * 100) / 100 : 0),
         estimatedAnnualProduction: annualProduction,
         estimatedMonthlyProduction: Math.round(annualProduction / 12),
         financing: [],
