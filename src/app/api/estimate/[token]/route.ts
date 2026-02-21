@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseClient } from '@/lib/supabase/client';
+import type { Lead } from '../../../../../types/leads';
 
 /**
  * GET /api/estimate/[token]
@@ -36,32 +37,35 @@ export async function GET(
       );
     }
 
+    // Type assertion for Supabase data (double assertion for safety)
+    const typedLead = lead as unknown as Lead;
+
     // Derive system size and production if missing (prevent showing 0s)
-    const monthlyKwh = lead.usage?.monthlyKwh
-      ?? (lead.usage?.billAmount ? lead.usage.billAmount / 0.14 : undefined);
+    const monthlyKwh = typedLead.usage?.monthlyKwh
+      ?? (typedLead.usage?.billAmount ? typedLead.usage.billAmount / 0.14 : undefined);
     
-    const annualProduction = lead.estimated_annual_production
-      || (lead.system_size_kw ? Math.round(lead.system_size_kw * 1300) : undefined)
+    const annualProduction = typedLead.estimated_annual_production
+      || (typedLead.system_size_kw ? Math.round(typedLead.system_size_kw * 1300) : undefined)
       || (monthlyKwh ? Math.round(monthlyKwh * 12) : 0);
     
-    const systemSizeKw = lead.system_size_kw
+    const systemSizeKw = typedLead.system_size_kw
       || (annualProduction ? Math.round((annualProduction / 1300) * 100) / 100 : 0);
 
     // Return lead data (no sensitive installer info)
     return NextResponse.json({
       lead: {
-        id: lead.id,
-        address: lead.address,
-        usage: lead.usage,
-        roof: lead.roof,
-        preferences: lead.preferences,
-        contact: lead.contact,
+        id: typedLead.id,
+        address: typedLead.address,
+        usage: typedLead.usage,
+        roof: typedLead.roof,
+        preferences: typedLead.preferences,
+        contact: typedLead.contact,
         system_size_kw: systemSizeKw,
         estimated_annual_production: annualProduction,
-        lead_score: lead.lead_score,
-        share_token: lead.share_token,
-        scheduled_appointment_at: lead.scheduled_appointment_at,
-        created_at: lead.created_at,
+        lead_score: typedLead.lead_score,
+        share_token: typedLead.share_token,
+        scheduled_appointment_at: typedLead.scheduled_appointment_at,
+        created_at: typedLead.created_at,
       },
     });
   } catch (error) {
