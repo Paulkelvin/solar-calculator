@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendCustomerSubmissionEmail } from '@/lib/email/sender';
 import { generateProposalHTML, generatePDFBlob } from '@/lib/pdf-generator';
+import { calculateFinancing } from '@/lib/calculations/solar';
 import type { Lead } from '../../../../../types/leads';
 
 export async function POST(request: NextRequest) {
@@ -66,11 +67,45 @@ export async function POST(request: NextRequest) {
         },
       };
 
+      // Calculate actual financing options using the calculation engine
+      const financingData = calculateFinancing(estimatedSystemSizeKw);
+      
+      // Convert financing data to array format for PDF
+      const financingOptions = [
+        {
+          type: 'cash' as const,
+          totalCost: financingData.totalSystemCost,
+          downPayment: financingData.cash.upfront,
+          monthlyPayment: 0,
+          totalInterest: 0,
+          payoffYears: financingData.cash.yearsToBreakEven,
+          roi: financingData.cash.roi25Years,
+        },
+        {
+          type: 'loan' as const,
+          totalCost: financingData.totalSystemCost,
+          downPayment: financingData.loan.downPayment,
+          monthlyPayment: financingData.loan.monthlyPayment,
+          totalInterest: financingData.loan.totalInterest,
+          payoffYears: financingData.loan.yearsToBreakEven,
+          roi: financingData.loan.roi25Years,
+        },
+        {
+          type: 'lease' as const,
+          totalCost: financingData.lease.totalCost,
+          downPayment: 0,
+          monthlyPayment: financingData.lease.monthlyPayment,
+          totalInterest: 0,
+          payoffYears: financingData.lease.yearsToBreakEven,
+          roi: financingData.lease.roi20Years,
+        },
+      ];
+
       const calculationsForPdf = {
         systemSizeKw: estimatedSystemSizeKw,
         estimatedAnnualProduction: estimatedAnnualProduction,
         estimatedMonthlyProduction: Math.round(estimatedAnnualProduction / 12),
-        financing: [],
+        financing: financingOptions,
         environmental: {
           annualCO2Offset: Math.round(estimatedAnnualProduction * 0.386),
           treesEquivalent: Math.round(estimatedAnnualProduction * 0.386 / 21),
