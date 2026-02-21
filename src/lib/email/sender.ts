@@ -110,6 +110,7 @@ export async function sendCustomerSubmissionEmail(
       content: Buffer;
     };
     shareToken?: string;
+    calendlyUrl?: string;
   }
 ) {
   try {
@@ -124,7 +125,8 @@ export async function sendCustomerSubmissionEmail(
       `${systemSize.toFixed(2)} kW`,
       `${Math.round(annualProduction).toLocaleString()} kWh`,
       address,
-      options?.shareToken
+      options?.shareToken,
+      options?.calendlyUrl
     );
 
     const emailPayload = {

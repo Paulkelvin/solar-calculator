@@ -94,6 +94,7 @@ export async function POST(request: NextRequest) {
             content: pdfBuffer,
           },
           shareToken: leadData.share_token,
+          calendlyUrl: process.env.NEXT_PUBLIC_CALENDLY_URL,
         }
       );
 

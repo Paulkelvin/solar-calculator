@@ -97,10 +97,12 @@ This is an automated welcome message.`,
   /**
    * Customer email after lead submission
    */
-  customerSubmissionEmail: (customerName: string, systemSize: string, annualProduction: string, address: string, shareToken?: string) => {
+  customerSubmissionEmail: (customerName: string, systemSize: string, annualProduction: string, address: string, shareToken?: string, calendlyUrl?: string) => {
     const estimateUrl = shareToken 
       ? `${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}/estimate/${shareToken}`
       : undefined;
+    
+    const bookingUrl = calendlyUrl || process.env.NEXT_PUBLIC_CALENDLY_URL || 'https://calendly.com/paulopackager';
 
     return {
     subject: `Your solar estimate is ready`,
@@ -114,10 +116,13 @@ YOUR RECOMMENDED SOLAR SYSTEM:
 - Property Address: ${address}
 
 ${estimateUrl ? `VIEW YOUR ESTIMATE ONLINE:\n${estimateUrl}\n\n` : ''}WHAT HAPPENS NEXT:
-1. A solar consultant will review your estimate and contact you within 1-2 business days
-2. Review your detailed proposal online (link above) or in the attached PDF
-3. Share the link with family to discuss your solar options together
-4. When ready, schedule a free site assessment with our team
+1. Review your detailed proposal online (link above) or in the attached PDF
+2. Share the link with family to discuss your solar options together
+3. Schedule a free consultation with our team
+4. A solar expert will answer your questions and finalize your proposal
+
+SCHEDULE YOUR FREE CONSULTATION:
+${bookingUrl}
 
 Questions? Simply reply to this email or call us at (555) 123-4567.
 
@@ -191,11 +196,18 @@ You received this email because you requested a solar estimate at ${process.env.
       <div class="section">
         <h2>What Happens Next</h2>
         <ol style="margin: 8px 0 0 20px; padding: 0;">
-          <li style="margin-bottom: 8px;">A solar consultant will review your estimate and contact you within 1-2 business days</li>
           <li style="margin-bottom: 8px;">Review your detailed proposal online (link above) or in the attached PDF</li>
           <li style="margin-bottom: 8px;">Share the link with family to discuss your solar options together</li>
-          <li style="margin-bottom: 8px;">When ready, schedule a free site assessment with our team</li>
+          <li style="margin-bottom: 8px;">Schedule a free consultation with our team (see button below)</li>
+          <li style="margin-bottom: 8px;">A solar expert will answer your questions and finalize your proposal</li>
         </ol>
+      </div>
+
+      <div style="text-align: center; margin: 32px 0; padding: 24px; background-color: #f0fdf4; border: 2px solid #10b981; border-radius: 8px;">
+        <h3 style="margin: 0 0 8px 0; color: #059669; font-size: 18px;">📅 Ready to Go Solar?</h3>
+        <p style="margin: 0 0 16px 0; color: #047857; font-size: 14px;">Schedule your free consultation now - it only takes 30 seconds</p>
+        <a href="${bookingUrl}" style="display: inline-block; background-color: #10b981; color: white; padding: 14px 32px; text-decoration: none; border-radius: 6px; font-weight: 600; font-size: 16px;">Schedule Free Consultation</a>
+        <p style="margin: 12px 0 0 0; color: #047857; font-size: 12px;">Choose a time that works best for you</p>
       </div>
 
       <p style="margin-top: 20px;">Questions? Simply reply to this email or call us at (555) 123-4567.</p>
