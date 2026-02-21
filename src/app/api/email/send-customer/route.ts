@@ -44,9 +44,14 @@ export async function POST(request: NextRequest) {
         name: leadData.contact?.name || 'Customer',
         email: leadData.contact?.email || '',
         phone: leadData.contact?.phone || '',
-        address: leadData.address,
+        address: {
+          street: leadData.address?.street || '',
+          city: leadData.address?.city || '',
+          state: leadData.address?.state || '',
+          zip: leadData.address?.zip || '',
+        },
         usage: {
-          monthlyBill: leadData.usage?.billAmount || undefined,
+          monthlyBill: leadData.usage?.billAmount || 0,
           annualKwh: monthlyKwh ? Math.round(monthlyKwh * 12) : 0,
         },
         roof: {
