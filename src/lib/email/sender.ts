@@ -18,6 +18,32 @@ function getResendClient() {
 }
 
 /**
+ * Format email sender with proper validation
+ * Resend requires: "email@example.com" or "Name <email@example.com>"
+ */
+function formatFromEmail(email: string, name?: string): string {
+  // Remove any surrounding quotes or whitespace
+  const cleanEmail = email.trim().replace(/^["']|["']$/g, '');
+  
+  if (!name || name.trim() === '') {
+    return cleanEmail;
+  }
+  
+  // Clean name: remove quotes, trim, sanitize special chars
+  const cleanName = name
+    .trim()
+    .replace(/^["']|["']$/g, '') // Remove surrounding quotes
+    .replace(/[<>]/g, ''); // Remove angle brackets
+  
+  // If name is empty after cleaning, just use email
+  if (!cleanName) {
+    return cleanEmail;
+  }
+  
+  return `${cleanName} <${cleanEmail}>`;
+}
+
+/**
  * Send welcome email to new admin/installer after email confirmation
  */
 export async function sendWelcomeEmail(installerEmail: string) {
@@ -31,7 +57,7 @@ export async function sendWelcomeEmail(installerEmail: string) {
     const template = EmailTemplates.welcomeEmail(installerEmail);
 
     const result = await resend.emails.send({
-      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      from: formatFromEmail(FROM_EMAIL, FROM_NAME),
       to: installerEmail,
       replyTo: REPLY_TO_EMAIL,
       subject: template.subject,
@@ -80,7 +106,7 @@ export async function sendCustomerSubmissionEmail(
     );
 
     const emailPayload = {
-      from: `${FROM_NAME} <${FROM_EMAIL}>`,
+      from: formatFromEmail(FROM_EMAIL, FROM_NAME),
       to: customerEmail,
       replyTo: REPLY_TO_EMAIL,
       subject: template.subject,
@@ -91,8 +117,10 @@ export async function sendCustomerSubmissionEmail(
       },
     };
     
-    console.log('[sendCustomerSubmissionEmail] Sending with payload:', {
-      from: emailPayload.from,
+    console.log('[sendCustomerSubmissionEmail] Email configuration:', {
+      rawFromEmail: FROM_EMAIL,
+      rawFromName: FROM_NAME,
+      formattedFrom: emailPayload.from,
       to: emailPayload.to,
       replyTo: emailPayload.replyTo,
       subject: emailPayload.subject,
@@ -147,7 +175,7 @@ export async function sendInstallerLeadEmail(
     );
 
     const result = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: formatFromEmail(FROM_EMAIL, FROM_NAME),
       to: INSTALLER_EMAIL,
       subject: template.subject,
       html: template.html,
