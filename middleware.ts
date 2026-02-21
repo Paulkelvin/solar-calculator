@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
 
   // Pattern 1: sb-<ref>-auth-token (Supabase v2 cookie)
   if (projectRef) {
-    authCookie = request.cookies.get(sb- + projectRef + -auth-token)?.value;
+    authCookie = request.cookies.get(`sb-${projectRef}-auth-token`)?.value;
   }
 
   // Pattern 2: Legacy sb-access-token
