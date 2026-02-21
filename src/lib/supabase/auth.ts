@@ -106,14 +106,20 @@ export async function signOut() {
  */
 export async function signInWithGoogle() {
   try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Use window.location.origin so the redirect always points to the current domain
+    // (works correctly in both local dev and production without needing NEXT_PUBLIC_APP_URL)
+    const appUrl =
+      typeof window !== 'undefined'
+        ? window.location.origin
+        : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
         redirectTo: `${appUrl}/auth/callback`,
         queryParams: {
           access_type: 'offline',
-          prompt: 'consent',
+          prompt: 'select_account',
         },
       },
     });

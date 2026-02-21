@@ -83,54 +83,72 @@ function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-6">
-      <div className="w-full max-w-md rounded-lg border border-border bg-white p-6 sm:p-8 shadow-sm">
-        <h1 className="mb-2 text-xl sm:text-2xl font-bold">Solar Installer Login</h1>
-        <p className="mb-6 text-sm text-muted-foreground">
-          Sign in to manage your solar leads
-        </p>
-
-        {/* Google Sign In */}
-        <div className="space-y-3">
-          <GoogleSignInButton mode="signin" />
-          
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">Or continue with email</span>
-            </div>
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-amber-50/30 to-orange-50/40 px-4 py-8">
+      <div className="w-full max-w-md">
+        {/* Brand header */}
+        <div className="mb-6 text-center">
+          <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-amber-400 to-orange-500 shadow-lg mb-3">
+            <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <circle cx="12" cy="12" r="5" fill="currentColor" stroke="none" />
+              <line x1="12" y1="1" x2="12" y2="3" strokeLinecap="round" />
+              <line x1="12" y1="21" x2="12" y2="23" strokeLinecap="round" />
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" strokeLinecap="round" />
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" strokeLinecap="round" />
+              <line x1="1" y1="12" x2="3" y2="12" strokeLinecap="round" />
+              <line x1="21" y1="12" x2="23" y2="12" strokeLinecap="round" />
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" strokeLinecap="round" />
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" strokeLinecap="round" />
+            </svg>
           </div>
+          <h1 className="text-xl font-bold text-gray-900">Solar ROI Calculator</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Installer Portal</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 mt-6">
+        {/* Card */}
+        <div className="rounded-2xl border border-gray-200 bg-white p-7 shadow-xl shadow-gray-100/80">
+          <h2 className="text-lg font-semibold text-gray-900">Welcome back</h2>
+          <p className="mt-1 mb-6 text-sm text-gray-500">
+            Sign in to manage your solar leads
+          </p>
+
+          {/* Google Sign In — primary CTA */}
+          <div className="space-y-4">
+            <GoogleSignInButton mode="signin" />
+
+            <div className="relative flex items-center gap-3">
+              <div className="h-px flex-1 bg-gray-200" />
+              <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">or</span>
+              <div className="h-px flex-1 bg-gray-200" />
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4 mt-1">
           {justRegistered && (
-            <div className="rounded-md bg-amber-50 p-3 text-sm text-amber-700">
+            <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-sm text-amber-800">
               Account created successfully! Please sign in.
             </div>
           )}
 
           {confirmationError === 'confirmation_failed' && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
               Email confirmation failed. The link may have expired — please try signing up again.
             </div>
           )}
 
           {confirmationError === 'verification_failed' && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
               Email verification failed. Please try again or contact support.
             </div>
           )}
 
           {error && (
-            <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+            <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-sm text-red-700">
               {error}
             </div>
           )}
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
               Email
             </label>
             <input
@@ -138,23 +156,23 @@ function LoginForm() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 w-full rounded-md border border-border px-3 py-2.5 text-base focus:border-primary focus:outline-none"
+              className="mt-1.5 w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 transition"
               placeholder="you@company.com"
               disabled={isLoading}
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
               Password
             </label>
-            <div className="relative mt-1">
+            <div className="relative mt-1.5">
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-md border border-border px-3 py-2.5 pr-10 text-base focus:border-primary focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-400/20 transition"
                 placeholder="••••••••"
                 disabled={isLoading}
               />
@@ -169,25 +187,25 @@ function LoginForm() {
             </div>
           </div>
 
+          <div className="flex justify-end">
+            <Link href="/auth/reset-password" className="text-xs text-amber-600 hover:text-amber-700 hover:underline font-medium">
+              Forgot password?
+            </Link>
+          </div>
+
           <Button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-primary py-2 text-white hover:bg-primary disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-medium py-2.5 rounded-lg shadow-sm transition-all duration-150"
           >
-            {isLoading ? 'Signing in...' : 'Sign In'}
+            {isLoading ? 'Signing in...' : 'Sign In with Email'}
           </Button>
         </form>
 
-        <div className="mt-6 space-y-2 border-t border-border pt-6 text-center text-sm">
-          <p>
-            Don't have an account?{' '}
-            <Link href="/auth/signup" className="font-medium text-primary hover:underline">
-              Sign up
-            </Link>
-          </p>
-          <p>
-            <Link href="/auth/reset-password" className="text-primary hover:underline">
-              Forgot password?
+          <p className="mt-5 text-center text-sm text-gray-500">
+            Don&apos;t have an account?{' '}
+            <Link href="/auth/signup" className="font-medium text-amber-600 hover:text-amber-700 hover:underline">
+              Create one
             </Link>
           </p>
         </div>
