@@ -1,8 +1,10 @@
 import { Resend } from 'resend';
 import { EmailTemplates } from './templates';
 
-const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@solar-calculator.example.com';
-const INSTALLER_EMAIL = process.env.INSTALLER_EMAIL || 'installer@solar-calculator.example.com';
+const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@testingground.sbs';
+const FROM_NAME = process.env.EMAIL_FROM_NAME || 'Solar ROI Calculator';
+const REPLY_TO_EMAIL = process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM || 'support@testingground.sbs';
+const INSTALLER_EMAIL = process.env.INSTALLER_EMAIL || 'installer@testingground.sbs';
 
 /**
  * Get Resend client (instantiated at runtime)
@@ -29,11 +31,15 @@ export async function sendWelcomeEmail(installerEmail: string) {
     const template = EmailTemplates.welcomeEmail(installerEmail);
 
     const result = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: installerEmail,
+      reply_to: REPLY_TO_EMAIL,
       subject: template.subject,
       html: template.html,
       text: template.text,
+      headers: {
+        'X-Entity-Ref-ID': `welcome-${Date.now()}`,
+      },
     });
 
     if (result.error) {
@@ -74,11 +80,15 @@ export async function sendCustomerSubmissionEmail(
     );
 
     const result = await resend.emails.send({
-      from: FROM_EMAIL,
+      from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: customerEmail,
+      reply_to: REPLY_TO_EMAIL,
       subject: template.subject,
       html: template.html,
       text: template.text,
+      headers: {
+        'X-Entity-Ref-ID': `customer-${Date.now()}`,
+      },
     });
 
     if (result.error) {

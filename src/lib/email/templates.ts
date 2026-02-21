@@ -8,7 +8,7 @@ export const EmailTemplates = {
    * Welcome email for new admin/installer signup
    */
   welcomeEmail: (installerEmail: string) => ({
-    subject: '🎉 Welcome to Solar ROI Calculator',
+    subject: 'Welcome to Solar ROI Calculator - Account Activated',
     text: `Welcome to Solar ROI Calculator!
 
 Your admin account has been successfully activated. You can now access your dashboard to manage solar leads and proposals.
@@ -97,93 +97,105 @@ This is an automated welcome message.`,
    * Customer email after lead submission
    */
   customerSubmissionEmail: (customerName: string, systemSize: string, annualProduction: string, address: string) => ({
-    subject: '☀️ Your Solar Estimate is Ready!',
+    subject: `Your Solar Estimate for ${address}`,
     text: `Hi ${customerName},
 
-Thank you for using our Solar ROI Calculator! We've analyzed your property and generated a personalized solar estimate.
+Thank you for requesting a solar estimate. We've analyzed your property and prepared a customized solar system proposal.
 
-📊 Your Solar System:
-- Estimated System Size: ${systemSize} kW
-- Expected Annual Production: ${annualProduction} kWh/year
-- Property: ${address}
+SYSTEM DETAILS:
+- System Size: ${systemSize}
+- Estimated Annual Production: ${annualProduction}
+- Property Address: ${address}
 
-💡 Next Steps:
-1. Review your detailed estimate (attached PDF)
-2. Compare financing options (Cash, Loan, Lease, PPA)
-3. Schedule a consultation with our team
+NEXT STEPS:
+1. Review your complete estimate and financing options
+2. Compare different payment scenarios (Cash, Loan, Lease, PPA)  
+3. Schedule a consultation with our solar team
 
-Our solar experts will contact you shortly to discuss your project and answer any questions.
+View your full estimate: ${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}
 
-Questions? Reply to this email or call us directly.
+Our solar consultants will reach out to you within 1-2 business days to discuss your estimate and answer any questions.
 
 Best regards,
 Solar Installation Team
 
 ---
-This is an automated message. Please do not reply with sensitive information.`,
+This is an automated confirmation email. If you have questions, please reply to this email.`,
     html: `
 <html>
 <head>
   <meta charset="UTF-8">
   <style>
-    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; line-height: 1.6; color: #333; background-color: #ffffff; margin: 0; padding: 0; }
     .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: linear-gradient(135deg, #d97706 0%, #d97706 100%); color: white; padding: 30px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
-    .header h1 { margin: 0; font-size: 28px; }
-    .section { background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #d97706; }
-    .section h2 { color: #d97706; margin-top: 0; }
-    .metric { display: inline-block; width: 48%; margin: 10px 1%; padding: 15px; background: white; border-radius: 4px; text-align: center; }
-    .metric-label { font-size: 12px; color: #6b7280; text-transform: uppercase; }
-    .metric-value { font-size: 24px; font-weight: bold; color: #d97706; margin-top: 5px; }
-    .cta-button { display: inline-block; background: #d97706; color: white; padding: 12px 30px; text-decoration: none; border-radius: 4px; margin: 10px 0; }
-    .footer { background: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #6b7280; border-radius: 4px; margin-top: 30px; }
+    .header { background-color: #f97316; color: white; padding: 24px 20px; text-align: center; }
+    .header h1 { margin: 0; font-size: 24px; font-weight: 600; }
+    .header p { margin: 8px 0 0 0; font-size: 14px; opacity: 0.95; }
+    .content { padding: 30px 20px; background-color: #ffffff; }
+    .section { margin-bottom: 24px; }
+    .section h2 { color: #1f2937; margin: 0 0 12px 0; font-size: 16px; font-weight: 600; }
+    .info-table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    .info-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
+    .info-table td:first-child { font-weight: 600; color: #6b7280; width: 40%; }
+    .info-table td:last-child { color: #1f2937; }
+    .cta-button { display: inline-block; background-color: #f97316; color: white; padding: 12px 28px; text-decoration: none; border-radius: 6px; margin: 16px 0; font-weight: 500; }
+    .cta-button:hover { background-color: #ea580c; }
+    .footer { padding: 20px; text-align: center; font-size: 12px; color: #6b7280; background-color: #f9fafb; border-top: 1px solid #e5e7eb; }
+    .footer p { margin: 4px 0; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>☀️ Your Solar Estimate is Ready!</h1>
-      <p>Personalized analysis for your property</p>
+      <h1>Your Solar Estimate</h1>
+      <p>Personalized Analysis for ${address}</p>
     </div>
 
-    <p>Hi ${customerName},</p>
+    <div class="content">
+      <p>Hi ${customerName},</p>
 
-    <p>Thank you for using our Solar ROI Calculator! We've analyzed your property and generated a personalized solar estimate based on your location, roof specifications, and energy usage.</p>
+      <p>Thank you for requesting a solar estimate. We've analyzed your property details and prepared a customized solar system proposal.</p>
 
-    <div class="section">
-      <h2>📊 Your Solar System</h2>
-      <div class="metric">
-        <div class="metric-label">System Size</div>
-        <div class="metric-value">${systemSize} kW</div>
+      <div class="section">
+        <h2>System Details</h2>
+        <table class="info-table">
+          <tr>
+            <td>System Size</td>
+            <td>${systemSize}</td>
+          </tr>
+          <tr>
+            <td>Estimated Annual Production</td>
+            <td>${annualProduction}</td>
+          </tr>
+          <tr>
+            <td>Property Address</td>
+            <td>${address}</td>
+          </tr>
+        </table>
       </div>
-      <div class="metric">
-        <div class="metric-label">Annual Production</div>
-        <div class="metric-value">${annualProduction} kWh</div>
+
+      <div class="section">
+        <h2>Next Steps</h2>
+        <ol style="margin: 8px 0 0 20px; padding: 0;">
+          <li style="margin-bottom: 8px;">Review your complete estimate and financing options</li>
+          <li style="margin-bottom: 8px;">Compare different payment scenarios (Cash, Loan, Lease, PPA)</li>
+          <li style="margin-bottom: 8px;">Schedule a consultation with our solar team</li>
+        </ol>
       </div>
-      <div style="clear: both;"></div>
-      <p><strong>Property:</strong> ${address}</p>
+
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}" class="cta-button">View Full Estimate</a>
+      </div>
+
+      <p>Our solar consultants will reach out to you within 1-2 business days to discuss your estimate and answer any questions.</p>
+
+      <p style="margin-top: 20px;">Best regards,<br><strong>Solar Installation Team</strong></p>
     </div>
-
-    <div class="section">
-      <h2>💡 Next Steps</h2>
-      <ol>
-        <li><strong>Review Your Estimate</strong> - Download and review the detailed PDF report</li>
-        <li><strong>Compare Financing Options</strong> - Explore Cash, Loan, Lease, and PPA scenarios</li>
-        <li><strong>Schedule a Consultation</strong> - Our team will contact you to discuss your project</li>
-      </ol>
-    </div>
-
-    <p style="text-align: center;">
-      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}" class="cta-button">View Full Estimate</a>
-    </p>
-
-    <p>Our solar experts will review your estimate and contact you shortly to discuss financing options and answer any questions you may have.</p>
-
-    <p><strong>Questions?</strong> Reply to this email or contact us directly.</p>
 
     <div class="footer">
-      <p>This is an automated message from our Solar ROI Calculator. For inquiries, please contact our solar team.</p>
-      <p>&copy; 2026 Solar Installation Team. All rights reserved.</p>
+      <p>This is an automated confirmation email.</p>
+      <p>If you have questions, please reply to this email.</p>
+      <p>&copy; ${new Date().getFullYear()} Solar ROI Calculator. All rights reserved.</p>
     </div>
   </div>
 </body>
