@@ -200,7 +200,36 @@ export async function getInstallerProfile(userId: string) {
       .eq('id', userId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      // If no profile exists (e.g., implicit OAuth flow), create one
+      if (error.code === 'PGRST116') {
+        console.log('No installer profile found, creating default profile...');
+        const { data: userData } = await supabase.auth.getUser();
+        const user = userData?.user;
+        
+        if (user) {
+          const email = user.email || '';
+          const fullName = user.user_metadata?.full_name || user.user_metadata?.name || email.split('@')[0] || 'Installer';
+          
+          const { data: newProfile, error: insertError } = await supabase
+            .from('installers')
+            .insert({
+              id: userId,
+              email: email,
+              company_name: fullName + ' Solar Co.',
+              contact_name: fullName,
+              state: 'CA',
+            })
+            .select()
+            .single();
+            
+          if (!insertError && newProfile) {
+            return newProfile;
+          }
+        }
+      }
+      throw error;
+    }
     return data;
   } catch (error) {
     console.error('Get installer profile error:', error);

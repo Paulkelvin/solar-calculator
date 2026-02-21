@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/auth";
 import { QuickCalculator } from "@/components/utility/QuickCalculator";
 import { Toaster } from "@/components/providers/Toaster";
 import { AuthCookieBridge } from "@/components/auth/AuthCookieBridge";
+import { MobileWarning } from "@/components/utility/MobileWarning";
 
 /**
  * Client-side layout wrapper
@@ -29,6 +30,7 @@ export function ClientLayout({ children }: { children: ReactNode }) {
         <QuickCalculator isOpen={calcOpen} onToggle={setCalcOpen} />
       </div>
       <Toaster />
+      <MobileWarning />
     </AuthProvider>
   );
 }
