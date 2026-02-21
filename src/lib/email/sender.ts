@@ -33,7 +33,7 @@ export async function sendWelcomeEmail(installerEmail: string) {
     const result = await resend.emails.send({
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: installerEmail,
-      reply_to: REPLY_TO_EMAIL,
+      replyTo: REPLY_TO_EMAIL,
       subject: template.subject,
       html: template.html,
       text: template.text,
@@ -82,7 +82,7 @@ export async function sendCustomerSubmissionEmail(
     const result = await resend.emails.send({
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: customerEmail,
-      reply_to: REPLY_TO_EMAIL,
+      replyTo: REPLY_TO_EMAIL,
       subject: template.subject,
       html: template.html,
       text: template.text,
