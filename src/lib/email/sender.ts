@@ -253,3 +253,53 @@ export async function sendTestEmail(toEmail: string) {
     return { success: false, error };
   }
 }
+
+/**
+ * Send installer notification when customer schedules an appointment
+ */
+export async function sendInstallerAppointmentEmail(options: {
+  installerEmail: string;
+  leadData: {
+    customerName: string;
+    customerEmail: string;
+    appointmentTime: string;
+    estimateUrl: string;
+    dashboardUrl: string;
+    leadId: string;
+  };
+}) {
+  try {
+    const resend = getResendClient();
+    if (!resend) {
+      console.warn('RESEND_API_KEY not configured - skipping installer notification');
+      return { success: false, reason: 'API key not configured' };
+    }
+
+    const template = EmailTemplates.installerAppointmentEmail(options.leadData);
+
+    // Use installer email from env if provided, otherwise use the one passed in
+    const recipientEmail = INSTALLER_EMAIL || options.installerEmail;
+
+    const result = await resend.emails.send({
+      from: formatFromEmail(FROM_EMAIL, FROM_NAME),
+      to: recipientEmail,
+      replyTo: options.leadData.customerEmail, // Reply goes to customer
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+      headers: {
+        'X-Entity-Ref-ID': `lead-${options.leadData.leadId}`,
+      },
+    });
+
+    if (result.error) {
+      console.error('Installer appointment email send error:', result.error);
+      return { success: false, error: result.error };
+    }
+
+    return { success: true, messageId: result.data?.id };
+  } catch (error) {
+    console.error('Installer appointment email send error:', error);
+    return { success: false, error };
+  }
+}

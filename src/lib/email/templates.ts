@@ -333,4 +333,141 @@ Solar ROI Calculator Admin Team`,
 </html>
     `,
   }),
+
+  /**
+   * Installer notification when customer schedules an appointment
+   */
+  installerAppointmentEmail: (options: {
+    customerName: string;
+    customerEmail: string;
+    appointmentTime: string;
+    estimateUrl: string;
+    dashboardUrl: string;
+    leadId: string;
+  }) => {
+    const { customerName, customerEmail, appointmentTime, estimateUrl, dashboardUrl, leadId } = options;
+    
+    const formattedTime = new Date(appointmentTime).toLocaleString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      timeZoneName: 'short',
+    });
+
+    return {
+      subject: `New Appointment Scheduled: ${customerName}`,
+      text: `New Solar Consultation Scheduled
+
+A customer has scheduled an appointment through your solar estimate link.
+
+APPOINTMENT DETAILS:
+Customer: ${customerName}
+Email: ${customerEmail}
+Scheduled Time: ${formattedTime}
+
+Lead ID: ${leadId}
+
+NEXT STEPS:
+1. Review the customer's estimate: ${estimateUrl}
+2. Prepare for the consultation
+3. The appointment has been added to your calendar
+
+View full lead details in your dashboard:
+${dashboardUrl}
+
+This appointment has automatically updated the lead status to "contacted".
+
+---
+Solar Estimate Team
+${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}`,
+      html: `
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f9fafb; }
+    .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; }
+    .header { background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; padding: 40px 20px; text-align: center; }
+    .header h1 { margin: 0 0 10px 0; font-size: 28px; }
+    .header p { margin: 0; opacity: 0.9; }
+    .alert-box { background: #fef3c7; border-left: 4px solid #f59e0b; padding: 20px; margin: 20px; border-radius: 4px; }
+    .alert-box h2 { margin: 0 0 15px 0; color: #d97706; font-size: 20px; }
+    .info-grid { display: table; width: 100%; margin: 20px 0; }
+    .info-row { display: table-row; }
+    .info-label { display: table-cell; padding: 12px 20px; font-weight: bold; color: #6b7280; width: 40%; border-bottom: 1px solid #f3f4f6; }
+    .info-value { display: table-cell; padding: 12px 20px; color: #111827; border-bottom: 1px solid #f3f4f6; }
+    .section { padding: 0 20px 20px 20px; }
+    .section h3 { color: #111827; margin: 30px 0 15px 0; font-size: 18px; }
+    .next-steps { background: #f0fdf4; border: 2px solid #10b981; border-radius: 8px; padding: 20px; margin: 20px; }
+    .next-steps h3 { margin-top: 0; color: #059669; }
+    .next-steps ol { margin: 10px 0; padding-left: 20px; }
+    .next-steps li { padding: 8px 0; color: #047857; }
+    .cta-button { display: inline-block; background: #059669; color: white; padding: 14px 28px; text-decoration: none; border-radius: 6px; margin: 10px 10px 10px 0; font-weight: 600; }
+    .cta-button:hover { background: #047857; }
+    .cta-button.secondary { background: #6b7280; }
+    .cta-button.secondary:hover { background: #4b5563; }
+    .footer { background: #f9fafb; padding: 20px; text-align: center; font-size: 13px; color: #6b7280; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📅 New Appointment Scheduled</h1>
+      <p>A customer is ready to meet with you</p>
+    </div>
+
+    <div class="alert-box">
+      <h2>⏰ ${formattedTime}</h2>
+      <p><strong>${customerName}</strong> has scheduled a solar consultation.</p>
+    </div>
+
+    <div class="section">
+      <h3>Customer Details</h3>
+      <div class="info-grid">
+        <div class="info-row">
+          <div class="info-label">Name:</div>
+          <div class="info-value"><strong>${customerName}</strong></div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Email:</div>
+          <div class="info-value">${customerEmail}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Lead ID:</div>
+          <div class="info-value">${leadId}</div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">Status:</div>
+          <div class="info-value"><span style="color: #059669; font-weight: bold;">Contacted</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="next-steps">
+      <h3>✅ Next Steps</h3>
+      <ol>
+        <li><strong>Review the estimate</strong> to understand the customer's solar needs</li>
+        <li><strong>Prepare your consultation</strong> with system details and financing options</li>
+        <li><strong>Your calendar invitation</strong> has been sent separately</li>
+      </ol>
+    </div>
+
+    <div class="section" style="text-align: center;">
+      <a href="${estimateUrl}" class="cta-button">View Customer Estimate</a>
+      <a href="${dashboardUrl}" class="cta-button secondary">Open Dashboard</a>
+    </div>
+
+    <div class="footer">
+      <p>This appointment has automatically updated the lead status to "contacted".</p>
+      <p>&copy; ${new Date().getFullYear()} Solar Estimate Team. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+      `,
+    };
+  },
 };

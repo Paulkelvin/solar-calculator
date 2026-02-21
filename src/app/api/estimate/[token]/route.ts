@@ -36,6 +36,17 @@ export async function GET(
       );
     }
 
+    // Derive system size and production if missing (prevent showing 0s)
+    const monthlyKwh = lead.usage?.monthlyKwh
+      ?? (lead.usage?.billAmount ? lead.usage.billAmount / 0.14 : undefined);
+    
+    const annualProduction = lead.estimated_annual_production
+      || (lead.system_size_kw ? Math.round(lead.system_size_kw * 1300) : undefined)
+      || (monthlyKwh ? Math.round(monthlyKwh * 12) : 0);
+    
+    const systemSizeKw = lead.system_size_kw
+      || (annualProduction ? Math.round((annualProduction / 1300) * 100) / 100 : 0);
+
     // Return lead data (no sensitive installer info)
     return NextResponse.json({
       lead: {
@@ -45,8 +56,8 @@ export async function GET(
         roof: lead.roof,
         preferences: lead.preferences,
         contact: lead.contact,
-        system_size_kw: lead.system_size_kw,
-        estimated_annual_production: lead.estimated_annual_production,
+        system_size_kw: systemSizeKw,
+        estimated_annual_production: annualProduction,
         lead_score: lead.lead_score,
         share_token: lead.share_token,
         scheduled_appointment_at: lead.scheduled_appointment_at,
