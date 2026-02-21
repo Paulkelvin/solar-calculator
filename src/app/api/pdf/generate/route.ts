@@ -43,7 +43,8 @@ export async function POST(request: NextRequest) {
       };
 
       const annualProduction = lead.estimated_annual_production
-        || (lead.system_size_kw ? Math.round(lead.system_size_kw * 1300) : 0);
+        || (lead.system_size_kw ? Math.round(lead.system_size_kw * 1300) : undefined)
+        || annualKwh;
       const transformedCalculations = {
         systemSizeKw: lead.system_size_kw || (annualProduction ? Math.round((annualProduction / 1300) * 100) / 100 : 0),
         estimatedAnnualProduction: annualProduction,
