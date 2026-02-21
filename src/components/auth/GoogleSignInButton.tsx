@@ -15,22 +15,30 @@ export function GoogleSignInButton({ mode = "signin" }: { mode?: "signin" | "sig
     );
 
     try {
-      await signInWithGoogle();
-      // Redirect happens automatically — keep loading state
+      console.log('🔐 Starting Google OAuth flow...');
+      const result = await signInWithGoogle();
+      console.log('🔐 Google OAuth initiated:', result);
       
-      // If we're still here after 1 second, something might be wrong
+      // Redirect happens automatically — keep loading state
+      // Note: If redirect is successful, this code won't execute as page navigates away
+      
+      // If we're still here after 2 seconds, check what went wrong
       setTimeout(() => {
-        if (window.location.hash === '#' || window.location.pathname === '/auth/login') {
-          toast.error("Google sign-in interrupted", {
-            description: "Please disable any ad blockers or privacy extensions for this site and try again.",
+        const stillOnLoginPage = window.location.pathname === '/auth/login' || window.location.pathname === '/auth/signup';
+        console.log('🔐 OAuth status check - Still on auth page:', stillOnLoginPage);
+        
+        if (stillOnLoginPage) {
+          toast.error("Google sign-in didn't redirect", {
+            description: "Please check browser console for details. Contact support if this persists.",
             id: "google-auth",
-            duration: 6000,
+            duration: 8000,
           });
           setIsLoading(false);
         }
-      }, 1000);
+      }, 2000);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Failed to sign in with Google";
+      console.error('❌ Google OAuth error:', error);
       
       // Check if it's a network/blocked error
       if (errorMsg.includes('blocked') || errorMsg.includes('network')) {

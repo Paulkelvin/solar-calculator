@@ -113,10 +113,13 @@ export async function signInWithGoogle() {
         ? window.location.origin
         : (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000');
 
+    const redirectUrl = `${appUrl}/auth/callback`;
+    console.log('🔐 Google OAuth - Redirect URL:', redirectUrl);
+
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${appUrl}/auth/callback`,
+        redirectTo: redirectUrl,
         queryParams: {
           access_type: 'offline',
           prompt: 'select_account',
@@ -124,10 +127,19 @@ export async function signInWithGoogle() {
       },
     });
 
+    console.log('🔐 Google OAuth response:', { data, error });
+
     if (error) throw error;
+
+    // The redirect should happen automatically via data.url
+    if (data?.url) {
+      console.log('🔐 Redirecting to:', data.url);
+      window.location.href = data.url;
+    }
+
     return { success: true, data };
   } catch (error) {
-    console.error('Google sign in error:', error);
+    console.error('❌ Google sign in error:', error);
     throw error;
   }
 }
