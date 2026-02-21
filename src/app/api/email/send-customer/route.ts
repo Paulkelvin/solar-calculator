@@ -26,12 +26,23 @@ export async function POST(request: NextRequest) {
       console.log('[send-customer] FROM_EMAIL env:', process.env.EMAIL_FROM);
       console.log('[send-customer] FROM_NAME env:', process.env.EMAIL_FROM_NAME);
       console.log('[send-customer] RESEND_API_KEY present:', !!process.env.RESEND_API_KEY);
+
+      // Derive system size and production if missing on the lead record
+      const monthlyKwh = leadData.usage?.monthlyKwh
+        ?? (leadData.usage?.billAmount ? leadData.usage.billAmount / 0.14 : undefined); // rough $0.14/kWh
+
+      const estimatedAnnualProduction = leadData.estimated_annual_production
+        ?? (monthlyKwh ? Math.round(monthlyKwh * 12) : 0);
+
+      // Assume 1 kW ~ 1,300 kWh/year production as a conservative default
+      const estimatedSystemSizeKw = leadData.system_size_kw
+        ?? (estimatedAnnualProduction ? Math.round((estimatedAnnualProduction / 1300) * 100) / 100 : 0);
       
       const emailResult = await sendCustomerSubmissionEmail(
         to,
         leadData.contact.name,
-        leadData.system_size_kw || 0,
-        leadData.estimated_annual_production || 0,
+        estimatedSystemSizeKw,
+        estimatedAnnualProduction,
         `${leadData.address.street}, ${leadData.address.city}, ${leadData.address.state} ${leadData.address.zip}`
       );
 
@@ -45,6 +56,8 @@ export async function POST(request: NextRequest) {
               hasApiKey: !!process.env.RESEND_API_KEY,
               fromEmail: process.env.EMAIL_FROM,
               fromName: process.env.EMAIL_FROM_NAME,
+              derivedSystemSizeKw: estimatedSystemSizeKw,
+              derivedAnnualProduction: estimatedAnnualProduction,
             }
           },
           { status: 500 }

@@ -122,6 +122,8 @@ export async function sendCustomerSubmissionEmail(
       text: template.text,
       headers: {
         'X-Entity-Ref-ID': `customer-${Date.now()}`,
+        'List-Unsubscribe': `<mailto:${REPLY_TO_EMAIL}>`,
+        'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       },
     };
     
