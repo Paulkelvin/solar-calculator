@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { signIn } from '@/lib/supabase/auth';
+import { useAuth } from '@/contexts/auth';
 import { LoginSchema } from '../../../../types/auth';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,6 +14,7 @@ import { toast } from 'sonner';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { session } = useAuth();
   const justRegistered = searchParams.get('registered') === 'true';
   const confirmationError = searchParams.get('error');
   const rawRedirect = searchParams.get('redirect') || '/dashboard';
@@ -23,6 +25,13 @@ function LoginForm() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Redirect if already authenticated (handles OAuth hash fragment redirects)
+  useEffect(() => {
+    if (session.isAuthenticated) {
+      router.replace(redirectTo);
+    }
+  }, [session.isAuthenticated, router, redirectTo]);
 
   // Show toast messages based on URL params
   useEffect(() => {

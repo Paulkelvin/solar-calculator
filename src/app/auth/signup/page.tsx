@@ -1,17 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { signUp } from '@/lib/supabase/auth';
+import { useAuth } from '@/contexts/auth';
 import { SignUpSchema } from '../../../../types/auth';
 import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function SignUpPage() {
   const router = useRouter();
+  const { session } = useAuth();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -23,6 +25,13 @@ export default function SignUpPage() {
   const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Redirect if already authenticated (handles OAuth hash fragment redirects)
+  useEffect(() => {
+    if (session.isAuthenticated) {
+      router.replace('/dashboard');
+    }
+  }, [session.isAuthenticated, router]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
