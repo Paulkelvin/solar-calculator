@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
       
       // Successfully confirmed — trigger welcome email in background (non-blocking)
       if (data?.user?.email) {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.url;
+        const origin = new URL(request.url).origin;
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin;
         fetch(`${appUrl}/api/email/send-welcome`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -47,8 +48,10 @@ export async function GET(request: NextRequest) {
         }).catch(err => console.error('Welcome email trigger failed:', err));
       }
       
-      // Redirect to dashboard
-      return NextResponse.redirect(new URL(next, request.url));
+      // Redirect to dashboard with success indicator
+      const dashboardUrl = new URL(next, request.url);
+      dashboardUrl.searchParams.set('confirmed', 'true');
+      return NextResponse.redirect(dashboardUrl);
     } catch (err) {
       console.error('Auth callback error:', err);
       return NextResponse.redirect(new URL('/auth/login?error=callback_error', request.url));
@@ -71,7 +74,8 @@ export async function GET(request: NextRequest) {
       
       // Successfully confirmed — trigger welcome email in background (non-blocking)
       if (data?.user?.email) {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.url;
+        const origin = new URL(request.url).origin;
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || origin;
         fetch(`${appUrl}/api/email/send-welcome`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -79,7 +83,9 @@ export async function GET(request: NextRequest) {
         }).catch(err => console.error('Welcome email trigger failed:', err));
       }
       
-      return NextResponse.redirect(new URL(next, request.url));
+      const dashboardUrl = new URL(next, request.url);
+      dashboardUrl.searchParams.set('confirmed', 'true');
+      return NextResponse.redirect(dashboardUrl);
     } catch (err) {
       console.error('Auth callback OTP error:', err);
       return NextResponse.redirect(new URL('/auth/login?error=callback_error', request.url));

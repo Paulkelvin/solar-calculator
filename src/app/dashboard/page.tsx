@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from "@/contexts/auth";
 import { fetchLeads } from "@/lib/supabase/queries";
 import { LeadsList } from "@/components/dashboard/LeadsList";
@@ -15,10 +16,24 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { Lead } from "../../../types/leads";
+import { toast } from 'sonner';
 
 export default function DashboardPage() {
   const { session } = useAuth();
+  const searchParams = useSearchParams();
   const [stats, setStats] = useState({ total: 0, converted: 0, contacted: 0, avgScore: 0 });
+
+  // Show success toast when redirected after email confirmation
+  useEffect(() => {
+    if (searchParams.get('confirmed') === 'true') {
+      toast.success('✅ Email confirmed!', {
+        description: 'Your account is now active. Welcome email sent to your inbox.',
+        duration: 6000,
+      });
+      // Clean up URL
+      window.history.replaceState({}, '', '/dashboard');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const loadStats = async () => {

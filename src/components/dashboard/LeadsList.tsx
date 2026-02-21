@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/auth";
 import { fetchLeads } from "@/lib/supabase/queries";
 import { supabase } from "@/lib/supabase/client";
 import type { Lead } from "../../../types/leads";
-import { ChevronLeft, ChevronRight, Trash2, X, Lock, AlertTriangle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2, X, Lock, AlertTriangle, Inbox, Calculator, Share2 } from "lucide-react";
 
 type SortBy = "date" | "score";
 type StatusFilter = "all" | "new" | "contacted" | "converted" | "lost";
@@ -232,10 +232,39 @@ export function LeadsList() {
 
   if (leads.length === 0) {
     return (
-      <div className="rounded-lg border border-border bg-secondary/30 p-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          No leads yet. Submit calculations to populate this list.
-        </p>
+      <div className="rounded-xl border-2 border-dashed border-gray-200 bg-gradient-to-b from-gray-50/50 to-white p-12 text-center">
+        <div className="mx-auto max-w-md space-y-4">
+          <div className="flex justify-center">
+            <div className="rounded-full bg-amber-100 p-4">
+              <Inbox className="h-8 w-8 text-amber-600" />
+            </div>
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900">
+            No leads yet
+          </h3>
+          <p className="text-sm text-gray-600">
+            Share your solar calculator with customers to start generating leads. Each calculation will appear here with full details.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-amber-700 transition-colors"
+            >
+              <Calculator className="h-4 w-4" />
+              Try Calculator
+            </Link>
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.origin);
+                alert('Calculator link copied to clipboard!');
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+            >
+              <Share2 className="h-4 w-4" />
+              Share Link
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

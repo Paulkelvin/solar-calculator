@@ -210,6 +210,28 @@ export function ResultsView({ results, leadData }: ResultsViewProps) {
 
   return (
     <div className="space-y-8">
+      {/* Disclaimer Banner */}
+      <div className="rounded-lg border-l-4 border-amber-500 bg-gradient-to-r from-amber-50 to-orange-50 p-4 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0">
+            <svg className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-sm font-semibold text-amber-900">
+              📊 Preliminary Estimates
+            </h3>
+            <p className="mt-1 text-sm text-amber-800">
+              These calculations are based on your inputs and current solar data. A certified installer will contact you within 24 hours with a detailed, customized proposal including accurate pricing, equipment options, and financing details.
+            </p>
+            <p className="mt-2 text-xs text-amber-700">
+              💡 <strong>Next steps:</strong> Check your email for a confirmation and our team will follow up shortly.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* System Overview with Real Solar Data */}
       <div className="rounded-lg border border-border bg-background p-6">
         <h2 className="text-2xl font-semibold">Your Solar ROI Estimate</h2>

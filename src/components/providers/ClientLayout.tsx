@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import { AuthProvider } from "@/contexts/auth";
 import { QuickCalculator } from "@/components/utility/QuickCalculator";
+import { Toaster } from "@/components/providers/Toaster";
 
 /**
  * Client-side layout wrapper
@@ -25,6 +26,7 @@ export function ClientLayout({ children }: { children: ReactNode }) {
         {children}
         <QuickCalculator isOpen={calcOpen} onToggle={setCalcOpen} />
       </div>
+      <Toaster />
     </AuthProvider>
   );
 }

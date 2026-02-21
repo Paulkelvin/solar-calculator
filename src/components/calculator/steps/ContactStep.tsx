@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { contactSchema, type Contact } from "../../../../types/leads";
+import { ValidationSummary } from "@/components/ui/validation-summary";
 
 interface ContactStepProps {
   value?: Contact;
@@ -69,6 +70,9 @@ export function ContactStep({ value, onChange }: ContactStepProps) {
 
   return (
     <div className="space-y-4">
+      {/* Validation Summary */}
+      <ValidationSummary errors={errors} />
+      
       <div>
         <label className="block text-sm font-medium">Enter your full name</label>
         <input

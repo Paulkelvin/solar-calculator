@@ -1,12 +1,13 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { signIn } from '@/lib/supabase/auth';
 import { LoginSchema } from '../../../../types/auth';
 import { Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 
 function LoginForm() {
   const router = useRouter();
@@ -22,6 +23,25 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // Show toast messages based on URL params
+  useEffect(() => {
+    if (justRegistered) {
+      toast.success('Account created!', {
+        description: 'Please sign in to continue.',
+      });
+    }
+    if (confirmationError === 'confirmation_failed') {
+      toast.error('Email confirmation failed', {
+        description: 'The link may have expired. Please try signing up again.',
+      });
+    }
+    if (confirmationError === 'verification_failed') {
+      toast.error('Email verification failed', {
+        description: 'Please try again or contact support.',
+      });
+    }
+  }, [justRegistered, confirmationError]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -31,7 +51,9 @@ function LoginForm() {
       // Validate inputs
       const result = LoginSchema.safeParse({ email, password });
       if (!result.success) {
-        setError(result.error.errors[0].message);
+        const errorMsg = result.error.errors[0].message;
+        setError(errorMsg);
+        toast.error('Validation error', { description: errorMsg });
         setIsLoading(false);
         return;
       }
@@ -40,15 +62,21 @@ function LoginForm() {
       const { session } = await signIn(email, password);
 
       // Use replace instead of push to avoid back-button loop
-      // Small delay to allow auth state to propagate
       if (session) {
+        toast.success('Welcome back!', {
+          description: 'Redirecting to dashboard...',
+        });
         setTimeout(() => router.replace(redirectTo), 100);
       } else {
-        setError('Login succeeded but no session was returned. You may need to confirm your email first.');
+        const msg = 'Login succeeded but no session was returned. You may need to confirm your email first.';
+        setError(msg);
+        toast.error('Sign in issue', { description: msg });
         setIsLoading(false);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      const errorMsg = err instanceof Error ? err.message : 'Login failed';
+      setError(errorMsg);
+      toast.error('Sign in failed', { description: errorMsg });
       setIsLoading(false);
     }
   };

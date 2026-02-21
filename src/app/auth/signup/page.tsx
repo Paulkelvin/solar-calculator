@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { signUp } from '@/lib/supabase/auth';
 import { SignUpSchema } from '../../../../types/auth';
 import { Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -35,7 +36,9 @@ export default function SignUpPage() {
       // Validate inputs
       const validation = SignUpSchema.safeParse(formData);
       if (!validation.success) {
-        setError(validation.error.errors[0].message);
+        const errorMsg = validation.error.errors[0].message;
+        setError(errorMsg);
+        toast.error(errorMsg);
         setIsLoading(false);
         return;
       }
@@ -47,13 +50,20 @@ export default function SignUpPage() {
       // Supabase returns a user but confirmed_at is null when email confirmation is needed
       if (signUpResult.user && !(signUpResult.user as any).confirmed_at) {
         setEmailConfirmationSent(true);
+        toast.success('Account created! Check your email to confirm.', {
+          description: 'We\'ve sent a confirmation link to ' + formData.email,
+          duration: 7000,
+        });
         return;
       }
 
       // Redirect to login
+      toast.success('Account created successfully!');
       router.push('/auth/login?registered=true');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign up failed');
+      const errorMsg = err instanceof Error ? err.message : 'Sign up failed';
+      setError(errorMsg);
+      toast.error('Sign up failed', { description: errorMsg });
     } finally {
       setIsLoading(false);
     }
@@ -68,15 +78,27 @@ export default function SignUpPage() {
         </p>
 
         {emailConfirmationSent ? (
-          <div className="space-y-4 rounded-md bg-amber-50 p-4">
-            <p className="text-sm font-medium text-amber-800">Account created!</p>
-            <p className="text-sm text-amber-700">
+          <div className="space-y-4 rounded-md bg-green-50 border-l-4 border-green-500 p-4">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">✅</span>
+              <p className="text-sm font-semibold text-green-800">Account created successfully!</p>
+            </div>
+            <p className="text-sm text-green-700">
               We&apos;ve sent a confirmation email to <strong>{formData.email}</strong>.
-              Please check your inbox (and spam folder) and click the confirmation link before signing in.
             </p>
-            <Link href="/auth/login" className="inline-block text-primary hover:underline text-sm font-medium">
-              Go to Login →
-            </Link>
+            <div className="space-y-2 bg-white/50 rounded p-3 text-sm text-green-700">
+              <p className="font-medium">📧 Next Steps:</p>
+              <ol className="list-decimal pl-5 space-y-1">
+                <li>Check your inbox (and spam folder)</li>
+                <li>Click the confirmation link</li>
+                <li>You&apos;ll be redirected to the dashboard</li>
+              </ol>
+            </div>
+            <div className="pt-2">
+              <Link href="/auth/login" className="inline-block text-primary hover:underline text-sm font-medium">
+                Already confirmed? Sign in →
+              </Link>
+            </div>
           </div>
         ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
