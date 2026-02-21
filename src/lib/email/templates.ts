@@ -185,7 +185,10 @@ You received this email because you requested a solar estimate at ${process.env.
       </div>
 
       <div style="text-align: center; margin: 24px 0;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}" class="cta-button">View Full Estimate</a>
+        <p style="margin: 0 0 8px 0; font-weight: 600; color: #1f2937;">View your estimate:</p>
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}" style="color: #f97316; word-break: break-all;">
+          ${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}
+        </a>
       </div>
 
       <p>Our solar consultants will reach out to you within 1-2 business days to discuss your estimate and answer any questions.</p>
