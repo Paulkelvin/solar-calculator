@@ -105,15 +105,15 @@ export async function GET(request: NextRequest) {
         const maxAge = 60 * 60 * 24 * 7; // 7 days
         
         // Set the main auth token cookie
+        // Match Supabase client cookie shape so middleware can read it
         response.cookies.set({
           name: `sb-${projectRef}-auth-token`,
           value: JSON.stringify({
-            access_token: data.session.access_token,
-            refresh_token: data.session.refresh_token,
-            expires_at: data.session.expires_at,
-            expires_in: data.session.expires_in,
-            token_type: 'bearer',
-            user: data.session.user,
+            currentSession: {
+              ...data.session,
+              token_type: 'bearer',
+            },
+            expiresAt: data.session.expires_at,
           }),
           maxAge,
           path: '/',

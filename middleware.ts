@@ -59,7 +59,8 @@ export async function middleware(request: NextRequest) {
   if (authCookie) {
     try {
       const parsed = JSON.parse(authCookie);
-      accessToken = parsed.access_token;
+      // Supabase browser cookie structure
+      accessToken = parsed?.access_token || parsed?.currentSession?.access_token;
     } catch {
       // Cookie might be a plain token string (legacy format)
       accessToken = authCookie;
