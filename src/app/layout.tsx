@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   description:
     "Calculate your solar savings, compare financing options, and get a personalized solar proposal in minutes.",
   keywords: ["solar", "ROI", "calculator", "solar panels", "solar savings", "solar estimate"],
+  verification: {
+    google: "fzPf8OKFUhQnolqH8_FjaXrqOuwUyNm8lHLKq1fByZ0",
+  },
 };
 
 export const viewport: Viewport = {
