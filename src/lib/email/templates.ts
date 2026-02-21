@@ -174,7 +174,7 @@ This is an automated message. Please do not reply with sensitive information.`,
     </div>
 
     <p style="text-align: center;">
-      <a href="https://solar-calculator.example.com" class="cta-button">View Full Estimate</a>
+      <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}" class="cta-button">View Full Estimate</a>
     </p>
 
     <p>Our solar experts will review your estimate and contact you shortly to discuss financing options and answer any questions you may have.</p>
