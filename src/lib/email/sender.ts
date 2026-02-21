@@ -103,7 +103,13 @@ export async function sendCustomerSubmissionEmail(
   customerName: string,
   systemSize: number,
   annualProduction: number,
-  address: string
+  address: string,
+  options?: {
+    pdfAttachment?: {
+      filename: string;
+      content: Buffer;
+    };
+  }
 ) {
   try {
     const resend = getResendClient();
@@ -131,6 +137,14 @@ export async function sendCustomerSubmissionEmail(
         'List-Unsubscribe': `<mailto:${REPLY_TO_EMAIL}>`,
         'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
       },
+      attachments: options?.pdfAttachment
+        ? [
+            {
+              filename: options.pdfAttachment.filename,
+              content: options.pdfAttachment.content,
+            },
+          ]
+        : undefined,
     };
     
     console.log('[sendCustomerSubmissionEmail] Email configuration:', {

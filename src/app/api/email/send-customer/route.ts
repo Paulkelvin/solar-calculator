@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendCustomerSubmissionEmail } from '@/lib/email/sender';
+import { generateProposalHTML, generatePDFBlob } from '@/lib/pdf-generator';
 import type { Lead } from '../../../../../types/leads';
 
 export async function POST(request: NextRequest) {
@@ -38,12 +39,56 @@ export async function POST(request: NextRequest) {
       const estimatedSystemSizeKw = leadData.system_size_kw
         ?? (estimatedAnnualProduction ? Math.round((estimatedAnnualProduction / 1300) * 100) / 100 : 0);
       
+      // Build PDF attachment (summary)
+      const leadForPdf = {
+        name: leadData.contact?.name || 'Customer',
+        email: leadData.contact?.email || '',
+        phone: leadData.contact?.phone || '',
+        address: leadData.address,
+        usage: {
+          monthlyBill: leadData.usage?.billAmount || undefined,
+          annualKwh: monthlyKwh ? Math.round(monthlyKwh * 12) : 0,
+        },
+        roof: {
+          size: leadData.roof?.squareFeet || 0,
+          sunExposure: leadData.roof?.sunExposure || 'good',
+        },
+        preferences: {
+          battery: leadData.preferences?.wantsBattery ?? false,
+          financing: leadData.preferences?.financingType || 'cash',
+          timeline: leadData.preferences?.timeline || '3-months',
+          notes: leadData.preferences?.notes || '',
+        },
+      };
+
+      const calculationsForPdf = {
+        systemSizeKw: estimatedSystemSizeKw,
+        estimatedAnnualProduction: estimatedAnnualProduction,
+        estimatedMonthlyProduction: Math.round(estimatedAnnualProduction / 12),
+        financing: [],
+        environmental: {
+          annualCO2Offset: Math.round(estimatedAnnualProduction * 0.386),
+          treesEquivalent: Math.round(estimatedAnnualProduction * 0.386 / 21),
+          gridIndependence: 80,
+        },
+        confidence: 'preliminary' as const,
+      };
+
+      const pdfHtml = generateProposalHTML(leadForPdf, calculationsForPdf as any);
+      const pdfBuffer = await generatePDFBlob(pdfHtml);
+
       const emailResult = await sendCustomerSubmissionEmail(
         to,
         leadData.contact.name,
         estimatedSystemSizeKw,
         estimatedAnnualProduction,
-        `${leadData.address.street}, ${leadData.address.city}, ${leadData.address.state} ${leadData.address.zip}`
+        `${leadData.address.street}, ${leadData.address.city}, ${leadData.address.state} ${leadData.address.zip}`,
+        {
+          pdfAttachment: {
+            filename: 'solar-estimate.pdf',
+            content: pdfBuffer,
+          },
+        }
       );
 
       if (!emailResult.success) {
