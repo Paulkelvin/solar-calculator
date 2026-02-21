@@ -26,15 +26,9 @@ Google OAuth allows users to sign in using their Google accounts, providing a co
 
 ---
 
-## Step 2: Enable Google+ API
+## Step 2: Configure OAuth Consent Screen
 
-1. In your Google Cloud project, go to **APIs & Services** → **Library**
-2. Search for **"Google+ API"**
-3. Click on it and click **"Enable"**
-
----
-
-## Step 3: Configure OAuth Consent Screen
+**Note:** You do NOT need to enable any APIs for basic OAuth sign-in. The Google+ API mentioned in older guides is deprecated and unnecessary.
 
 1. Go to **APIs & Services** → **OAuth consent screen**
 2. Select **External** user type
@@ -74,7 +68,7 @@ Google OAuth allows users to sign in using their Google accounts, providing a co
 
 ---
 
-## Step 4: Create OAuth Credentials
+## Step 3: Create OAuth Credentials
 
 1. Go to **APIs & Services** → **Credentials**
 2. Click **"Create Credentials"** → **"OAuth client ID"**
@@ -100,7 +94,7 @@ https://epooqasmhxxrpjhizhez.supabase.co/auth/v1/callback
 
 ---
 
-## Step 5: Configure Supabase
+## Step 4: Configure Supabase
 
 1. Go to your [Supabase Dashboard](https://supabase.com/dashboard)
 2. Select your project
@@ -137,7 +131,7 @@ https://epooqasmhxxrpjhizhez.supabase.co/auth/v1/callback
 
 ---
 
-## Step 6: Test the Integration
+## Step 5: Test the Integration
 
 ### Local Testing:
 1. Run your app locally: `npm run dev`
@@ -189,9 +183,9 @@ https://epooqasmhxxrpjhizhez.supabase.co/auth/v1/callback
 
 ### Error: "Access blocked: This app's request is invalid"
 **Solution:** 
-- Check that Google+ API is enabled
-- Verify OAuth consent screen is configured
+- Verify OAuth consent screen is configured with correct app name
 - Ensure authorized domains include `testingground.sbs` and `supabase.co`
+- Make sure you're editing the correct project in Google Cloud Console
 
 ### Users not being created in installers table
 **Solution:** 
@@ -284,12 +278,13 @@ No additional environment variables needed! Google OAuth is configured entirely 
 
 ## Summary Checklist
 
-- [ ] Create Google Cloud project
-- [ ] Enable Google+ API
-- [ ] Configure OAuth consent screen
+- [ ] Create Google Cloud project (or use existing "Integratesun" project)
+- [ ] Configure OAuth consent screen with "Solar ROI Calculator" as app name
+- [ ] Add authorized domains: `testingground.sbs` and `supabase.co`
 - [ ] Create OAuth credentials (Client ID & Secret)
-- [ ] Add authorized redirect URI in Google Cloud
-- [ ] Configure Google provider in Supabase
+- [ ] Add authorized redirect URI in Google Cloud: `https://epooqasmhxxrpjhizhez.supabase.co/auth/v1/callback`
+- [ ] Add authorized JavaScript origins: `https://testingground.sbs`, `http://localhost:3000`
+- [ ] Configure Google provider in Supabase with Client ID and Secret
 - [ ] Test locally
 - [ ] Deploy to production
 - [ ] Test in production

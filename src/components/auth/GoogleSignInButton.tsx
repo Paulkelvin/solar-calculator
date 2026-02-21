@@ -17,12 +17,34 @@ export function GoogleSignInButton({ mode = "signin" }: { mode?: "signin" | "sig
     try {
       await signInWithGoogle();
       // Redirect happens automatically — keep loading state
+      
+      // If we're still here after 1 second, something might be wrong
+      setTimeout(() => {
+        if (window.location.hash === '#' || window.location.pathname === '/auth/login') {
+          toast.error("Google sign-in interrupted", {
+            description: "Please disable any ad blockers or privacy extensions for this site and try again.",
+            id: "google-auth",
+            duration: 6000,
+          });
+          setIsLoading(false);
+        }
+      }, 1000);
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Failed to sign in with Google";
-      toast.error("Google authentication failed", {
-        description: errorMsg,
-        id: "google-auth",
-      });
+      
+      // Check if it's a network/blocked error
+      if (errorMsg.includes('blocked') || errorMsg.includes('network')) {
+        toast.error("Google sign-in blocked", {
+          description: "It looks like an ad blocker or privacy extension is preventing Google Login. Please disable it for this site.",
+          id: "google-auth",
+          duration: 6000,
+        });
+      } else {
+        toast.error("Google authentication failed", {
+          description: errorMsg,
+          id: "google-auth",
+        });
+      }
       setIsLoading(false);
     }
   };
