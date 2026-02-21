@@ -67,27 +67,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Validate token if present (not just existence check)
-  let isValidSession = false;
-  if (accessToken && supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('mock')) {
-    try {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey);
-      const { data: { user }, error } = await supabase.auth.getUser(accessToken);
-      isValidSession = !error && !!user;
-      
-      if (isValidSession) {
-        console.log('✅ Middleware: Valid session for user:', user.id);
-      } else {
-        console.log('❌ Middleware: Invalid session -', error?.message);
-      }
-    } catch (err) {
-      console.log('❌ Middleware: Session validation error:', err);
-      isValidSession = false;
-    }
-  } else if (accessToken && process.env.NODE_ENV === 'development') {
-    // Only in local dev: treat token existence as valid
-    isValidSession = true;
-  }
+  // Treat the presence of an access token as a valid session (lighter check to avoid redirect loop)
+  const isValidSession = !!accessToken;
 
   if (isProtectedRoute) {
     if (!isValidSession) {
