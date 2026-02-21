@@ -83,7 +83,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-amber-50/30 to-orange-50/40 px-4 py-8">
+    <div className="flex h-screen items-center justify-center bg-gradient-to-br from-slate-50 via-amber-50/30 to-orange-50/40 px-4 py-8 overflow-hidden">
       <div className="w-full max-w-md">
         {/* Brand header */}
         <div className="mb-6 text-center">
