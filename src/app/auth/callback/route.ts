@@ -29,14 +29,25 @@ export async function GET(request: NextRequest) {
   // Handle PKCE flow (code exchange)
   if (code) {
     try {
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
       if (error) {
         console.error('Code exchange error:', error.message);
         return NextResponse.redirect(
           new URL(`/auth/login?error=confirmation_failed&message=${encodeURIComponent(error.message)}`, request.url)
         );
       }
-      // Successfully confirmed — redirect to dashboard
+      
+      // Successfully confirmed — trigger welcome email in background (non-blocking)
+      if (data?.user?.email) {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.url;
+        fetch(`${appUrl}/api/email/send-welcome`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: data.user.email }),
+        }).catch(err => console.error('Welcome email trigger failed:', err));
+      }
+      
+      // Redirect to dashboard
       return NextResponse.redirect(new URL(next, request.url));
     } catch (err) {
       console.error('Auth callback error:', err);
@@ -47,7 +58,7 @@ export async function GET(request: NextRequest) {
   // Handle token hash flow (magic link / email confirmation with token_hash)
   if (token_hash && type) {
     try {
-      const { error } = await supabase.auth.verifyOtp({
+      const { data, error } = await supabase.auth.verifyOtp({
         type: type as 'email' | 'signup' | 'recovery',
         token_hash,
       });
@@ -57,6 +68,17 @@ export async function GET(request: NextRequest) {
           new URL(`/auth/login?error=verification_failed&message=${encodeURIComponent(error.message)}`, request.url)
         );
       }
+      
+      // Successfully confirmed — trigger welcome email in background (non-blocking)
+      if (data?.user?.email) {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || request.url;
+        fetch(`${appUrl}/api/email/send-welcome`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: data.user.email }),
+        }).catch(err => console.error('Welcome email trigger failed:', err));
+      }
+      
       return NextResponse.redirect(new URL(next, request.url));
     } catch (err) {
       console.error('Auth callback OTP error:', err);

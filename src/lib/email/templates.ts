@@ -5,6 +5,95 @@
 
 export const EmailTemplates = {
   /**
+   * Welcome email for new admin/installer signup
+   */
+  welcomeEmail: (installerEmail: string) => ({
+    subject: '🎉 Welcome to Solar ROI Calculator',
+    text: `Welcome to Solar ROI Calculator!
+
+Your admin account has been successfully activated. You can now access your dashboard to manage solar leads and proposals.
+
+📊 What you can do:
+- Track and manage solar leads
+- Access detailed customer proposals
+- View lead scores and engagement metrics
+- Manage your installer profile
+
+🚀 Get Started:
+Log into your dashboard: ${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}/dashboard
+
+Need help? Reply to this email and our support team will assist you.
+
+Best regards,
+Solar ROI Calculator Team
+
+---
+This is an automated welcome message.`,
+    html: `
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); color: white; padding: 40px 20px; text-align: center; border-radius: 8px; margin-bottom: 20px; }
+    .header h1 { margin: 0 0 10px 0; font-size: 32px; }
+    .section { background: #f9fafb; padding: 20px; border-radius: 8px; margin-bottom: 20px; border-left: 4px solid #d97706; }
+    .section h2 { color: #d97706; margin-top: 0; font-size: 20px; }
+    .feature-list { list-style: none; padding: 0; }
+    .feature-list li { padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+    .feature-list li:last-child { border-bottom: none; }
+    .feature-list li:before { content: "✓ "; color: #d97706; font-weight: bold; margin-right: 8px; }
+    .cta-button { display: inline-block; background: #d97706; color: white; padding: 14px 35px; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold; font-size: 16px; }
+    .cta-button:hover { background: #b45309; }
+    .footer { background: #f3f4f6; padding: 20px; text-align: center; font-size: 12px; color: #6b7280; border-radius: 4px; margin-top: 30px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎉 Welcome to Solar ROI Calculator!</h1>
+      <p style="margin: 0; font-size: 18px;">Your account is now active</p>
+    </div>
+
+    <p style="font-size: 16px;">Hi there,</p>
+
+    <p>Congratulations! Your admin account for Solar ROI Calculator has been successfully activated. You now have access to powerful tools for managing solar leads and proposals.</p>
+
+    <div class="section">
+      <h2>📊 What You Can Do</h2>
+      <ul class="feature-list">
+        <li><strong>Track Leads:</strong> View and manage all solar leads submitted through your calculator</li>
+        <li><strong>Access Proposals:</strong> Review detailed customer proposals with financing scenarios</li>
+        <li><strong>Lead Scoring:</strong> See lead quality scores and engagement metrics</li>
+        <li><strong>Profile Management:</strong> Update your installer profile and company information</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <h2>🚀 Get Started</h2>
+      <p>Ready to dive in? Access your dashboard to start managing leads:</p>
+      <p style="text-align: center;">
+        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}/dashboard" class="cta-button">Go to Dashboard</a>
+      </p>
+    </div>
+
+    <p><strong>Need Help?</strong> Reply to this email and our support team will be happy to assist you with getting started.</p>
+
+    <p>Welcome aboard!</p>
+    <p><strong>The Solar ROI Calculator Team</strong></p>
+
+    <div class="footer">
+      <p>This is an automated welcome message sent to ${installerEmail}</p>
+      <p>&copy; ${new Date().getFullYear()} Solar ROI Calculator. All rights reserved.</p>
+    </div>
+  </div>
+</body>
+</html>
+    `,
+  }),
+
+  /**
    * Customer email after lead submission
    */
   customerSubmissionEmail: (customerName: string, systemSize: string, annualProduction: string, address: string) => ({

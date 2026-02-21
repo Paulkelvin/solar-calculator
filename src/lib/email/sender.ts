@@ -16,6 +16,40 @@ function getResendClient() {
 }
 
 /**
+ * Send welcome email to new admin/installer after email confirmation
+ */
+export async function sendWelcomeEmail(installerEmail: string) {
+  try {
+    const resend = getResendClient();
+    if (!resend) {
+      console.warn('RESEND_API_KEY not configured - skipping welcome email');
+      return { success: false, reason: 'API key not configured' };
+    }
+
+    const template = EmailTemplates.welcomeEmail(installerEmail);
+
+    const result = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: installerEmail,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    });
+
+    if (result.error) {
+      console.error('Failed to send welcome email:', result.error);
+      return { success: false, error: result.error };
+    }
+
+    console.log('Welcome email sent successfully to:', installerEmail);
+    return { success: true, messageId: result.data?.id };
+  } catch (error) {
+    console.error('Welcome email send error:', error);
+    return { success: false, error };
+  }
+}
+
+/**
  * Send customer submission confirmation email
  */
 export async function sendCustomerSubmissionEmail(
