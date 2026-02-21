@@ -17,11 +17,13 @@ export async function POST(request: NextRequest) {
     if (lead) {
       // Transform lead into expected format
       const transformedLeadData = {
+        name: lead.contact?.name || 'Customer',
+        email: lead.contact?.email || '',
+        phone: lead.contact?.phone || '',
         address: lead.address,
         usage: lead.usage,
         roof: lead.roof,
         preferences: lead.preferences,
-        contact: lead.contact,
       };
 
       const transformedCalculations = {
