@@ -26,10 +26,18 @@ export async function POST(request: NextRequest) {
         preferences: lead.preferences,
       };
 
+      const annualProduction = lead.estimated_annual_production || 0;
       const transformedCalculations = {
         systemSizeKw: lead.system_size_kw || 0,
-        estimatedAnnualProduction: lead.estimated_annual_production || 0,
-        financing: [], // Could be expanded later
+        estimatedAnnualProduction: annualProduction,
+        estimatedMonthlyProduction: Math.round(annualProduction / 12),
+        financing: [],
+        environmental: {
+          annualCO2Offset: Math.round(annualProduction * 0.386),
+          treesEquivalent: Math.round(annualProduction * 0.386 / 21),
+          gridIndependence: 80,
+        },
+        confidence: 'preliminary' as const,
       };
 
       const html = generateProposalHTML(transformedLeadData, transformedCalculations);
