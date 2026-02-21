@@ -109,6 +109,7 @@ export async function sendCustomerSubmissionEmail(
       filename: string;
       content: Buffer;
     };
+    shareToken?: string;
   }
 ) {
   try {
@@ -122,7 +123,8 @@ export async function sendCustomerSubmissionEmail(
       customerName,
       `${systemSize.toFixed(2)} kW`,
       `${Math.round(annualProduction).toLocaleString()} kWh`,
-      address
+      address,
+      options?.shareToken
     );
 
     const emailPayload = {

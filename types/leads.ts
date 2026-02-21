@@ -82,6 +82,9 @@ export interface Lead {
   notes?: string;
   solar_potential_kwh_annual?: number;
   roof_imagery_url?: string;
+  share_token?: string;
+  scheduled_appointment_at?: string;
+  appointment_notes?: string;
   created_at: string;
   updated_at: string;
 }

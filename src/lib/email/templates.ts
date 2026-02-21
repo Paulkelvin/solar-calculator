@@ -97,25 +97,29 @@ This is an automated welcome message.`,
   /**
    * Customer email after lead submission
    */
-  customerSubmissionEmail: (customerName: string, systemSize: string, annualProduction: string, address: string) => ({
+  customerSubmissionEmail: (customerName: string, systemSize: string, annualProduction: string, address: string, shareToken?: string) => {
+    const estimateUrl = shareToken 
+      ? `${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}/estimate/${shareToken}`
+      : undefined;
+
+    return {
     subject: `Your solar estimate is ready`,
     text: `Hi ${customerName},
 
 Thank you for requesting a solar estimate. We've analyzed your property and prepared a customized solar system proposal.
 
-SYSTEM DETAILS:
-- System Size: ${systemSize}
+YOUR RECOMMENDED SOLAR SYSTEM:
+- Recommended System Size: ${systemSize}
 - Estimated Annual Production: ${annualProduction}
 - Property Address: ${address}
 
-NEXT STEPS:
-1. Review your complete estimate and financing options
-2. Compare different payment scenarios (Cash, Loan, Lease, PPA)  
-3. Schedule a consultation with our solar team
+${estimateUrl ? `VIEW YOUR ESTIMATE ONLINE:\n${estimateUrl}\n\n` : ''}WHAT HAPPENS NEXT:
+1. A solar consultant will review your estimate and contact you within 1-2 business days
+2. Review your detailed proposal online (link above) or in the attached PDF
+3. Share the link with family to discuss your solar options together
+4. When ready, schedule a free site assessment with our team
 
-View your full estimate: ${process.env.NEXT_PUBLIC_APP_URL || 'https://testingground.sbs'}
-
-Our solar consultants will reach out to you within 1-2 business days to discuss your estimate and answer any questions.
+Questions? Simply reply to this email or call us at (555) 123-4567.
 
 Best regards,
 Solar Estimate Team
@@ -158,10 +162,10 @@ You received this email because you requested a solar estimate at ${process.env.
       <p>Thank you for requesting a solar estimate. We've analyzed your property details and prepared a customized solar system proposal.</p>
 
       <div class="section">
-        <h2>System Details</h2>
+        <h2>Your Recommended Solar System</h2>
         <table class="info-table">
           <tr>
-            <td>System Size</td>
+            <td>Recommended System Size</td>
             <td>${systemSize}</td>
           </tr>
           <tr>
@@ -175,21 +179,26 @@ You received this email because you requested a solar estimate at ${process.env.
         </table>
       </div>
 
+      ${estimateUrl ? `
+      <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; margin: 24px 0; border-radius: 4px;">
+        <p style="margin: 0 0 8px 0; font-weight: 600; color: #92400e;">📊 View Your Estimate Online</p>
+        <p style="margin: 0 0 12px 0; color: #78350f; font-size: 14px;">Access your detailed proposal anytime, anywhere:</p>
+        <a href="${estimateUrl}" style="display: inline-block; background-color: #f59e0b; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 500;">View Full Estimate</a>
+        <p style="margin: 12px 0 0 0; color: #78350f; font-size: 12px;">Share this link with family to discuss your solar options together</p>
+      </div>
+      ` : ''}
+
       <div class="section">
-        <h2>Next Steps</h2>
+        <h2>What Happens Next</h2>
         <ol style="margin: 8px 0 0 20px; padding: 0;">
-          <li style="margin-bottom: 8px;">Review your complete estimate and financing options</li>
-          <li style="margin-bottom: 8px;">Compare different payment scenarios (Cash, Loan, Lease, PPA)</li>
-          <li style="margin-bottom: 8px;">Schedule a consultation with our solar team</li>
+          <li style="margin-bottom: 8px;">A solar consultant will review your estimate and contact you within 1-2 business days</li>
+          <li style="margin-bottom: 8px;">Review your detailed proposal online (link above) or in the attached PDF</li>
+          <li style="margin-bottom: 8px;">Share the link with family to discuss your solar options together</li>
+          <li style="margin-bottom: 8px;">When ready, schedule a free site assessment with our team</li>
         </ol>
       </div>
 
-      <div style="text-align: center; margin: 24px 0;">
-        <p style="margin: 0 0 8px 0; font-weight: 600; color: #1f2937;">Your detailed summary link will be sent by your consultant after confirming a time.</p>
-        <p style="margin: 0; color: #6b7280; font-size: 14px;">If you need it sooner, just reply to this email and we'll send it right away.</p>
-      </div>
-
-      <p>Our solar consultants will reach out to you within 1-2 business days to discuss your estimate and answer any questions.</p>
+      <p style="margin-top: 20px;">Questions? Simply reply to this email or call us at (555) 123-4567.</p>
 
       <p style="margin-top: 20px;">Best regards,<br><strong>Solar Estimate Team</strong></p>
     </div>
@@ -203,7 +212,8 @@ You received this email because you requested a solar estimate at ${process.env.
 </body>
 </html>
     `,
-  }),
+    };
+  },
 
   /**
    * Installer email when new lead is submitted

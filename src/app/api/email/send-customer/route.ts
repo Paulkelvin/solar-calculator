@@ -93,6 +93,7 @@ export async function POST(request: NextRequest) {
             filename: 'solar-estimate.pdf',
             content: pdfBuffer,
           },
+          shareToken: leadData.share_token,
         }
       );
 
