@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { AuthProvider } from "@/contexts/auth";
 import { QuickCalculator } from "@/components/utility/QuickCalculator";
 import { Toaster } from "@/components/providers/Toaster";
+import { AuthCookieBridge } from "@/components/auth/AuthCookieBridge";
 
 /**
  * Client-side layout wrapper
@@ -15,6 +16,7 @@ export function ClientLayout({ children }: { children: ReactNode }) {
 
   return (
     <AuthProvider>
+      <AuthCookieBridge />
       <div
         className="relative h-full w-full flex flex-col mx-auto px-3 sm:px-4 py-3 sm:py-4 md:py-6 transition-all duration-300"
         style={{
