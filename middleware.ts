@@ -32,41 +32,58 @@ export async function middleware(request: NextRequest) {
   const projectRef = supabaseUrl.match(/https:\/\/([^.]+)\./)?.[1] || '';
 
   // Try multiple cookie patterns Supabase might use
-  let token: string | undefined;
+  let authCookie: string | undefined;
 
   // Pattern 1: sb-<ref>-auth-token (Supabase v2 cookie)
   if (projectRef) {
-    token = request.cookies.get(`sb-${projectRef}-auth-token`)?.value;
+    authCookie = request.cookies.get(`sb-${projectRef}-auth-token`)?.value;
   }
 
   // Pattern 2: Legacy sb-access-token
-  if (!token) {
-    token = request.cookies.get('sb-access-token')?.value;
+  if (!authCookie) {
+    authCookie = request.cookies.get('sb-access-token')?.value;
   }
 
   // Pattern 3: Check all cookies for any Supabase auth cookie
-  if (!token) {
+  if (!authCookie) {
     for (const [name, cookie] of request.cookies) {
       if (name.startsWith('sb-') && name.endsWith('-auth-token')) {
-        token = cookie.value;
+        authCookie = cookie.value;
         break;
       }
     }
   }
 
+  // Parse the auth cookie to get access token
+  let accessToken: string | undefined;
+  if (authCookie) {
+    try {
+      const parsed = JSON.parse(authCookie);
+      accessToken = parsed.access_token;
+    } catch {
+      // Cookie might be a plain token string (legacy format)
+      accessToken = authCookie;
+    }
+  }
+
   // Validate token if present (not just existence check)
   let isValidSession = false;
-  if (token && supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('mock')) {
+  if (accessToken && supabaseUrl && supabaseAnonKey && !supabaseUrl.includes('mock')) {
     try {
-      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-      });
-      const { data: { user }, error } = await supabase.auth.getUser(token);
+      const supabase = createClient(supabaseUrl, supabaseAnonKey);
+      const { data: { user }, error } = await supabase.auth.getUser(accessToken);
       isValidSession = !error && !!user;
-    } catch {
+      
+      if (isValidSession) {
+        console.log('✅ Middleware: Valid session for user:', user.id);
+      } else {
+        console.log('❌ Middleware: Invalid session -', error?.message);
+      }
+    } catch (err) {
+      console.log('❌ Middleware: Session validation error:', err);
       isValidSession = false;
     }
-  } else if (token && process.env.NODE_ENV === 'development') {
+  } else if (accessToken && process.env.NODE_ENV === 'development') {
     // Only in local dev: treat token existence as valid
     isValidSession = true;
   }
