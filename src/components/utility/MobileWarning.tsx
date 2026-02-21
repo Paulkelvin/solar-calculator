@@ -40,7 +40,7 @@ export function MobileWarning() {
       <div className="flex-1">
         <h3 className="text-sm font-medium text-amber-800">Desktop Recommended</h3>
         <p className="mt-1 text-xs text-amber-700">
-          For the best experience managing leads and viewing the dashboard, please use a desktop or tablet device.
+          For the best experience using the solar calculator and viewing your proposal, please use a desktop or tablet device.
         </p>
       </div>
       <button
