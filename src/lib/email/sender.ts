@@ -2,8 +2,9 @@ import { Resend } from 'resend';
 import { EmailTemplates } from './templates';
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'noreply@testingground.sbs';
-const FROM_NAME = process.env.EMAIL_FROM_NAME || 'Solar Estimate Team';
-const REPLY_TO_EMAIL = process.env.EMAIL_REPLY_TO || process.env.EMAIL_FROM || 'support@testingground.sbs';
+// Force a neutral, non-promotional display name to avoid spam triggers
+const FROM_NAME = 'Solar Estimate Team';
+const REPLY_TO_EMAIL = process.env.EMAIL_REPLY_TO || 'support@testingground.sbs';
 const INSTALLER_EMAIL = process.env.INSTALLER_EMAIL || 'installer@testingground.sbs';
 
 /**
@@ -30,10 +31,15 @@ function formatFromEmail(emailRaw: string, nameRaw?: string): string {
   const extractedEmail = bracketMatch?.[1]?.trim();
 
   // Derive name: prefer explicit nameRaw, otherwise take text before the bracket
-  const derivedName = nameRaw
+  const derivedNameRaw = nameRaw
     ?.trim()
     .replace(/^[\"']|[\"']$/g, '')
     .replace(/[<>]/g, '') || (bracketMatch ? trimmed.split('<')[0].trim().replace(/^[\"']|[\"']$/g, '') : '');
+
+  // Hard override to remove ROI or other promotional terms from display name
+  const neutralName = derivedNameRaw && /roi/i.test(derivedNameRaw)
+    ? 'Solar Estimate Team'
+    : derivedNameRaw || 'Solar Estimate Team';
 
   const email = extractedEmail || trimmed;
 
@@ -43,7 +49,7 @@ function formatFromEmail(emailRaw: string, nameRaw?: string): string {
     return email;
   }
 
-  const cleanName = derivedName?.trim();
+  const cleanName = neutralName?.trim();
   if (!cleanName) {
     return email;
   }
