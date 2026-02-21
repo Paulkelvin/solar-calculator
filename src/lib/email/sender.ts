@@ -79,7 +79,7 @@ export async function sendCustomerSubmissionEmail(
       address
     );
 
-    const result = await resend.emails.send({
+    const emailPayload = {
       from: `${FROM_NAME} <${FROM_EMAIL}>`,
       to: customerEmail,
       replyTo: REPLY_TO_EMAIL,
@@ -89,16 +89,30 @@ export async function sendCustomerSubmissionEmail(
       headers: {
         'X-Entity-Ref-ID': `customer-${Date.now()}`,
       },
+    };
+    
+    console.log('[sendCustomerSubmissionEmail] Sending with payload:', {
+      from: emailPayload.from,
+      to: emailPayload.to,
+      replyTo: emailPayload.replyTo,
+      subject: emailPayload.subject,
     });
 
+    const result = await resend.emails.send(emailPayload);
+
     if (result.error) {
-      console.error('Failed to send customer email:', result.error);
+      console.error('[sendCustomerSubmissionEmail] Resend API error:', {
+        error: result.error,
+        message: result.error.message,
+        name: result.error.name,
+      });
       return { success: false, error: result.error };
     }
 
+    console.log('[sendCustomerSubmissionEmail] Success! Message ID:', result.data?.id);
     return { success: true, messageId: result.data?.id };
   } catch (error) {
-    console.error('Customer email send error:', error);
+    console.error('[sendCustomerSubmissionEmail] Exception:', error);
     return { success: false, error };
   }
 }

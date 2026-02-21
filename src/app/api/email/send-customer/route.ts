@@ -21,6 +21,12 @@ export async function POST(request: NextRequest) {
     // Handle new lead-based request
     if (lead && to) {
       const leadData = lead as Lead;
+      
+      console.log('[send-customer] Attempting to send email to:', to);
+      console.log('[send-customer] FROM_EMAIL env:', process.env.EMAIL_FROM);
+      console.log('[send-customer] FROM_NAME env:', process.env.EMAIL_FROM_NAME);
+      console.log('[send-customer] RESEND_API_KEY present:', !!process.env.RESEND_API_KEY);
+      
       const emailResult = await sendCustomerSubmissionEmail(
         to,
         leadData.contact.name,
@@ -30,12 +36,22 @@ export async function POST(request: NextRequest) {
       );
 
       if (!emailResult.success) {
+        console.error('[send-customer] Email failed:', JSON.stringify(emailResult, null, 2));
         return NextResponse.json(
-          { error: 'Failed to send email', details: emailResult },
+          { 
+            error: 'Failed to send email', 
+            details: emailResult,
+            debugInfo: {
+              hasApiKey: !!process.env.RESEND_API_KEY,
+              fromEmail: process.env.EMAIL_FROM,
+              fromName: process.env.EMAIL_FROM_NAME,
+            }
+          },
           { status: 500 }
         );
       }
 
+      console.log('[send-customer] Email sent successfully:', emailResult.messageId);
       return NextResponse.json({ success: true, message: 'Email sent to ' + to });
     }
 
